@@ -1,0 +1,141 @@
+# FatherProcess
+
+**MACCABI Healthcare System - Watchdog/Supervisor Daemon**
+
+---
+
+## Quick Summary
+
+FatherProcess is the central supervisor daemon for the MACCABI healthcare backend system. According to the source code at `FatherProcess.c:7-10`, it is responsible for "starting the MACABI system and keeping all servers up."
+
+The program performs the following primary functions:
+1. **Initializes system resources** - Creates semaphores, shared memory, and tables
+2. **Starts child processes** - Spawns configured server programs from database parameters
+3. **Monitors child processes** - Watchdog loop detects failures and restarts processes
+4. **Handles IPC commands** - Receives control messages for system management
+5. **Manages graceful shutdown** - Terminates all children in an orderly fashion
+
+Written by Ely Levy (Reshuma) in 1996, the program has been maintained and updated through 2024.
+
+---
+
+## Key Files
+
+| File | Lines | Purpose |
+|------|------:|---------|
+| FatherProcess.c | 1972 | Main watchdog daemon - initialization, monitoring, shutdown |
+| MacODBC_MyOperators.c | 114 | ODBC SQL cursor definitions for setup_new table |
+| MacODBC_MyCustomWhereClauses.c | 10 | Custom WHERE clauses (stub file) |
+| Makefile | 44 | Build configuration |
+
+**Total**: 2140 lines across 4 files
+
+---
+
+## How to Use This Documentation
+
+This documentation set consists of 7 files:
+
+| File | Contents |
+|------|----------|
+| **01_PROGRAM_SPECIFICATION.md** | Overview, file structure, functions, dependencies, defines, globals |
+| **02_SYSTEM_ARCHITECTURE.md** | Process model, boot sequence, IPC mechanisms, state machine, data flow |
+| **03_TECHNICAL_ANALYSIS.md** | Detailed function analysis, control flow, error handling, external calls |
+| **04_BUSINESS_LOGIC.md** | Process supervision, restart logic, healthcare context, multi-instance management |
+| **05_CODE_ARTIFACTS.md** | Key code snippets, configuration, database operations, data structures |
+| **README.md** | This file - overview and navigation guide |
+| **VALIDATION_REPORT.md** | Quality assurance verification and scoring |
+
+### Recommended Reading Order
+
+1. **README.md** (this file) - Get oriented
+2. **01_PROGRAM_SPECIFICATION.md** - Understand structure and components
+3. **02_SYSTEM_ARCHITECTURE.md** - Understand how the system works
+4. **04_BUSINESS_LOGIC.md** - Understand supervision and restart behavior
+5. **03_TECHNICAL_ANALYSIS.md** - Deep dive into function details
+6. **05_CODE_ARTIFACTS.md** - Reference actual code snippets
+
+---
+
+## Related Components
+
+According to the research context, FatherProcess interacts with:
+
+### Child Processes (started by FatherProcess)
+- **SqlServer** - SQL server worker (SQLPROC_TYPE)
+- **As400UnixServer** - AS/400 bridge (AS400TOUNIX_TYPE)
+- **DocSqlServer** - Doctor SQL server (DOCSQLPROC_TYPE)
+- **PurchaseHistoryServer** - Purchase history (PURCHASE_HIST_TYPE)
+- Other configured programs from the `setup_new` database table
+
+### Libraries
+- **GenLib** - Shared memory, semaphores, process spawn, socket IPC
+- **GenSql** - Database connectivity, table schema (TableTab[])
+
+### Headers (via MacODBC.h)
+- **Global.h** - System constants, data structures, process types
+- **MsgHndlr.h** - Message handling definitions
+
+---
+
+## System Requirements
+
+Based on the code analysis:
+
+- **Platform**: UNIX/Linux (uses POSIX APIs: fork, sigaction, shmget, etc.)
+- **Database**: ODBC-compatible (MS-SQL or Informix)
+- **Build**: C compiler with ODBC library (`-lodbc`)
+
+---
+
+## Configuration
+
+FatherProcess is configured via:
+
+1. **Environment Variables**:
+   - `MAC_SYS` - Determines which subsystems to run (pharm, doctor, doc_tcp_only)
+
+2. **Database Table** (`setup_new`):
+   - Program definitions (Program...)
+   - System assignments (system parameter)
+   - Instance control settings (startup_instances, max_instances, etc.)
+   - Runtime parameters
+
+---
+
+## Security Notes
+
+According to the research context (`RESEARCH/context_summary.md`):
+
+- Hard-coded secret values exist in `TikrotRPC.h` and `global_1.h`
+- These locations are documented but values are not copied into documentation
+- Credentials are stored in shared memory (`All.mac_user`, `All.mac_pass`, etc.)
+
+---
+
+## Source Code Location
+
+```
+source_code/FatherProcess/
+├── FatherProcess.c                  # Main source (1972 lines)
+├── MacODBC_MyOperators.c            # SQL cursors (114 lines)
+├── MacODBC_MyCustomWhereClauses.c   # WHERE clauses (10 lines)
+├── Makefile                         # Build config (44 lines)
+└── [project files]                  # Visual Studio, Eclipse configs
+```
+
+---
+
+## Documentation Metadata
+
+| Field | Value |
+|-------|-------|
+| Task ID | DOC-FATHER-001 |
+| Generated | 2026-02-02 |
+| Agent | CIDRA Documenter Agent |
+| Source | CHUNKS/FatherProcess/ |
+| Validation | 100/100 (see VALIDATION_REPORT.md) |
+
+---
+
+*Generated by CIDRA Documenter Agent - DOC-FATHER-001*

@@ -1,0 +1,117 @@
+{
+  "cidra_version": "1.0.0",
+  "project_name": "Zacaut_Batei_Merkahat_C",
+  "display_name": "MACCABI Healthcare System (C Backend)",
+  "description": "Legacy C backend system for Maccabi Healthcare - process supervision, database connectivity, and healthcare services",
+
+  "technology": {
+    "primary": "C",
+    "plugin": "c_plugin.yaml",
+    "frameworks": ["UNIX", "ODBC", "Shared Memory", "IPC"],
+    "build_system": "Visual Studio 2022"
+  },
+
+  "paths": {
+    "source_code": "source_code/",
+    "chunks_output": "CHUNKS/",
+    "documentation_output": "Documentation/",
+    "recommendations_output": "RECOMMENDATIONS/",
+    "cidra_framework": "enterprise_cidra_framework-main/"
+  },
+
+  "components": [
+    {
+      "name": "FatherProcess",
+      "path": "source_code/FatherProcess/",
+      "type": "daemon",
+      "description": "Watchdog server - starts and monitors all child processes",
+      "priority": 1,
+      "files": ["FatherProcess.c", "MacODBC_MyOperators.c"]
+    },
+    {
+      "name": "SqlServer",
+      "path": "source_code/SqlServer/",
+      "type": "server",
+      "description": "SQL Server component",
+      "priority": 2
+    },
+    {
+      "name": "As400UnixServer",
+      "path": "source_code/As400UnixServer/",
+      "type": "server",
+      "description": "AS/400 mainframe integration server",
+      "priority": 3
+    },
+    {
+      "name": "PharmTcpServer",
+      "path": "source_code/PharmTcpServer/",
+      "type": "server",
+      "description": "Pharmacy TCP server",
+      "priority": 4
+    },
+    {
+      "name": "PharmWebServer",
+      "path": "source_code/PharmWebServer/",
+      "type": "server",
+      "description": "Pharmacy web server",
+      "priority": 5
+    },
+    {
+      "name": "GenLib",
+      "path": "source_code/GenLib/",
+      "type": "library",
+      "description": "General shared library",
+      "priority": 6
+    },
+    {
+      "name": "GenSql",
+      "path": "source_code/GenSql/",
+      "type": "library",
+      "description": "SQL utility library",
+      "priority": 7
+    },
+    {
+      "name": "Include",
+      "path": "source_code/Include/",
+      "type": "headers",
+      "description": "Header files",
+      "priority": 8
+    }
+  ],
+
+  "language": "Hebrew",
+  "output_language": "Hebrew",
+
+  "orchestration": {
+    "enabled": true,
+    "orchestrator_name": "Orc",
+    "auto_pipeline": false,
+    "prompt_system": "orc_prompts/"
+  },
+
+  "agents": {
+    "chunker": {
+      "enabled": true,
+      "strategy": "adaptive",
+      "token_limit": 4000
+    },
+    "documenter": {
+      "enabled": true,
+      "validation_required": true,
+      "min_score": 100
+    },
+    "recommender": {
+      "enabled": true,
+      "dialog_required": true
+    }
+  },
+
+  "verification": {
+    "line_count_command": "(Get-Content $FILE).Count",
+    "function_count_command": "Select-String -Path $FILE -Pattern '^(static\\s+)?(int|void|char|pid_t)\\s+\\w+\\s*\\(' | Measure-Object | Select-Object -ExpandProperty Count",
+    "anti_hallucination": true
+  },
+
+  "created_at": "2026-02-02",
+  "created_by": "Orc (Orchestrator)"
+}

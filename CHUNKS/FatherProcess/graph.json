@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "component": "FatherProcess",
+    "generated_at": "2026-02-02T12:00:00Z",
+    "total_nodes": 13,
+    "total_edges": 42
+  },
+  "nodes": [
+    {"id": "ch_father_001_globals", "type": "global_declarations", "file": "FatherProcess.c"},
+    {"id": "ch_father_002_main_init", "type": "function_section", "function": "main", "section": "initialization"},
+    {"id": "ch_father_003_main_stats_startup", "type": "function_section", "function": "main", "section": "statistics_and_system_startup"},
+    {"id": "ch_father_004_main_watchdog_status", "type": "function_section", "function": "main", "section": "watchdog_loop_system_status"},
+    {"id": "ch_father_005_main_watchdog_deadchild", "type": "function_section", "function": "main", "section": "watchdog_loop_dead_children"},
+    {"id": "ch_father_006_main_watchdog_ipc", "type": "function_section", "function": "main", "section": "watchdog_loop_ipc_messages"},
+    {"id": "ch_father_007_main_shutdown", "type": "function_section", "function": "main", "section": "shutdown_sequence"},
+    {"id": "ch_father_008_sql_dbparam", "type": "function", "function": "sql_dbparam_into_shm"},
+    {"id": "ch_father_009_sqlgetparams", "type": "function", "function": "SqlGetParamsByName"},
+    {"id": "ch_father_010_run_system", "type": "function", "function": "run_system"},
+    {"id": "ch_father_011_getprogparm", "type": "function", "function": "GetProgParm"},
+    {"id": "ch_father_012_terminate_handler", "type": "function", "function": "TerminateHandler"},
+    {"id": "ch_father_013_odbc_operators", "type": "file_complete", "file": "MacODBC_MyOperators.c"}
+  ],
+  "edges": [
+    {"from": "ch_father_002_main_init", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_002_main_init", "to": "ch_father_009_sqlgetparams", "type": "calls"},
+    {"from": "ch_father_002_main_init", "to": "ch_father_008_sql_dbparam", "type": "calls"},
+    {"from": "ch_father_002_main_init", "to": "ch_father_012_terminate_handler", "type": "registers_handler"},
+    {"from": "ch_father_003_main_stats_startup", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_003_main_stats_startup", "to": "ch_father_010_run_system", "type": "calls"},
+    {"from": "ch_father_004_main_watchdog_status", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_005_main_watchdog_deadchild", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_006_main_watchdog_ipc", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_006_main_watchdog_ipc", "to": "ch_father_009_sqlgetparams", "type": "calls"},
+    {"from": "ch_father_006_main_watchdog_ipc", "to": "ch_father_008_sql_dbparam", "type": "calls"},
+    {"from": "ch_father_006_main_watchdog_ipc", "to": "ch_father_010_run_system", "type": "calls"},
+    {"from": "ch_father_007_main_shutdown", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_008_sql_dbparam", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_008_sql_dbparam", "to": "ch_father_013_odbc_operators", "type": "uses_cursor"},
+    {"from": "ch_father_009_sqlgetparams", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_009_sqlgetparams", "to": "ch_father_013_odbc_operators", "type": "uses_cursor"},
+    {"from": "ch_father_010_run_system", "to": "ch_father_001_globals", "type": "uses_globals"},
+    {"from": "ch_father_010_run_system", "to": "ch_father_011_getprogparm", "type": "calls"},
+    {"from": "ch_father_011_getprogparm", "to": "ch_father_001_globals", "type": "uses_globals"}
+  ],
+  "call_graph": {
+    "main": {
+      "calls": ["sql_dbparam_into_shm", "SqlGetParamsByName", "run_system", "TerminateHandler"],
+      "sections_sequence": [
+        "ch_father_002_main_init",
+        "ch_father_003_main_stats_startup",
+        "ch_father_004_main_watchdog_status",
+        "ch_father_005_main_watchdog_deadchild",
+        "ch_father_006_main_watchdog_ipc",
+        "ch_father_007_main_shutdown"
+      ]
+    },
+    "sql_dbparam_into_shm": {
+      "calls_external": ["DeclareCursorInto", "OpenCursor", "FetchCursor", "CloseCursor", "AddItem", "DeleteTable", "ActItems"],
+      "called_by": ["main"]
+    },
+    "SqlGetParamsByName": {
+      "calls_external": ["DeclareCursor", "OpenCursor", "FetchCursorInto", "CloseCursor"],
+      "called_by": ["main"]
+    },
+    "run_system": {
+      "calls": ["GetProgParm"],
+      "calls_external": ["OpenTable", "ActItems", "Run_server", "CloseTable"],
+      "called_by": ["main"]
+    },
+    "GetProgParm": {
+      "calls_external": ["OpenTable", "ActItems", "CloseTable"],
+      "called_by": ["run_system"]
+    },
+    "TerminateHandler": {
+      "calls_external": ["sigaction", "GerrLogMini"],
+      "triggered_by": ["SIGTERM", "SIGFPE", "SIGSEGV"]
+    }
+  },
+  "external_dependencies": {
+    "GenLib": {
+      "functions": ["InitEnv", "HashEnv", "GetCurrNamedPipe", "ListenSocketNamed", "CreateSemaphore", "InitFirstExtent", "CreateTable", "OpenTable", "CloseTable", "AddItem", "DeleteTable", "ActItems", "RewindTable", "Run_server", "AddCurrProc", "GetSonsCount", "AddToSonsCount", "DisposeSockets", "KillAllExtents", "DeleteSemaphore", "GerrLogMini"]
+    },
+    "GenSql": {
+      "functions": ["SQLMD_connect", "SQLMD_disconnect", "DeclareCursor", "DeclareCursorInto", "OpenCursor", "FetchCursor", "FetchCursorInto", "CloseCursor", "SQLERR_code_cmp", "SQLERR_error_test"],
+      "data": ["TableTab", "MAIN_DB"]
+    },
+    "system": {
+      "functions": ["sigaction", "fork", "kill", "waitpid", "getpgid", "setsid", "fcntl", "setuid", "access", "unlink", "time", "localtime", "sleep", "usleep", "exit", "_exit", "getenv", "getpid", "getppid", "mlockall", "plock"]
+    }
+  },
+  "shared_memory_tables": {
+    "used": ["PARM_TABLE", "PROC_TABLE", "STAT_TABLE", "UPDT_TABLE", "TSTT_TABLE", "DSTT_TABLE", "PRSC_TABLE", "MSG_RECID_TABLE", "DIPR_TABLE"],
+    "created_by_father": true,
+    "schema_source": "GenSql.c:TableTab[]"
+  }
+}

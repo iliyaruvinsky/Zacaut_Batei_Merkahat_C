@@ -1,0 +1,214 @@
+{
+  "metadata": {
+    "component": "FatherProcess",
+    "analyzed_at": "2026-02-02T12:00:00Z",
+    "analyzer": "CIDRA Chunker v1.0.0"
+  },
+  "file_statistics": {
+    "total_files": 4,
+    "total_lines": 2144,
+    "files": [
+      {
+        "file": "FatherProcess.c",
+        "lines": 1973,
+        "functions": 6,
+        "complexity": "high",
+        "purpose": "Main watchdog daemon for MACCABI healthcare system"
+      },
+      {
+        "file": "MacODBC_MyOperators.c",
+        "lines": 115,
+        "sql_cursors": 2,
+        "complexity": "low",
+        "purpose": "ODBC SQL operator definitions"
+      },
+      {
+        "file": "MacODBC_MyCustomWhereClauses.c",
+        "lines": 11,
+        "where_clauses": 0,
+        "complexity": "low",
+        "purpose": "Custom WHERE clauses (placeholder/stub)"
+      },
+      {
+        "file": "Makefile",
+        "lines": 45,
+        "complexity": "low",
+        "purpose": "Build configuration for FatherProcess.exe"
+      }
+    ]
+  },
+  "function_inventory": {
+    "total_functions": 6,
+    "functions": [
+      {
+        "name": "main",
+        "line_start": 146,
+        "line_end": 1469,
+        "lines": 1323,
+        "complexity": "very_high",
+        "description": "Entry point and main watchdog loop",
+        "chunked_into": 6
+      },
+      {
+        "name": "sql_dbparam_into_shm",
+        "line_start": 1481,
+        "line_end": 1597,
+        "lines": 116,
+        "complexity": "medium",
+        "description": "Load parameters from DB to shared memory"
+      },
+      {
+        "name": "SqlGetParamsByName",
+        "line_start": 1608,
+        "line_end": 1757,
+        "lines": 149,
+        "complexity": "medium",
+        "description": "Get parameters from DB by program name"
+      },
+      {
+        "name": "run_system",
+        "line_start": 1766,
+        "line_end": 1884,
+        "lines": 118,
+        "complexity": "medium",
+        "description": "Run child processes from parameters table"
+      },
+      {
+        "name": "GetProgParm",
+        "line_start": 1893,
+        "line_end": 1926,
+        "lines": 33,
+        "complexity": "low",
+        "description": "Find parameter of program from shared memory"
+      },
+      {
+        "name": "TerminateHandler",
+        "line_start": 1937,
+        "line_end": 1972,
+        "lines": 35,
+        "complexity": "low",
+        "description": "Signal handler for terminating signals"
+      }
+    ]
+  },
+  "preprocessor_analysis": {
+    "defines": [
+      {"name": "MAIN", "line": 23, "purpose": "Mark this as main program file"},
+      {"name": "FATHER", "line": 24, "purpose": "Mark this as FatherProcess"},
+      {"name": "NO_PRN", "line": 25, "purpose": "Disable diagnostic printing"},
+      {"name": "prn", "line": 34, "purpose": "Diagnostic print macro"},
+      {"name": "prn_1", "line": 38, "purpose": "Diagnostic print with 1 arg"},
+      {"name": "prn_2", "line": 44, "purpose": "Diagnostic print with 2 args"},
+      {"name": "Conflict_Test", "line": 67, "purpose": "SQL conflict test macro"},
+      {"name": "PROG_KEY_LEN", "line": 74, "value": "31"},
+      {"name": "PARAM_NAM_LEN", "line": 75, "value": "31"},
+      {"name": "PARAM_VAL_LEN", "line": 76, "value": "31"}
+    ],
+    "includes": [
+      {"header": "MacODBC.h", "line": 29, "type": "system/project"},
+      {"header": "MsgHndlr.h", "line": 30, "type": "project"}
+    ]
+  },
+  "global_variables": {
+    "total": 16,
+    "table_pointers": [
+      "parm_tablep", "proc_tablep", "updt_tablep", "stat_tablep",
+      "tstt_tablep", "dstt_tablep", "prsc_tablep", "msg_recid_tablep", "dipr_tablep"
+    ],
+    "arrays": [
+      {"name": "table_ptrs", "type": "TABLE**[]", "purpose": "Map table indices to pointers"},
+      {"name": "InstanceControl", "type": "TInstanceControl[]", "purpose": "Multi-instance program control"}
+    ],
+    "scalars": [
+      {"name": "running_system", "type": "int", "purpose": "Bitmap of active subsystems"},
+      {"name": "caught_signal", "type": "int", "purpose": "Signal number caught for shutdown"},
+      {"name": "TikrotProductionMode", "type": "int", "purpose": "Avoid unresolved external errors"},
+      {"name": "UseODBC", "type": "int", "purpose": "ODBC usage flag"},
+      {"name": "sig_act_terminate", "type": "struct sigaction", "purpose": "SIGTERM handler config"}
+    ]
+  },
+  "data_structures_used": {
+    "from_Global_h": [
+      "TABLE", "TABLE_DATA", "PROC_DATA", "DIPR_DATA", "STAT_DATA",
+      "TSTT_DATA", "DSTT_DATA", "UPDT_DATA", "PARM_DATA", "TInstanceControl"
+    ],
+    "local": []
+  },
+  "ipc_mechanisms": {
+    "named_sockets": {
+      "creation": "GetCurrNamedPipe + ListenSocketNamed (line 300-301)",
+      "messaging": "GetSocketMessage (line 1123)",
+      "cleanup": "DisposeSockets (line 1444)"
+    },
+    "semaphore": {
+      "creation": "CreateSemaphore (line 304)",
+      "cleanup": "DeleteSemaphore (line 1453)"
+    },
+    "shared_memory": {
+      "creation": "InitFirstExtent (line 307)",
+      "tables": "CreateTable loop (lines 312-334)",
+      "cleanup": "KillAllExtents (line 1447)"
+    },
+    "signals": {
+      "handled": ["SIGTERM"],
+      "handler": "TerminateHandler",
+      "registration": "sigaction (line 250)"
+    }
+  },
+  "database_access": {
+    "connection": {
+      "function": "SQLMD_connect",
+      "retry_loop": "lines 262-271",
+      "disconnection": "SQLMD_disconnect (line 1441)"
+    },
+    "cursors": {
+      "FP_setup_cur": "SELECT from setup_new (all rows)",
+      "FP_params_cur": "SELECT from setup_new (by program_name)"
+    },
+    "tables_accessed": ["setup_new"]
+  },
+  "process_management": {
+    "child_spawn": "Run_server (via run_system)",
+    "child_monitoring": "waitpid with WNOHANG",
+    "child_termination": "kill with SIGTERM or Signal 9",
+    "orphan_detection": "getpgid check",
+    "process_types_aware": [
+      "FATHERPROC_TYPE", "SQLPROC_TYPE", "AS400TOUNIX_TYPE",
+      "DOCSQLPROC_TYPE", "PURCHASE_HIST_TYPE", "TSX25WORKPROC_TYPE"
+    ]
+  },
+  "state_machine": {
+    "system_states": ["GOING_UP", "SYSTEM_UP", "GOING_DOWN", "SYSTEM_DOWN"],
+    "tracked_for": ["system", "pharm_status", "doctor_status"],
+    "transitions": {
+      "GOING_UP -> SYSTEM_UP": "When sons > 0 (or subsystem processes found)",
+      "SYSTEM_UP -> GOING_DOWN": "On shutdown command",
+      "GOING_DOWN -> SYSTEM_DOWN": "When sons < 1",
+      "SYSTEM_DOWN": "Exit watchdog loop"
+    }
+  },
+  "complexity_metrics": {
+    "overall": "high",
+    "factors": [
+      "Large main function (1323 lines)",
+      "Complex state machine",
+      "Multiple IPC mechanisms",
+      "Multi-instance process control",
+      "Database integration",
+      "Signal handling"
+    ]
+  },
+  "key_findings": [
+    "FatherProcess is the watchdog/supervisor daemon that initializes and monitors the entire MACCABI healthcare system",
+    "Boot sequence: SQLMD_connect -> CreateSemaphore -> InitFirstExtent -> CreateTable loop -> AddCurrProc -> run_system",
+    "Uses shared memory for process registry (proc_tablep), parameters (parm_tablep), and statistics (tstt/dstt_tablep)",
+    "Named pipes are actually Unix-domain sockets (AF_UNIX)",
+    "Supports multi-instance child programs via InstanceControl array",
+    "Graceful shutdown via SIGTERM with 1-second delay before semaphore deletion"
+  ],
+  "security_notes": [
+    "Credentials (MacUser, MacPass, MacDb) are stored in shared memory parm_tablep",
+    "setuid to unprivileged user after initialization (line 294)",
+    "No hard-coded secrets in FatherProcess.c itself"
+  ]
+}
