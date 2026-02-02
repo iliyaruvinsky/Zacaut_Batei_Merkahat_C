@@ -1,0 +1,68 @@
+# CIDRA Project - Recommended .gitignore
+
+# IDE directories (IDE configs should be in Protocols/ and copied to root)
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+*~
+
+# Build outputs
+dist/
+build/
+target/
+out/
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Archives
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# Large binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Compiled files
+*.class
+*.o
+*.obj
+
+# Package files  
+*.jar
+*.war
+*.ear
+
+# IDE-specific (keep .vscode/, .claude/, etc. from Protocols/)
+# These are templates, not project-specific
+
+# Keep Source Code/ and Documentation/ directories
+# These are the core of your CIDRA project
+

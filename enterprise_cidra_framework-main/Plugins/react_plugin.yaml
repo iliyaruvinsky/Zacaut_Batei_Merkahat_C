@@ -1,0 +1,236 @@
+# React Documentation Plugin
+
+**גרסה**: 1.0  
+**תאריך**: 31 אוקטובר 2025  
+**בסיס**: הותאם מהמתודולוגיה המוכחת של SAP Plugin  
+**טכנולוגיות נתמכות**: React, JavaScript, TypeScript, Node.js, Next.js
+
+---
+
+## 🎯 Plugin Metadata
+
+```json
+{
+  "id": "react-documentation-plugin",
+  "name": "React Documentation Generator",
+  "version": "1.0.0", 
+  "description": "תיעוד אוטומטי מדויק לאפליקציות React בהתבסס על קוד אמיתי",
+  "technology": "React",
+  "subtechnologies": ["React", "JavaScript", "TypeScript", "Node.js", "Next.js"],
+  "compatibility": {
+    "cursor": true,
+    "claudeCode": true
+  },
+  "adaptedFrom": "SAP Plugin anti-hallucination methodology",
+  "author": "Code Documentation Framework Team"
+}
+```
+
+---
+
+## 📋 כללים ספציפיים ל-React
+
+### ⚛️ Component Analysis Rules
+
+#### 1. Component Structure Detection
+```markdown
+**MUST**: זהה Function Components vs Class Components
+**MUST**: ספור Props, State, Hooks בדיוק
+**NEVER**: המצא props שלא מועברים בפועל
+**ALWAYS**: תעד רק hooks שבשימוש בקוד
+**FORMAT**:
+### Component: [NAME]
+**Type**: [Function/Class]
+**Props**: [COUNT] (ספירה מדויקת)
+**Hooks**: [COUNT] (רק מה שקיים)
+```
+
+#### 2. Props Analysis
+```markdown
+**MUST**: תעד רק props שמועברים בפועל
+**NEVER**: תנחש סוגי props ללא TypeScript definitions
+**ALWAYS**: ספור destructured props בדיוק
+**EXAMPLE**:
+✅ Props: name, age, isActive (3 מדויק)
+❌ Props: name, age, isActive, וכנראה עוד... (ספקולציה)
+```
+
+#### 3. Hooks Documentation
+```markdown
+**useState**: תעד כל state variable בנפרד
+**useEffect**: ספור dependencies מדויק
+**Custom Hooks**: תעד רק אם מוגדרים בפרויקט
+**Context**: תעד useContext רק אם בשימוש
+```
+
+#### 4. Event Handlers Tracking
+```markdown
+**onClick, onChange, etc.**: תעד כל event handler
+**Callback Props**: תעד functions שמועברות כprops
+**Side Effects**: תעד API calls, localStorage, etc.
+**NEVER**: המצא event handlers שלא קיימים
+```
+
+### 🔄 State Management Analysis
+
+#### 1. Local State
+```markdown
+**useState**: ספור כל state hook
+**useReducer**: תעד reducer functions
+**State Updates**: תעד setState calls
+```
+
+#### 2. Global State  
+```markdown
+**Context API**: תעד Providers ו-Consumers
+**Redux**: תעד actions, reducers, selectors (אם קיים)
+**Zustand/Jotai**: תעד stores (אם קיים)
+```
+
+### 🌐 API Integration Rules
+
+#### 1. HTTP Requests
+```markdown
+**fetch/axios**: תעד כל API call
+**Endpoints**: רשום URLs מדויקים מהקוד
+**Methods**: GET, POST, PUT, DELETE בשימוש
+**Error Handling**: תעד try-catch blocks
+```
+
+#### 2. Data Flow
+```markdown
+**Props Drilling**: תעד העברת נתונים בין components
+**Lifting State Up**: זהה shared state patterns
+**Data Fetching**: תעד useEffect עם API calls
+```
+
+---
+
+## 🛠️ כלי ניתוח ספציפיים ל-React
+
+### React Analyzer
+```python
+class ReactAnalyzer:
+    def analyze_component(self, component_file):
+        """
+        מנתח React Component
+        מותאם מהמתודולוגיה של SAP (דיוק 100%)
+        """
+        analysis = {
+            "component_name": self.extract_component_name(component_file),
+            "type": self.detect_component_type(component_file),  # Function/Class
+            "props": self.extract_props_exact(component_file),  # ספירה מדויקת
+            "state": self.analyze_state_usage(component_file),
+            "hooks": self.extract_hooks_only_used(component_file),  # רק מה שבשימוש
+            "event_handlers": self.find_event_handlers(component_file),
+            "api_calls": self.extract_api_calls(component_file),
+            "child_components": self.find_child_components(component_file),
+            "imports": self.analyze_imports(component_file),
+            "exports": self.analyze_exports(component_file)
+        }
+        return analysis
+
+    def count_lines_accurate(self, file_content):
+        """
+        ספירה מדויקת כמו ב-SAP Plugin
+        """
+        return len(file_content.splitlines())
+```
+
+### Project Structure Analyzer
+```python
+class ReactProjectAnalyzer:
+    def analyze_project(self, project_path):
+        """
+        ניתוח מבנה פרויקט React מלא
+        """
+        return {
+            "framework": self.detect_framework(),  # CRA, Next.js, Vite
+            "components": self.scan_all_components(),
+            "pages": self.find_pages_or_routes(),
+            "api_routes": self.find_api_endpoints(),  # Next.js API routes
+            "hooks": self.find_custom_hooks(),
+            "context_providers": self.find_context_providers(),
+            "utils": self.find_utility_functions(),
+            "types": self.extract_typescript_types()  # אם TypeScript
+        }
+```
+
+---
+
+## 📝 תבניות תיעוד React
+
+### Component Template
+```markdown
+# [COMPONENT_NAME] Component
+
+## מידע כללי (מבוסס קוד אמיתי)
+- **שם Component**: [NAME]
+- **סוג**: [Function/Class]
+- **גודל**: [X] שורות מדויקות
+- **קובץ**: [FILE_PATH]
+
+## Props ([COUNT] props)
+[AUTO-GENERATED - רק props שמועברים בפועל]
+
+## State Management
+### Local State ([COUNT] state variables)
+[AUTO-GENERATED מ-useState/useReducer]
+
+### Hooks ([COUNT] hooks)
+[AUTO-GENERATED - רק hooks בשימוש]
+
+## Event Handlers ([COUNT] handlers)
+[AUTO-GENERATED מ-onClick, onChange, etc.]
+
+## API Integration
+[AUTO-GENERATED מ-fetch/axios calls]
+
+## Child Components ([COUNT] children)
+[AUTO-GENERATED מ-JSX analysis]
+
+## מגבלות תיעוד
+### מה שלא ניתן לדעת:
+- לוגיקה עסקית ב-API endpoints חיצוניים
+- תוכן responses מ-API calls
+- משמעות עסקית של state changes
+
+### מה שכן ידוע:
+- מבנה Component (props, state, hooks)
+- Event handlers ו-side effects
+- Child components ו-data flow
+- API calls ו-endpoints
+```
+
+### Application Template
+```markdown
+# [APP_NAME] - React Application
+
+## ארכיטקטורה כללית (מבוסס קוד)
+- **Framework**: [CRA/Next.js/Vite]
+- **Components**: [COUNT] (ספירה מדויקת)
+- **Pages/Routes**: [COUNT]
+- **Custom Hooks**: [COUNT]
+
+## Component Hierarchy
+[AUTO-GENERATED TREE]
+
+## State Management Strategy
+[AUTO-GENERATED - Context/Redux/Local]
+
+## API Integration
+[AUTO-GENERATED מ-API calls]
+
+## Routing Structure
+[AUTO-GENERATED מ-React Router/Next.js]
+```
+
+---
+
+**React Plugin מוכן - מבוסס על עקרונות הדיוק של SAP Plugin!**
+
+עכשיו אמשיך למצגת הטכנית למפתחים:
+
+<function_calls>
+<invoke name="todo_write">
+<parameter name="merge">true

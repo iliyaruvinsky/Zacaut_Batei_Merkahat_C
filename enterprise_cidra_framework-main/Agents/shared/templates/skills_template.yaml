@@ -1,0 +1,211 @@
+# THE_[AGENT_NAME]_AGENT - Skills Definition Template
+# Version: 0.1.0
+# Framework: Universal CIDRA
+#
+# Instructions:
+# 1. Copy this file to your agent directory
+# 2. Rename to skills.yaml
+# 3. Fill in all [PLACEHOLDER] values
+# 4. Add/remove skills as needed
+# 5. Register agent in agents/registry.yaml
+
+---
+
+agent:
+  name: "THE_[AGENT_NAME]_AGENT"
+  version: "0.1.0"
+  mission: "[DESCRIBE THE AGENT'S MISSION]"
+
+  core_principles:
+    - "[Principle 1]"
+    - "[Principle 2]"
+    - "[Principle 3]"
+
+---
+
+# USER-INVOKED SKILLS (Slash Commands)
+
+user_invoked_skills:
+
+  - skill_id: "[AGENT_PREFIX]_001"
+    name: "[command_name]"
+    command: "/[command] [parameters]"
+    type: "main_entry"  # main_entry | secondary | utility
+    description: "[What this command does]"
+
+    parameters:
+      - name: "[param_name]"
+        required: true  # true | false
+        type: "string"  # string | boolean | number | path
+        description: "[What this parameter does]"
+      - name: "--[option]"
+        required: false
+        type: "boolean"
+        default: false
+        description: "[What this option does]"
+
+    workflow:
+      - step: 1
+        action: "[action_name]"
+        description: "[What happens in this step]"
+      - step: 2
+        action: "[action_name]"
+        description: "[What happens in this step]"
+
+    prerequisites:
+      - "[Prerequisite 1]"
+
+  # Add more user-invoked skills as needed
+
+---
+
+# DIALOG SKILLS (Interactive with user)
+# Use these if your agent needs to ask the user questions
+
+dialog_skills:
+
+  - skill_id: "[AGENT_PREFIX]_DLG_001"
+    name: "[dialog_name]"
+    type: "dialog"
+    critical: false  # true if this dialog is mandatory
+    description: "[What this dialog accomplishes]"
+    when: "[When to trigger this dialog]"
+
+    questions:
+      - question: 1
+        text: "[Question to ask user]"
+        type: "single_select"  # single_select | multi_select | text | form
+        options:
+          - value: "[option_value]"
+            label: "[Display text]"
+          - value: "[option_value]"
+            label: "[Display text]"
+        stores: "[variable_name]"
+
+  # Add more dialog skills as needed
+  # Remove this section if agent doesn't need dialogs
+
+---
+
+# INTERNAL SKILLS (Automatic Capabilities)
+
+internal_skills:
+
+  - skill_id: "[AGENT_PREFIX]_INT_001"
+    name: "[internal_capability_name]"
+    type: "internal"
+    description: "[What this capability does]"
+
+    process:
+      - step: 1
+        action: "[Action description]"
+      - step: 2
+        action: "[Action description]"
+
+    output:
+      field1: "[description]"
+      field2: "[description]"
+
+  # MANDATORY: Include anti-hallucination rules
+  - skill_id: "[AGENT_PREFIX]_INT_AH"
+    name: "anti_hallucination_compliance"
+    type: "internal"
+    critical: true
+    description: "Ensure compliance with anti-hallucination rules"
+    rules:
+      - "Verify before claiming"
+      - "Exact counting only"
+      - "Source traceability required"
+      - "Avoid forbidden words"
+      - "Honest reporting always"
+
+  # Add more internal skills as needed
+
+---
+
+# OUTPUT SKILLS (What the agent produces)
+
+output_skills:
+
+  - skill_id: "[AGENT_PREFIX]_OUT_001"
+    name: "[output_name]"
+    type: "output"
+    description: "[What this output contains]"
+
+    format: "markdown"  # markdown | json | yaml | directory
+    location: "[output_directory_or_file]"
+
+    structure:
+      - section: "[Section Name]"
+        content: "[What this section contains]"
+      - section: "[Section Name]"
+        content: "[What this section contains]"
+
+  # Add more output skills as needed
+
+---
+
+# QUALITY SKILLS (Validation and assurance)
+# Optional but recommended
+
+quality_skills:
+
+  - skill_id: "[AGENT_PREFIX]_QA_001"
+    name: "self_validation"
+    type: "quality"
+    description: "[How this agent validates its work]"
+
+    checks:
+      - check: "[What to check]"
+        severity: "critical"  # critical | major | minor
+      - check: "[What to check]"
+        severity: "major"
+
+  # Add more quality skills as needed
+  # Remove this section if using shared validation only
+
+---
+
+# CONFIGURATION
+
+configuration:
+
+  defaults:
+    setting1: "[default_value]"
+    setting2: "[default_value]"
+
+  # Environment variables this agent uses
+  environment:
+    - name: "CIDRA_[SETTING]"
+      description: "[What this setting controls]"
+      default: "[default_value]"
+
+---
+
+# DEPENDENCIES
+
+dependencies:
+
+  reads_from:
+    - "[What this agent reads - outputs from other agents]"
+
+  produces:
+    - "[What this agent produces]"
+
+  requires_agents:
+    - agent: "[REQUIRED_AGENT_NAME]"
+      reason: "[Why it's required]"
+
+  optional_agents:
+    - agent: "[OPTIONAL_AGENT_NAME]"
+      reason: "[Why it's useful]"
+
+---
+
+# VERSION HISTORY
+
+version_history:
+  - version: "0.1.0"
+    date: "[YYYY-MM]"
+    changes:
+      - "Initial skills definition"

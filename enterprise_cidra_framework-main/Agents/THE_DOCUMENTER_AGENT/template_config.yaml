@@ -1,0 +1,811 @@
+# Documentation Template Configuration
+# Configurable standards for code documentation across different organizations
+# Version: 1.0.0
+# Based on: MACCABI ICM Project (proven 100% accuracy)
+
+# ============================================================================
+# ORGANIZATION PROFILES
+# Pre-configured profiles for common organizational standards
+# ============================================================================
+
+profiles:
+
+  # Default profile - Based on MACCABI ICM proven methodology
+  maccabi_standard:
+    name: "MACCABI Standard"
+    description: "Proven methodology from MACCABI ICM SAP project (100% accuracy, 9 screens)"
+    quality_threshold: 100
+    strictness_level: "maximum"
+    file_count: 7
+    language: "hebrew_primary_english_secondary"
+    forbidden_words_enabled: true
+    careful_language_required: true
+    exact_counting_only: true
+    cross_reference_mandatory: true
+    limitations_section_required: true
+
+  # Relaxed profile - For internal documentation or draft stages
+  internal_documentation:
+    name: "Internal Documentation"
+    description: "Relaxed standards for internal use, allows some approximations"
+    quality_threshold: 90
+    strictness_level: "medium"
+    file_count: 5
+    language: "english_only"
+    forbidden_words_enabled: false
+    careful_language_required: false
+    exact_counting_only: false
+    cross_reference_mandatory: false
+    limitations_section_required: true
+
+  # Client deliverable profile - High quality but English-focused
+  client_deliverable:
+    name: "Client Deliverable"
+    description: "High-quality English documentation for external clients"
+    quality_threshold: 95
+    strictness_level: "high"
+    file_count: 6
+    language: "english_only"
+    forbidden_words_enabled: true
+    careful_language_required: true
+    exact_counting_only: true
+    cross_reference_mandatory: true
+    limitations_section_required: true
+
+  # Quick reference profile - Minimal but accurate
+  quick_reference:
+    name: "Quick Reference"
+    description: "Minimal documentation focusing on key facts only"
+    quality_threshold: 100
+    strictness_level: "high"
+    file_count: 3
+    language: "english_only"
+    forbidden_words_enabled: true
+    careful_language_required: true
+    exact_counting_only: true
+    cross_reference_mandatory: false
+    limitations_section_required: true
+
+# ============================================================================
+# FILE STRUCTURE CONFIGURATION
+# Define number of files and naming patterns per documentation set
+# ============================================================================
+
+file_structure:
+
+  # 7-file structure (MACCABI standard)
+  seven_file_standard:
+    file_count: 7
+    files:
+      - filename_pattern: "01_{COMPONENT_TYPE}_SPECIFICATION.md"
+        title: "{Component Name} - Specification"
+        purpose: "Technical specification based on actual code"
+        required: true
+
+      - filename_pattern: "02_UI_{INTERFACE_TYPE}.md"
+        title: "{Component Name} - UI/Interface"
+        purpose: "User interface or external interface description"
+        required: true
+
+      - filename_pattern: "03_TECHNICAL_ANALYSIS.md"
+        title: "{Component Name} - Technical Analysis"
+        purpose: "Detailed technical breakdown"
+        required: true
+
+      - filename_pattern: "04_BUSINESS_LOGIC.md"
+        title: "{Component Name} - Business Logic"
+        purpose: "Program flow and business rules"
+        required: true
+
+      - filename_pattern: "05_CODE_ARTIFACTS.md"
+        title: "{Component Name} - Code Artifacts"
+        purpose: "Key code snippets and examples"
+        required: true
+
+      - filename_pattern: "README.md"
+        title: "{Component Name} - Overview"
+        purpose: "Quick reference and overview"
+        required: true
+
+      - filename_pattern: "VALIDATION_REPORT_{COMPONENT_NAME}.md"
+        title: "{Component Name} - Validation Report"
+        purpose: "Verification against actual code"
+        required: true
+
+  # 6-file structure (client deliverable)
+  six_file_standard:
+    file_count: 6
+    files:
+      - filename_pattern: "01_SPECIFICATION.md"
+        required: true
+      - filename_pattern: "02_INTERFACE.md"
+        required: true
+      - filename_pattern: "03_TECHNICAL_DETAILS.md"
+        required: true
+      - filename_pattern: "04_BUSINESS_LOGIC.md"
+        required: true
+      - filename_pattern: "05_CODE_EXAMPLES.md"
+        required: true
+      - filename_pattern: "README.md"
+        required: true
+
+  # 5-file structure (internal documentation)
+  five_file_standard:
+    file_count: 5
+    files:
+      - filename_pattern: "01_SPECIFICATION.md"
+        required: true
+      - filename_pattern: "02_TECHNICAL_DETAILS.md"
+        required: true
+      - filename_pattern: "03_LOGIC.md"
+        required: true
+      - filename_pattern: "04_CODE_EXAMPLES.md"
+        required: true
+      - filename_pattern: "README.md"
+        required: true
+
+  # 3-file structure (quick reference)
+  three_file_standard:
+    file_count: 3
+    files:
+      - filename_pattern: "SPECIFICATION.md"
+        required: true
+      - filename_pattern: "TECHNICAL_NOTES.md"
+        required: true
+      - filename_pattern: "README.md"
+        required: true
+
+# ============================================================================
+# SECTION TEMPLATES
+# Define required sections for each file type
+# ============================================================================
+
+section_templates:
+
+  specification_file:
+    sections:
+      - section_name: "Component Details"
+        required: true
+        subsections:
+          - "Component name"
+          - "Technology/Language"
+          - "Code size (line counts)"
+          - "Source file references"
+
+      - section_name: "General Description"
+        required: true
+        language_rules: "Use careful language ('appears to', 'seems to')"
+
+      - section_name: "Data Structures / Context Nodes"
+        required: true
+        counting: "exact"
+        cross_reference: "mark shared vs unique"
+
+      - section_name: "Procedures / Methods"
+        required: true
+        counting: "exact"
+        include_line_numbers: true
+
+      - section_name: "Documentation Limitations"
+        required: true
+        subsections:
+          - "What CANNOT be determined from code"
+          - "What IS known from code"
+
+  readme_file:
+    sections:
+      - section_name: "Overview"
+        required: true
+
+      - section_name: "Characteristics (from code)"
+        required: true
+        include:
+          - "Line counts"
+          - "Element counts"
+          - "File counts"
+
+      - section_name: "Component Role (according to code)"
+        required: true
+        language_rules: "Use careful language"
+
+      - section_name: "Limitations"
+        required: true
+
+  validation_report:
+    sections:
+      - section_name: "Verification Checklist"
+        required: true
+        include:
+          - "Line count verification"
+          - "Element count verification"
+          - "Cross-reference validation"
+
+      - section_name: "Accuracy Confirmation"
+        required: true
+
+      - section_name: "Quality Score"
+        required: true
+        format: "X/100"
+
+      - section_name: "Fixes Applied (if any)"
+        required: false
+        include_if_fixes_made: true
+
+# ============================================================================
+# LANGUAGE CONFIGURATION
+# Configurable careful language and forbidden words per organization
+# ============================================================================
+
+language_rules:
+
+  # Careful language phrases (required in documentation)
+  careful_language:
+
+    english:
+      required_phrases:
+        - "appears to"
+        - "seems to"
+        - "according to code"
+        - "based on code"
+        - "according to the"
+        - "based on the"
+
+      minimum_occurrences: 5
+      deduction_if_missing: 10
+
+    hebrew:
+      required_phrases:
+        - "נראה ש"
+        - "נראה כי"
+        - "לפי הקוד"
+        - "מבוסס על הקוד"
+        - "לפי"
+        - "על פי"
+
+      minimum_occurrences: 5
+      deduction_if_missing: 10
+
+  # Forbidden words (to prevent overconfident language)
+  forbidden_words:
+
+    english:
+      marketing_terms:
+        - "advanced"
+        - "smart"
+        - "intelligent"
+        - "sophisticated"
+        - "state-of-the-art"
+        - "cutting-edge"
+        - "revolutionary"
+        - "innovative"
+        - "next-generation"
+
+      overconfident_terms:
+        - "seamless"
+        - "effortless"
+        - "intuitive" # unless provably tested
+        - "optimal" # unless provably calculated
+        - "perfect"
+        - "flawless"
+
+      auto_terms: # only forbidden if not provably automated
+        - "automatic"
+        - "automated"
+        - "self-"
+
+      deduction_per_occurrence: 5
+
+    hebrew:
+      marketing_terms:
+        - "מתקדם"
+        - "חכם"
+        - "אינטליגנטי"
+        - "מתוחכם"
+        - "חדשני"
+        - "מהפכני"
+
+      overconfident_terms:
+        - "חלק"
+        - "אינטואיטיבי"
+        - "אופטימלי"
+        - "מושלם"
+
+      deduction_per_occurrence: 5
+
+  # Estimate language (forbidden for exact counting)
+  estimate_language:
+
+    english:
+      forbidden_terms:
+        - "approximately"
+        - "around"
+        - "roughly"
+        - "about"
+        - "~" # tilde
+        - "±" # plus-minus
+        - "+" # as in "5+ fields"
+        - "several"
+        - "many"
+        - "some"
+        - "a few"
+        - "multiple" # unless followed by exact count
+
+      deduction_per_occurrence: 15
+
+    hebrew:
+      forbidden_terms:
+        - "בערך"
+        - "בקירוב"
+        - "כ-" # prefix meaning "about"
+        - "מספר" # unless followed by exact count
+        - "כמה"
+
+      deduction_per_occurrence: 15
+
+# ============================================================================
+# COUNTING REQUIREMENTS
+# Precision levels for element counting
+# ============================================================================
+
+counting_rules:
+
+  # Exact counting (MACCABI standard)
+  exact_counting:
+    line_counts:
+      method: "command-based"
+      powershell: "(Get-Content [FILE]).Count"
+      bash: "wc -l [FILE]"
+      allow_estimates: false
+      deduction_if_wrong: 40
+
+    element_counts:
+      method: "manual_verification"
+      allow_estimates: false
+      count_method: "field-by-field for structures, item-by-item for lists"
+      deduction_if_wrong: 15
+
+    operation_counts:
+      method: "grep-based"
+      allow_estimates: false
+      examples:
+        - "grep -c 'PATTERN' [FILE]"
+      deduction_if_wrong: 10
+
+  # Approximate counting (internal documentation)
+  approximate_counting:
+    line_counts:
+      method: "command-based or estimate"
+      allow_estimates: true
+      precision: "within 5%"
+      deduction_if_wrong: 10
+
+    element_counts:
+      method: "quick count"
+      allow_estimates: true
+      precision: "within 10%"
+      deduction_if_wrong: 5
+
+    operation_counts:
+      method: "estimate acceptable"
+      allow_estimates: true
+      deduction_if_wrong: 0
+
+# ============================================================================
+# CROSS-REFERENCE REQUIREMENTS
+# Rules for identifying shared vs unique elements
+# ============================================================================
+
+cross_reference_rules:
+
+  # Mandatory cross-reference (MACCABI standard)
+  mandatory:
+    enabled: true
+
+    shared_element_marking:
+      required: true
+      format: "### ElementName (shared from [SOURCE]!)"
+      include_line_numbers: true
+      include_primary_definition_location: true
+
+    unique_element_marking:
+      required: true
+      format: "### ElementName (unique to this component)"
+
+    deduction_if_missing: 25
+
+    technology_specific:
+      sap_webdynpro:
+        check_component_controller: true
+        component_controller_file_pattern: "0008_1BCWDY_S_*AW18.txt"
+
+      as400:
+        check_copy_members: true
+        copy_directives: ["/COPY", "/INCLUDE", "COPY"]
+
+      react:
+        check_shared_components: true
+        check_context_providers: true
+
+      python:
+        check_imported_modules: true
+        check_base_classes: true
+
+  # Optional cross-reference (internal documentation)
+  optional:
+    enabled: false
+    deduction_if_missing: 0
+
+# ============================================================================
+# LIMITATIONS SECTION REQUIREMENTS
+# Rules for "what is/isn't known" section
+# ============================================================================
+
+limitations_section:
+
+  # Required format (MACCABI standard)
+  required_format:
+    enabled: true
+
+    section_title:
+      english: "Documentation Limitations"
+      hebrew: "מגבלות תיעוד"
+
+    subsections:
+      - title_english: "What CANNOT be determined from code"
+        title_hebrew: "מה שלא ניתן לדעת"
+        required: true
+        minimum_items: 2
+
+      - title_english: "What IS known from code"
+        title_hebrew: "מה שכן ידוע"
+        required: true
+        minimum_items: 3
+
+    deduction_if_missing: 20
+
+    example_unknowns:
+      - "Database table contents"
+      - "External API behavior"
+      - "Business rule meanings"
+      - "User experience flows"
+      - "Performance characteristics"
+
+    example_knowns:
+      - "Code structure (exact counts)"
+      - "Program flow"
+      - "Data structure definitions"
+      - "Method signatures"
+      - "Database operations"
+
+  # Optional format (quick reference)
+  optional_format:
+    enabled: false
+    section_title: "Limitations"
+    combined_format: true
+    minimum_items: 1
+    deduction_if_missing: 10
+
+# ============================================================================
+# QUALITY THRESHOLDS
+# Scoring and pass/fail criteria
+# ============================================================================
+
+quality_scoring:
+
+  # MACCABI standard - Perfect scores only
+  perfect_only:
+    passing_score: 100
+    allow_partial_pass: false
+    delivery_criteria: "Must achieve 100/100 before delivery"
+
+    scoring_breakdown:
+      forbidden_words: -5
+      missing_careful_language: -10
+      estimate_language: -15
+      missing_limitations: -20
+      missing_cross_reference: -25
+      wrong_file_count: -30
+      inaccurate_line_count: -40
+      inaccurate_element_count: -15
+      invalid_line_references: -10
+      mismatched_code_snippets: -20
+      missing_validation_report: -15
+
+  # Client deliverable - High scores acceptable
+  high_threshold:
+    passing_score: 95
+    allow_partial_pass: true
+    delivery_criteria: "Must achieve 95/100 or higher"
+
+    scoring_breakdown:
+      forbidden_words: -3
+      missing_careful_language: -5
+      estimate_language: -10
+      missing_limitations: -15
+      missing_cross_reference: -15
+      wrong_file_count: -20
+      inaccurate_line_count: -30
+      inaccurate_element_count: -10
+      invalid_line_references: -5
+      mismatched_code_snippets: -15
+      missing_validation_report: -10
+
+  # Internal documentation - Moderate scores acceptable
+  moderate_threshold:
+    passing_score: 90
+    allow_partial_pass: true
+    delivery_criteria: "Must achieve 90/100 or higher"
+
+    scoring_breakdown:
+      forbidden_words: -2
+      missing_careful_language: -5
+      estimate_language: -5
+      missing_limitations: -10
+      missing_cross_reference: -5
+      wrong_file_count: -15
+      inaccurate_line_count: -20
+      inaccurate_element_count: -5
+      invalid_line_references: -3
+      mismatched_code_snippets: -10
+      missing_validation_report: -5
+
+  # Quick reference - Accuracy-focused only
+  accuracy_focused:
+    passing_score: 100
+    allow_partial_pass: false
+    delivery_criteria: "Must be factually accurate (100/100)"
+
+    scoring_breakdown:
+      forbidden_words: -5
+      missing_careful_language: 0 # not required for quick ref
+      estimate_language: -20 # extra strict on accuracy
+      missing_limitations: -15
+      missing_cross_reference: 0 # not required for quick ref
+      wrong_file_count: -30
+      inaccurate_line_count: -50 # extra strict on accuracy
+      inaccurate_element_count: -20 # extra strict on accuracy
+      invalid_line_references: -15
+      mismatched_code_snippets: -25
+      missing_validation_report: 0 # not required for quick ref
+
+# ============================================================================
+# VALIDATION COMMAND TEMPLATES
+# Reusable validation commands per check type
+# ============================================================================
+
+validation_commands:
+
+  file_count_check:
+    bash: "ls -1 [DOC_DIR]/*.md | wc -l"
+    powershell: "(Get-ChildItem [DOC_DIR] -Filter *.md).Count"
+    expected_comparison: "equal"
+
+  forbidden_words_check:
+    bash: "grep -i '[FORBIDDEN_PATTERN]' [DOC_DIR]/*.md"
+    powershell: "Select-String -Path [DOC_DIR]\\*.md -Pattern '[FORBIDDEN_PATTERN]' -CaseSensitive:$false"
+    expected_result: "no matches"
+
+  careful_language_check:
+    bash: "grep -i '[CAREFUL_PATTERN]' [DOC_DIR]/*.md | wc -l"
+    powershell: "(Select-String -Path [DOC_DIR]\\*.md -Pattern '[CAREFUL_PATTERN]' -CaseSensitive:$false).Count"
+    expected_comparison: "greater_than_or_equal"
+
+  estimate_language_check:
+    bash: "grep -i '[ESTIMATE_PATTERN]' [DOC_DIR]/*.md"
+    powershell: "Select-String -Path [DOC_DIR]\\*.md -Pattern '[ESTIMATE_PATTERN]' -CaseSensitive:$false"
+    expected_result: "no matches"
+
+  limitations_section_check:
+    bash: "grep -A 10 'Documentation Limitations\\|מגבלות תיעוד' [SPEC_FILE] | grep -q 'What CANNOT\\|What IS\\|מה שלא\\|מה שכן'"
+    expected_result: "found"
+
+  line_count_verification:
+    bash: "wc -l < [SOURCE_FILE]"
+    powershell: "(Get-Content [SOURCE_FILE]).Count"
+    compare_with: "documented count in specification file"
+    expected_comparison: "exact_match"
+
+# ============================================================================
+# ORGANIZATION-SPECIFIC CUSTOMIZATIONS
+# Templates for adding custom rules per organization
+# ============================================================================
+
+custom_rules:
+
+  # Example: Organization-specific forbidden terms
+  organization_specific_forbidden_words:
+    enabled: false
+    additional_terms: []
+    # Example:
+    # additional_terms:
+    #   - "legacy" # if organization doesn't want negative terms
+    #   - "hack" # if organization wants professional language only
+
+  # Example: Organization-specific required sections
+  organization_specific_sections:
+    enabled: false
+    additional_sections: []
+    # Example:
+    # additional_sections:
+    #   - section_name: "Security Considerations"
+    #     required: true
+    #     file: "01_SPECIFICATION.md"
+
+  # Example: Organization-specific quality checks
+  organization_specific_checks:
+    enabled: false
+    additional_checks: []
+    # Example:
+    # additional_checks:
+    #   - check_name: "Copyright header present"
+    #     check_command: "head -1 [DOC_FILES] | grep -q 'Copyright'"
+    #     deduction_if_fail: 5
+
+# ============================================================================
+# PRESET CONFIGURATIONS
+# Quick-start configurations combining multiple settings
+# ============================================================================
+
+preset_configurations:
+
+  # MACCABI ICM Configuration (proven)
+  maccabi_icm:
+    profile: "maccabi_standard"
+    file_structure: "seven_file_standard"
+    section_template: "specification_file"
+    language_rules:
+      careful_language: "english and hebrew"
+      forbidden_words: "enabled"
+      estimate_language: "forbidden"
+    counting: "exact_counting"
+    cross_reference: "mandatory"
+    limitations_section: "required_format"
+    quality_threshold: "perfect_only"
+
+  # Enterprise Client Configuration
+  enterprise_client:
+    profile: "client_deliverable"
+    file_structure: "six_file_standard"
+    section_template: "specification_file"
+    language_rules:
+      careful_language: "english"
+      forbidden_words: "enabled"
+      estimate_language: "forbidden"
+    counting: "exact_counting"
+    cross_reference: "mandatory"
+    limitations_section: "required_format"
+    quality_threshold: "high_threshold"
+
+  # Internal Team Configuration
+  internal_team:
+    profile: "internal_documentation"
+    file_structure: "five_file_standard"
+    section_template: "specification_file"
+    language_rules:
+      careful_language: "not required"
+      forbidden_words: "disabled"
+      estimate_language: "allowed with precision"
+    counting: "approximate_counting"
+    cross_reference: "optional"
+    limitations_section: "optional_format"
+    quality_threshold: "moderate_threshold"
+
+  # Quick Tech Notes Configuration
+  quick_notes:
+    profile: "quick_reference"
+    file_structure: "three_file_standard"
+    section_template: "readme_file"
+    language_rules:
+      careful_language: "english"
+      forbidden_words: "enabled"
+      estimate_language: "forbidden"
+    counting: "exact_counting"
+    cross_reference: "optional"
+    limitations_section: "optional_format"
+    quality_threshold: "accuracy_focused"
+
+# ============================================================================
+# TEMPLATE VARIABLES
+# Substitution variables for templates
+# ============================================================================
+
+template_variables:
+
+  component_placeholders:
+    COMPONENT_NAME: "Name of component being documented"
+    COMPONENT_TYPE: "Type (SCREEN, PROGRAM, MODULE, CLASS, etc.)"
+    INTERFACE_TYPE: "Interface type (MOCKUP, API, DATABASE, etc.)"
+    TECHNOLOGY: "Technology/language name"
+    LANGUAGE: "Programming language"
+
+  metadata_placeholders:
+    AUTHOR: "Documentation author"
+    DATE: "Documentation date"
+    VERSION: "Component version"
+    PROJECT: "Project name"
+
+  count_placeholders:
+    LINE_COUNT: "Total line count"
+    ELEMENT_COUNT: "Element count (nodes, methods, etc.)"
+    FILE_COUNT: "Number of source files"
+
+  reference_placeholders:
+    SOURCE_FILE: "Source file path"
+    LINE_NUMBER: "Specific line number"
+    LINE_RANGE: "Line range (e.g., 145-167)"
+
+# ============================================================================
+# USAGE EXAMPLES
+# How to use this configuration
+# ============================================================================
+
+usage_examples:
+
+  example_1:
+    scenario: "Documenting SAP WebDynpro screen for external client (like MACCABI)"
+    configuration: "preset_configurations.maccabi_icm"
+    result: "7 files, 100/100 quality requirement, Hebrew+English, zero hallucinations"
+
+  example_2:
+    scenario: "Documenting AS/400 program for enterprise client"
+    configuration: "preset_configurations.enterprise_client"
+    modifications:
+      - "Change language_rules to English only"
+      - "Keep quality_threshold at 95/100"
+    result: "6 files, 95/100 quality requirement, English only, high accuracy"
+
+  example_3:
+    scenario: "Internal team documentation for Python microservice"
+    configuration: "preset_configurations.internal_team"
+    result: "5 files, 90/100 quality requirement, relaxed language rules"
+
+  example_4:
+    scenario: "Quick reference for React component library"
+    configuration: "preset_configurations.quick_notes"
+    result: "3 files, 100/100 accuracy requirement, minimal but accurate"
+
+# ============================================================================
+# VERSION HISTORY
+# ============================================================================
+
+version_history:
+  v1_0_0:
+    date: "2025-11-02"
+    changes:
+      - "Initial configuration template"
+      - "Based on proven MACCABI ICM methodology"
+      - "4 preset profiles defined"
+      - "4 file structure options"
+      - "Comprehensive language rules"
+      - "Configurable quality thresholds"
+      - "Validation command templates"
+
+  future_enhancements:
+    - "Add more technology-specific presets"
+    - "Add validation script generator"
+    - "Add custom scoring formula support"
+    - "Add multi-language documentation support"
+    - "Add automated template generator from config"
+
+# ============================================================================
+# METADATA
+# ============================================================================
+
+metadata:
+  version: "1.0.0"
+  based_on: "MACCABI ICM SAP WebDynpro ABAP Project"
+  proven_results: "9 screens at 100% accuracy, 18x productivity"
+  purpose: "Configurable standards for universal code documentation"
+
+  compatibility:
+    agent_specification: "agent_specification.md v1.0"
+    validation_framework: "validation_framework.md v1.0"
+    plugins:
+      - "sap_plugin.yaml v1.0"
+      - "as400_plugin.yaml v1.0"
+
+  recommended_usage:
+    new_projects: "Start with maccabi_icm preset, adjust as needed"
+    existing_standards: "Map to organization_specific_customizations"
+    client_work: "Use enterprise_client or client_deliverable presets"
+    internal_work: "Use internal_team preset"

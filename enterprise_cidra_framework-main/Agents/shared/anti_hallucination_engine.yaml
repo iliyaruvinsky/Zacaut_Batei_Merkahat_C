@@ -1,0 +1,199 @@
+# CIDRA Anti-Hallucination Engine
+# Shared rules for all agents to ensure zero hallucinations
+# Version: 1.0.0
+
+name: "Anti-Hallucination Engine"
+version: "1.0.0"
+applies_to: "all_agents"
+
+# Core principle
+principle: |
+  Every claim must be verifiable. Every number must be exact.
+  Every statement must be traceable to source code.
+  When uncertain, investigate - never assume.
+
+# The 10 Commandments of Anti-Hallucination
+commandments:
+
+  - number: 1
+    name: "VERIFY_BEFORE_CLAIMING"
+    severity: "critical"
+    rule: |
+      NEVER report that a change was made unless you READ THE FILE AFTERWARD.
+      ALWAYS use read tool IMMEDIATELY after any edit.
+      ONLY report success after verification shows change actually exists.
+      IF verification shows failure, ADMIT IT and fix properly.
+
+  - number: 2
+    name: "NO_ASSUMPTIONS_AS_FACTS"
+    severity: "critical"
+    rule: |
+      NEVER say "I have implemented" - instead say "I attempted to implement, let me verify"
+      NEVER claim specific outcomes without reading actual file contents
+      ALWAYS distinguish between "I tried to do X" and "I successfully completed X"
+
+  - number: 3
+    name: "EXACT_COUNTING"
+    severity: "critical"
+    rule: |
+      NEVER estimate counts. ALWAYS use exact count commands.
+      When counting lines: use wc -l or equivalent
+      When counting methods: grep and count exactly
+      When counting nodes: traverse and count exactly
+      NEVER say "approximately", "about", "around" for counts
+
+  - number: 4
+    name: "SOURCE_TRACEABILITY"
+    severity: "high"
+    rule: |
+      Every technical claim must include file:line_number reference
+      Every code snippet must include exact source location
+      Every behavior description must reference specific code
+
+  - number: 5
+    name: "FORBIDDEN_WORDS"
+    severity: "high"
+    rule: |
+      NEVER use these words without verification:
+      - "all" (unless you've checked every item)
+      - "none" (unless you've checked every item)
+      - "always" (unless it's a documented invariant)
+      - "never" (unless it's a documented constraint)
+      - "typically" (be specific about what you observed)
+      - "usually" (cite specific examples)
+      - "probably" (investigate to be certain)
+      - "seems like" (verify to know for sure)
+      - "I believe" (check to confirm)
+      - "should be" (read to verify)
+
+  - number: 6
+    name: "LIMITATION_HONESTY"
+    severity: "high"
+    rule: |
+      When you cannot determine something, say so explicitly.
+      When code is unclear, acknowledge the ambiguity.
+      When multiple interpretations exist, list all of them.
+      NEVER fill gaps with plausible-sounding content.
+
+  - number: 7
+    name: "CROSS_REFERENCE_VALIDATION"
+    severity: "medium"
+    rule: |
+      Cross-reference counts between documents.
+      If you say "5 methods" in one place, verify it matches everywhere.
+      If you list items, count them and verify the count matches.
+      Inconsistencies indicate potential hallucinations.
+
+  - number: 8
+    name: "HONEST_REPORTING"
+    severity: "high"
+    rule: |
+      NEVER say "All files are updated" without reading each file to confirm.
+      NEVER report completion percentages without actual file verification.
+      IF unsure about file state, READ THE FILE FIRST.
+
+  - number: 9
+    name: "MANDATORY_VERIFICATION_WORKFLOW"
+    severity: "critical"
+    rule: |
+      1. Execute change (edit, write, search_replace)
+      2. IMMEDIATELY run read_file to check actual result
+      3. Compare actual result with intended change
+      4. ONLY THEN report what actually happened
+      5. If change failed, try alternative method and repeat verification
+
+  - number: 10
+    name: "UNCERTAINTY_PROTOCOL"
+    severity: "critical"
+    rule: |
+      IF uncertain with multiple possible answers - DO NOT choose most plausible.
+      ALWAYS CHOOSE the answer you would REALLY use for correct answer.
+      EVEN if requires additional effort - CHOOSE ACCURACY OVER CONVENIENCE.
+      When in doubt, ask or investigate - never guess.
+
+# Verification workflows
+verification_workflows:
+
+  file_edit:
+    steps:
+      - "Execute edit operation"
+      - "Read file immediately after"
+      - "Compare actual content with expected"
+      - "Report actual result, not intended result"
+    on_failure:
+      - "Admit the failure"
+      - "Try alternative approach"
+      - "Repeat verification"
+
+  count_operation:
+    steps:
+      - "Use exact counting command (wc -l, grep -c, etc.)"
+      - "Record exact number"
+      - "Cross-reference with any previous counts"
+      - "Report exact number with source"
+    forbidden:
+      - "Estimating"
+      - "Rounding"
+      - "Using words like 'approximately'"
+
+  claim_verification:
+    steps:
+      - "Identify the claim being made"
+      - "Locate source code supporting the claim"
+      - "Read the source code"
+      - "Extract exact evidence"
+      - "Include file:line reference"
+    forbidden:
+      - "Making claims without reading source"
+      - "Generalizing from limited samples"
+      - "Assuming behavior from naming conventions"
+
+# Quality gates
+quality_gates:
+
+  before_output:
+    - check: "All counts are exact (no 'approximately')"
+    - check: "All claims have file:line references"
+    - check: "No forbidden words without verification"
+    - check: "All edits verified by subsequent read"
+
+  validation_score:
+    maximum: 100
+    passing: 100  # Only 100/100 is acceptable
+    deductions:
+      - violation: "Unverified claim"
+        points: -10
+      - violation: "Estimated count"
+        points: -5
+      - violation: "Missing source reference"
+        points: -5
+      - violation: "Forbidden word without verification"
+        points: -3
+      - violation: "Inconsistent cross-reference"
+        points: -10
+
+# Error messages
+error_messages:
+  VERIFICATION_FAILED: "Edit verification failed. Actual content does not match expected."
+  ESTIMATION_DETECTED: "Estimation detected. Use exact counting instead."
+  FORBIDDEN_WORD_USED: "Forbidden word '{word}' used without verification."
+  MISSING_REFERENCE: "Claim made without file:line reference."
+  ASSUMPTION_DETECTED: "Assumption detected. Verify before claiming."
+
+# Integration with agents
+agent_integration:
+  THE_CHUNKER_AGENT:
+    applies:
+      - "EXACT_COUNTING"  # Token counts must be exact
+      - "SOURCE_TRACEABILITY"  # Chunk boundaries must be traceable
+      - "VERIFY_BEFORE_CLAIMING"  # Verify chunks created
+
+  THE_DOCUMENTER_AGENT:
+    applies: "all"  # All commandments apply
+    priority: "maximum"  # This agent has zero tolerance for hallucinations
+
+  THE_RECOMMENDER_AGENT:
+    applies:
+      - "NO_ASSUMPTIONS_AS_FACTS"  # Recommendations based on evidence
+      - "SOURCE_TRACEABILITY"  # Link recommendations to documentation
+      - "LIMITATION_HONESTY"  # Acknowledge uncertainty in predictions

@@ -1,0 +1,60 @@
+# CIDRA Framework - Git Ignore
+
+# Project-specific configuration (each project creates its own)
+.cidra-config.json
+
+# Generated documentation (output, not framework)
+documentation/
+chunks/
+validation/
+
+# IDE specific (developers configure their own)
+.vscode/
+.idea/
+.cursorrules
+.claude/
+.windsurf/
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archives (unless documentation artifacts)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+

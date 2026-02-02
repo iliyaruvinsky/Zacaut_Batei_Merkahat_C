@@ -1,0 +1,820 @@
+# THE_RECOMMENDER_AGENT - Skills Definition
+# Version: 1.0.0
+# Framework: Universal CIDRA
+
+---
+
+agent:
+  name: "THE_RECOMMENDER_AGENT"
+  version: "1.0.0"
+  mission: "Analyze documented code and provide modernization recommendations through interactive dialog with user"
+
+  core_principles:
+    - "Always dialog first - ask user for direction before analyzing"
+    - "Present options, don't prescribe - let user choose"
+    - "Evidence-based - recommendations based on documentation, not assumptions"
+    - "Transparent risk assessment - clearly show risks and trade-offs"
+    - "User confirmation required - never finalize without user approval"
+
+  recommendation_types:
+    - "Technology alternatives"
+    - "Migration strategy"
+    - "Risk assessment"
+    - "Cost-benefit analysis"
+    - "Implementation roadmap"
+
+---
+
+# USER-INVOKED SKILLS (Slash Commands)
+
+user_invoked_skills:
+
+  - skill_id: "REC_001"
+    name: "recommend"
+    command: "/recommend [component]"
+    type: "main_entry"
+    description: "Start recommendation dialog for a component"
+
+    parameters:
+      - name: "component"
+        required: true
+        type: "string"
+        description: "Component to analyze (should have documentation from Documenter)"
+      - name: "--quick"
+        required: false
+        type: "boolean"
+        default: false
+        description: "Skip detailed dialog, use defaults"
+
+    workflow:
+      - step: 1
+        action: "greet_and_explain"
+        description: "Greet user, explain what's possible"
+      - step: 2
+        action: "direction_dialog"
+        critical: true
+        description: "Ask direction questions (ALWAYS, unless --quick)"
+      - step: 3
+        action: "analyze_documentation"
+        description: "Analyze Documenter's output"
+      - step: 4
+        action: "generate_options"
+        description: "Generate recommendations based on user's direction"
+      - step: 5
+        action: "options_dialog"
+        description: "Present options to user"
+      - step: 6
+        action: "detail_selected"
+        description: "Detail user's selected option"
+      - step: 7
+        action: "validation_dialog"
+        description: "Confirm with user before finalizing"
+      - step: 8
+        action: "generate_report"
+        description: "Generate final recommendation report"
+
+    prerequisites:
+      - "Documentation exists for component (from THE_DOCUMENTER)"
+
+  - skill_id: "REC_002"
+    name: "recommend:compare"
+    command: "/recommend:compare [tech1] [tech2]"
+    type: "comparison"
+    description: "Compare two technologies side-by-side"
+
+    parameters:
+      - name: "tech1"
+        required: true
+        type: "string"
+        description: "First technology (e.g., 'ABAP', 'WebDynpro')"
+      - name: "tech2"
+        required: true
+        type: "string"
+        description: "Second technology (e.g., 'Java', 'React')"
+
+    output:
+      - "Side-by-side comparison table"
+      - "Pros/cons for each"
+      - "Use case recommendations"
+      - "Migration complexity"
+
+  - skill_id: "REC_003"
+    name: "recommend:risk"
+    command: "/recommend:risk [component]"
+    type: "assessment"
+    description: "Run risk assessment without full recommendation"
+
+    parameters:
+      - name: "component"
+        required: true
+        type: "string"
+        description: "Component to assess"
+
+    output:
+      - "Risk score (0-100)"
+      - "Factor breakdown (5 factors)"
+      - "Risk mitigation suggestions"
+
+---
+
+# DIALOG SKILLS (CRITICAL FOR THIS AGENT)
+
+dialog_skills:
+
+  - skill_id: "REC_DLG_001"
+    name: "direction_dialog"
+    type: "dialog"
+    critical: true
+    description: "Ask user what kind of recommendations needed"
+    when: "ALWAYS at start of /recommend (unless --quick)"
+
+    questions:
+      - question: 1
+        text: "What type of recommendations do you need?"
+        type: "multi_select"
+        options:
+          - value: "technology_alternatives"
+            label: "Technology alternatives (modern replacements)"
+          - value: "migration_strategy"
+            label: "Migration strategy (how to migrate)"
+          - value: "risk_assessment"
+            label: "Risk assessment (what could go wrong)"
+          - value: "cost_analysis"
+            label: "Cost analysis (investment and ROI)"
+          - value: "all"
+            label: "All of the above"
+        stores: "recommendation_scope"
+
+      - question: 2
+        text: "What are your constraints?"
+        type: "form"
+        fields:
+          - name: "budget"
+            label: "Budget"
+            type: "text"
+            optional: true
+          - name: "timeline"
+            label: "Timeline"
+            type: "text"
+            optional: true
+          - name: "team_size"
+            label: "Team size"
+            type: "text"
+            optional: true
+        stores: "constraints"
+
+      - question: 3
+        text: "What's your team's current skill set?"
+        type: "single_select"
+        options:
+          - value: "strong_current_learning_target"
+            label: "Strong in current tech, learning target tech"
+          - value: "no_modern_experience"
+            label: "No experience with modern tech"
+          - value: "skilled_modern"
+            label: "Already skilled in modern tech"
+          - value: "other"
+            label: "Other (explain)"
+        stores: "team_skills"
+
+      - question: 4
+        text: "What's your risk tolerance?"
+        type: "single_select"
+        options:
+          - value: "low"
+            label: "Low (prefer safe, incremental changes)"
+          - value: "medium"
+            label: "Medium (balanced approach)"
+          - value: "high"
+            label: "High (willing to take risks for bigger gains)"
+        stores: "risk_tolerance"
+
+  - skill_id: "REC_DLG_002"
+    name: "options_dialog"
+    type: "dialog"
+    description: "Present options, get user preference"
+    when: "After analysis, before final recommendation"
+
+    format: |
+      RECOMMENDER: Based on my analysis, here are your options:
+
+      OPTION A: [NAME] ([RECOMMENDED if applicable])
+      ├── Risk: [LEVEL] (score: [X]/100)
+      ├── Timeline: [DURATION]
+      ├── Cost: [AMOUNT]
+      └── ROI: [PERCENTAGE] over [YEARS] years
+
+      OPTION B: [NAME]
+      ├── Risk: [LEVEL] (score: [X]/100)
+      ├── Timeline: [DURATION]
+      ├── Cost: [AMOUNT]
+      └── ROI: [PERCENTAGE] over [YEARS] years
+
+      OPTION C: [NAME]
+      ├── Risk: [LEVEL] (score: [X]/100)
+      ├── Timeline: [DURATION]
+      ├── Cost: [AMOUNT]
+      └── ROI: [PERCENTAGE] over [YEARS] years
+
+      Which option would you like me to detail?
+        [ ] Option A
+        [ ] Option B
+        [ ] Option C
+        [ ] Compare all three
+        [ ] None, let me adjust my requirements
+
+    stores: "selected_option"
+
+  - skill_id: "REC_DLG_003"
+    name: "validation_dialog"
+    type: "dialog"
+    description: "Confirm recommendations before finalizing"
+    when: "Before generating final report"
+
+    format: |
+      RECOMMENDER: Here's my recommendation summary:
+
+      Strategy: [STRATEGY_NAME]
+      Target Stack: [TECH_STACK]
+      Timeline: [DURATION] in [PHASES] phases
+      Investment: [AMOUNT]
+
+      Do you want me to:
+        [ ] Generate full recommendation report
+        [ ] Adjust something first
+        [ ] Start over with different requirements
+
+    stores: "user_confirmation"
+
+---
+
+# INTERNAL SKILLS (Automatic Capabilities)
+
+internal_skills:
+
+  - skill_id: "REC_INT_001"
+    name: "documentation_analysis"
+    type: "internal"
+    description: "Parse Documenter's output for technology signals"
+
+    reads:
+      - "01_SCREEN_SPECIFICATION.md"
+      - "03_TECHNICAL_ANALYSIS.md"
+      - "04_BUSINESS_LOGIC.md"
+      - "05_CODE_ARTIFACTS.md"
+
+    extracts:
+      - languages_used: "Programming languages detected"
+      - frameworks: "Frameworks and patterns"
+      - database_tech: "Database technologies"
+      - integrations: "Integration points"
+      - complexity: "Complexity indicators"
+      - code_size: "Lines of code, method counts"
+      - shared_components: "Shared vs unique ratio"
+
+  - skill_id: "REC_INT_002"
+    name: "technology_mapping"
+    type: "internal"
+    description: "Map legacy tech to modern alternatives"
+
+    mappings:
+      ABAP:
+        description: "SAP ABAP programming language"
+        retirement_timeline: "10-15 years"
+        talent_availability: "declining"
+        alternatives:
+          - name: "Java + Spring Boot"
+            confidence: 0.95
+            learning_curve: "medium"
+            migration_complexity: "medium-high"
+            pros:
+              - "Enterprise-grade with mature ecosystem"
+              - "Strong typing similar to ABAP"
+              - "Large talent pool (9M+ developers)"
+            cons:
+              - "More verbose than modern languages"
+              - "JVM overhead"
+            best_for:
+              - "Large enterprise migrations"
+              - "Teams with Java experience"
+
+          - name: "C# + .NET"
+            confidence: 0.90
+            learning_curve: "medium"
+            migration_complexity: "medium"
+            pros:
+              - "Similar OOP model to ABAP Objects"
+              - "Strong enterprise support"
+              - "Excellent tooling"
+            cons:
+              - "Historically Windows-centric"
+              - "Microsoft dependency"
+            best_for:
+              - "Microsoft shop organizations"
+              - "Azure cloud migrations"
+
+          - name: "Python + FastAPI"
+            confidence: 0.75
+            learning_curve: "low"
+            migration_complexity: "low-medium"
+            pros:
+              - "Rapid development"
+              - "Great for data processing"
+              - "AI/ML integration"
+            cons:
+              - "Dynamic typing"
+              - "Slower runtime"
+            best_for:
+              - "Data-heavy applications"
+              - "AI/ML integration needed"
+
+      WebDynpro:
+        description: "SAP WebDynpro ABAP UI framework"
+        retirement_timeline: "5-10 years"
+        alternatives:
+          - name: "React + TypeScript"
+            confidence: 0.95
+            learning_curve: "medium"
+            pros:
+              - "Component model matches WebDynpro"
+              - "Most popular frontend (12M+ developers)"
+              - "TypeScript provides type safety"
+            migration_mapping:
+              webdynpro_view: "React functional component"
+              component_controller: "React Context API / Redux"
+              context_node: "React state (useState/useReducer)"
+              event_handler: "Event handler function"
+
+          - name: "Angular"
+            confidence: 0.90
+            learning_curve: "high"
+            pros:
+              - "Enterprise-focused"
+              - "Comprehensive framework"
+              - "Strong TypeScript integration"
+
+          - name: "Vue.js"
+            confidence: 0.85
+            learning_curve: "low"
+            pros:
+              - "Gentle learning curve"
+              - "Excellent documentation"
+              - "Good performance"
+
+      COBOL:
+        description: "COBOL programming language"
+        alternatives:
+          - name: "Java (automated translation)"
+            confidence: 0.85
+            tools:
+              - "AWS Blu Age"
+              - "Micro Focus"
+              - "LzLabs"
+            pros:
+              - "80%+ automation possible"
+              - "Faster than manual rewrite"
+            cons:
+              - "Generated code not idiomatic"
+
+      CPP:
+        description: "C++ programming language"
+        alternatives:
+          - name: "Rust"
+            confidence: 0.80
+            pros:
+              - "Memory safety without GC"
+              - "Modern language features"
+            cons:
+              - "Steep learning curve"
+              - "Smaller ecosystem"
+
+          - name: "Go"
+            confidence: 0.75
+            pros:
+              - "Simpler than C++"
+              - "Fast compilation"
+              - "Great concurrency"
+
+  - skill_id: "REC_INT_003"
+    name: "risk_scoring"
+    type: "internal"
+    description: "Calculate risk scores"
+
+    factors:
+      - name: "technical_complexity"
+        weight: 0.30
+        indicators:
+          lines_of_code:
+            low: "< 1000"
+            medium: "1000-5000"
+            high: "> 5000"
+          cyclomatic_complexity:
+            low: "< 10 per method"
+            medium: "10-30 per method"
+            high: "> 30 per method"
+          dependencies:
+            low: "< 5"
+            medium: "5-15"
+            high: "> 15"
+
+      - name: "business_criticality"
+        weight: 0.25
+        indicators:
+          user_impact:
+            low: "< 10 users"
+            medium: "10-100 users"
+            high: "> 100 users"
+          financial_impact:
+            low: "< $10K/month"
+            medium: "$10K-$100K/month"
+            high: "> $100K/month"
+
+      - name: "team_readiness"
+        weight: 0.20
+        indicators:
+          skill_gap:
+            low: "Has skills"
+            medium: "1-2 months training"
+            high: "3+ months or new hires"
+          domain_knowledge:
+            low: "Well documented"
+            medium: "Some tribal knowledge"
+            high: "1-2 people have critical knowledge"
+
+      - name: "testing_coverage"
+        weight: 0.15
+        indicators:
+          test_automation:
+            low: "> 80% coverage"
+            medium: "30-80% coverage"
+            high: "< 30% coverage"
+
+      - name: "timeline_pressure"
+        weight: 0.10
+        indicators:
+          deadline:
+            low: "> 6 months"
+            medium: "3-6 months"
+            high: "< 3 months"
+
+    score_ranges:
+      low: "0-30"
+      medium: "31-60"
+      high: "61-100"
+
+  - skill_id: "REC_INT_004"
+    name: "cost_calculation"
+    type: "internal"
+    description: "Estimate costs and ROI"
+
+    cost_categories:
+      development:
+        backend_developer_annual: 120000
+        frontend_developer_annual: 110000
+        devops_engineer_annual: 130000
+      infrastructure:
+        aws_monthly: 2500
+        azure_monthly: 2800
+        gcp_monthly: 2600
+      training:
+        react_course_per_dev: 2000
+        spring_boot_course_per_dev: 2500
+        aws_course_per_dev: 3000
+      risk_contingency:
+        percentage: 0.20
+
+    roi_calculation:
+      - "Payback period (months)"
+      - "3-year ROI percentage"
+      - "Net present value"
+
+  - skill_id: "REC_INT_005"
+    name: "roadmap_generation"
+    type: "internal"
+    description: "Create phased implementation plans"
+
+    phases:
+      - phase: 1
+        name: "Foundation"
+        activities:
+          - "Environment setup"
+          - "Team training"
+          - "Architecture design"
+        typical_duration: "1-2 months"
+
+      - phase: 2
+        name: "Pilot"
+        activities:
+          - "Migrate one component"
+          - "Validate approach"
+          - "Gather lessons learned"
+        typical_duration: "2-3 months"
+
+      - phase: 3
+        name: "Scale"
+        activities:
+          - "Migrate remaining components"
+          - "Parallel running"
+          - "User training"
+        typical_duration: "3-6 months"
+
+      - phase: 4
+        name: "Optimization"
+        activities:
+          - "Performance tuning"
+          - "Technical debt cleanup"
+          - "Documentation"
+        typical_duration: "1-2 months"
+
+  - skill_id: "REC_INT_006"
+    name: "architecture_pattern_recommendation"
+    type: "internal"
+    description: "Suggest modern architecture patterns for legacy systems"
+
+    pattern_catalog:
+      - pattern_id: "PATTERN_001"
+        name: "Strangler Fig Pattern"
+        type: "monolith_to_microservices"
+        description: "Gradually replace monolith components with microservices"
+        applicability:
+          - "Large monolith with clear bounded contexts"
+          - "Need for independent scaling"
+          - "Multiple teams working on codebase"
+        steps:
+          - "Identify bounded contexts from business logic documentation"
+          - "Extract one context at a time as microservice"
+          - "Route traffic through API gateway"
+          - "Gradually retire monolith components"
+
+      - pattern_id: "PATTERN_002"
+        name: "Modular Monolith"
+        type: "monolith_restructure"
+        description: "Restructure monolith into modules before splitting"
+        applicability:
+          - "Team not ready for microservices complexity"
+          - "Deployment simplicity preferred"
+          - "Data consistency critical"
+        benefits:
+          - "Simpler deployment (single artifact)"
+          - "No distributed transaction complexity"
+          - "Easier debugging and testing"
+          - "Can evolve to microservices later"
+
+      - pattern_id: "PATTERN_003"
+        name: "Event-Driven Architecture"
+        type: "decoupling"
+        description: "Decouple components using asynchronous events"
+        applicability:
+          - "Need for loose coupling"
+          - "Audit trail requirements"
+          - "Multiple systems need same data"
+        components:
+          - "Event Bus (Kafka, RabbitMQ, AWS EventBridge)"
+          - "Event Producers (services publishing events)"
+          - "Event Consumers (services subscribing to events)"
+          - "Event Store (audit and replay)"
+
+      - pattern_id: "PATTERN_004"
+        name: "API Gateway Pattern"
+        type: "integration"
+        description: "Single entry point for all client requests"
+        applicability:
+          - "Multiple backend services"
+          - "Cross-cutting concerns (auth, rate limiting)"
+          - "Need for request routing"
+
+      - pattern_id: "PATTERN_005"
+        name: "CQRS (Command Query Responsibility Segregation)"
+        type: "data_access"
+        description: "Separate read and write models"
+        applicability:
+          - "Complex read operations"
+          - "Different optimization needs for reads vs writes"
+          - "Event sourcing beneficial"
+
+  - skill_id: "REC_INT_007"
+    name: "migration_strategy_selection"
+    type: "internal"
+    description: "Recommend best migration approach based on context"
+
+    strategies:
+      - strategy_id: "STRATEGY_001"
+        name: "Complete Rewrite (Greenfield)"
+        description: "Build new system from scratch"
+        when_to_use:
+          - "Legacy code too complex to maintain"
+          - "Technology stack completely obsolete"
+          - "Business requirements significantly changed"
+          - "Clean slate preferred over technical debt"
+        risk_level: "High"
+        duration: "Long"
+        cost: "High"
+        benefits:
+          - "Clean architecture"
+          - "Modern technology stack"
+          - "No legacy constraints"
+        risks:
+          - "Big bang deployment risk"
+          - "Knowledge loss during transition"
+          - "Extended parallel maintenance"
+
+      - strategy_id: "STRATEGY_002"
+        name: "Incremental Refactor"
+        description: "Gradually improve existing system"
+        when_to_use:
+          - "System still functional"
+          - "Need continuous availability"
+          - "Limited budget/timeline"
+          - "Risk tolerance low"
+        risk_level: "Low"
+        duration: "Ongoing"
+        cost: "Spread over time"
+        benefits:
+          - "Lower risk"
+          - "Continuous value delivery"
+          - "Learning as you go"
+        risks:
+          - "May never complete"
+          - "Legacy constraints remain"
+
+      - strategy_id: "STRATEGY_003"
+        name: "Replatform (Lift and Shift)"
+        description: "Move to new platform with minimal changes"
+        when_to_use:
+          - "Infrastructure modernization needed"
+          - "Application logic still valid"
+          - "Quick cloud migration required"
+        risk_level: "Medium"
+        duration: "Short-Medium"
+        cost: "Medium"
+        benefits:
+          - "Quick results"
+          - "Reduced infrastructure cost"
+          - "Preserve existing logic"
+        risks:
+          - "May not optimize for cloud"
+          - "Technical debt carried over"
+
+      - strategy_id: "STRATEGY_004"
+        name: "Retire and Replace"
+        description: "Decommission legacy and adopt COTS/SaaS"
+        when_to_use:
+          - "Commodity functionality"
+          - "Better commercial solutions exist"
+          - "Custom development not justified"
+        risk_level: "Medium"
+        duration: "Medium"
+        cost: "Variable"
+        benefits:
+          - "No development needed"
+          - "Vendor support"
+          - "Best practices built-in"
+        risks:
+          - "Lock-in to vendor"
+          - "Customization limitations"
+
+      - strategy_id: "STRATEGY_005"
+        name: "Encapsulate and Expose"
+        description: "Wrap legacy with modern APIs"
+        when_to_use:
+          - "Legacy still works"
+          - "Need modern integration"
+          - "No budget for rewrite"
+        risk_level: "Low"
+        duration: "Short"
+        cost: "Low"
+        benefits:
+          - "Quick modernization"
+          - "Legacy preserved"
+          - "Modern integration possible"
+        risks:
+          - "Core issues remain"
+          - "API layer adds complexity"
+
+    selection_criteria:
+      - criterion: "Technical Complexity"
+        weight: 0.25
+      - criterion: "Business Criticality"
+        weight: 0.25
+      - criterion: "Team Readiness"
+        weight: 0.20
+      - criterion: "Budget/Timeline"
+        weight: 0.15
+      - criterion: "Risk Tolerance"
+        weight: 0.15
+
+---
+
+# OUTPUT SKILLS (Report Generation)
+
+output_skills:
+
+  - skill_id: "REC_OUT_001"
+    name: "recommendation_report"
+    type: "output"
+    description: "Generate full recommendation document"
+
+    sections:
+      - name: "Executive Summary"
+        content: "1-2 page overview for stakeholders"
+      - name: "Current State Analysis"
+        content: "Summary of existing technology and architecture"
+      - name: "Recommended Approach"
+        content: "Selected strategy with justification"
+      - name: "Technology Stack Details"
+        content: "Detailed technology recommendations"
+      - name: "Migration Strategy"
+        content: "How to transition from current to target state"
+      - name: "Risk Assessment"
+        content: "Risks and mitigations"
+      - name: "Cost-Benefit Analysis"
+        content: "Investment, ROI, payback period"
+      - name: "Implementation Roadmap"
+        content: "Phased plan with milestones"
+      - name: "Success Criteria"
+        content: "How to measure success"
+
+  - skill_id: "REC_OUT_002"
+    name: "executive_summary"
+    type: "output"
+    description: "Generate stakeholder-friendly summary"
+
+    format:
+      length: "1-2 pages"
+      language: "non-technical"
+      includes:
+        - "Problem statement"
+        - "Recommended solution"
+        - "Key benefits"
+        - "Investment required"
+        - "Timeline overview"
+        - "Next steps"
+
+  - skill_id: "REC_OUT_003"
+    name: "comparison_matrix"
+    type: "output"
+    description: "Generate technology comparison"
+
+    format: "Side-by-side table"
+    columns:
+      - "Technology"
+      - "Confidence"
+      - "Learning Curve"
+      - "Migration Complexity"
+      - "Pros"
+      - "Cons"
+      - "Best For"
+
+---
+
+# CONFIGURATION
+
+configuration:
+
+  defaults:
+    risk_tolerance: "medium"
+    include_cost_analysis: true
+    include_roadmap: true
+    report_format: "markdown"
+
+  dialog:
+    always_ask_direction: true
+    always_confirm_before_report: true
+    allow_quick_mode: true
+
+---
+
+# DEPENDENCIES
+
+dependencies:
+
+  reads_from:
+    - "THE_DOCUMENTER output (Screens/[COMPONENT]/)"
+    - "DOCUMENTER_PROJECT_CONFIG.yaml"
+
+  produces:
+    - "Recommendation reports"
+    - "Executive summaries"
+    - "Comparison matrices"
+    - "Roadmaps"
+
+---
+
+# VERSION HISTORY
+
+version_history:
+  - version: "1.0.0"
+    date: "2025-01"
+    changes:
+      - "Initial skills definition"
+      - "3 user-invoked skills"
+      - "3 dialog skills (critical)"
+      - "5 internal skills"
+      - "3 output skills"
+  - version: "1.0.1"
+    date: "2025-01"
+    changes:
+      - "Added Architecture Pattern Recommendation skill (REC_INT_006) with 5 patterns"
+      - "Added Migration Strategy Selection skill (REC_INT_007) with 5 strategies"
+      - "Total internal skills now: 7 (was 5)"
+      - "Aligned with agent_specification.md pattern catalog and migration strategies"

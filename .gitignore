@@ -1,0 +1,17 @@
+# IDE specific
+.vscode/
+.idea/
+.claude/
+.windsurf/
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

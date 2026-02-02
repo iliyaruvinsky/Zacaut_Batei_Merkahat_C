@@ -1,0 +1,460 @@
+# THE_CHUNKER_AGENT - Skills Definition
+# Version: 1.0.0
+# Framework: Universal CIDRA
+
+---
+
+agent:
+  name: "THE_CHUNKER_AGENT"
+  version: "1.0.0"
+  mission: "Create optimized code chunks for LLM consumption and generate instructive prompts for THE_DOCUMENTER"
+
+  supported_languages:
+    - name: "SAP ABAP"
+      extensions: ["*.abap", "*.txt"]
+      patterns: ["METHOD", "ENDMETHOD", "FUNCTION", "ENDFUNCTION"]
+    - name: "WebDynpro ABAP"
+      extensions: ["*_S_*.txt", "*_B_*.txt"]
+      patterns: ["begin of Element_", "WDDOINIT", "WDDOMODIFYVIEW"]
+    - name: "C++"
+      extensions: ["*.cpp", "*.h", "*.hpp", "*.cc"]
+      patterns: ["void", "int main", "class", "#include"]
+    - name: "Python"
+      extensions: ["*.py"]
+      patterns: ["def ", "class ", "import "]
+    - name: "SQL"
+      extensions: ["*.sql", "*.prc", "*.fnc"]
+      patterns: ["CREATE", "SELECT", "INSERT", "UPDATE"]
+    - name: "COBOL"
+      extensions: ["*.cbl", "*.cob"]
+      patterns: ["IDENTIFICATION DIVISION", "PROCEDURE DIVISION"]
+    - name: "RPG/AS400"
+      extensions: ["*.rpgle", "*.sqlrpgle", "*.rpg"]
+      patterns: ["dcl-proc", "dcl-ds", "begsr"]
+    - name: "JavaScript/TypeScript"
+      extensions: ["*.js", "*.ts", "*.jsx", "*.tsx"]
+      patterns: ["function", "const", "import", "export"]
+    - name: "React"
+      extensions: ["*.jsx", "*.tsx"]
+      patterns: ["useState", "useEffect", "useContext", "React.Component", "<", "/>"]
+      notes: "React-specific patterns for component detection"
+
+---
+
+# USER-INVOKED SKILLS (Slash Commands)
+
+user_invoked_skills:
+
+  - skill_id: "CHUNK_001"
+    name: "chunk"
+    command: "/chunk [path]"
+    type: "main_entry"
+    description: "Main entry point - chunk code at specified path"
+
+    parameters:
+      - name: "path"
+        required: true
+        type: "string"
+        description: "Directory or file to chunk"
+      - name: "--strategy"
+        required: false
+        type: "enum"
+        values: ["file_level", "function_level", "class_level", "method_level", "semantic"]
+        description: "Override auto-detected chunking strategy"
+      - name: "--output"
+        required: false
+        type: "string"
+        default: "./CHUNKS/"
+        description: "Output directory for chunks"
+      - name: "--format"
+        required: false
+        type: "enum"
+        values: ["json", "markdown", "both"]
+        default: "json"
+        description: "Output format"
+
+    workflow:
+      - step: 1
+        action: "scan_directory"
+        description: "Scan target directory for code files"
+      - step: 2
+        action: "detect_languages"
+        description: "Detect programming languages in files"
+      - step: 3
+        action: "select_strategy"
+        description: "Select appropriate chunking strategy per language"
+      - step: 4
+        action: "create_chunks"
+        description: "Create chunks respecting logical boundaries"
+      - step: 5
+        action: "generate_metadata"
+        description: "Generate metadata for each chunk"
+      - step: 6
+        action: "build_relationships"
+        description: "Map relationships between chunks"
+      - step: 7
+        action: "create_index"
+        description: "Create searchable index"
+      - step: 8
+        action: "generate_documenter_prompt"
+        description: "Create DOCUMENTER_INSTRUCTIONS.md"
+      - step: 9
+        action: "export_chunks"
+        description: "Save all outputs to disk"
+
+    outputs:
+      - "CHUNKS/index.json"
+      - "CHUNKS/relationships.json"
+      - "CHUNKS/DOCUMENTER_INSTRUCTIONS.md"
+      - "CHUNKS/chunks/*.json"
+
+  - skill_id: "CHUNK_002"
+    name: "chunk:analyze"
+    command: "/chunk:analyze [path]"
+    type: "discovery"
+    description: "Pre-analysis before chunking - shows what will happen"
+
+    parameters:
+      - name: "path"
+        required: true
+        type: "string"
+        description: "Directory to analyze"
+
+    outputs:
+      - file_inventory: "Count, types, sizes of files"
+      - language_detection: "Languages found and their distribution"
+      - recommended_strategy: "Best chunking strategy"
+      - estimated_chunks: "Approximate number of chunks"
+      - shared_components: "Detected shared/reusable code"
+
+  - skill_id: "CHUNK_003"
+    name: "chunk:status"
+    command: "/chunk:status"
+    type: "monitoring"
+    description: "Show current chunking progress and statistics"
+
+    outputs:
+      - progress_percentage: "Completion percentage"
+      - chunks_created: "Number of chunks created"
+      - errors_warnings: "Any issues encountered"
+      - time_elapsed: "Time since start"
+
+---
+
+# INTERNAL SKILLS (Automatic Capabilities)
+
+internal_skills:
+
+  - skill_id: "CHUNK_INT_001"
+    name: "language_detection"
+    type: "internal"
+    description: "Identify programming language from file patterns and content"
+
+    detection_methods:
+      - method: "extension_matching"
+        priority: 1
+        description: "Match file extension to known languages"
+      - method: "content_analysis"
+        priority: 2
+        description: "Analyze file content for language-specific patterns"
+      - method: "keyword_detection"
+        priority: 3
+        description: "Look for language-specific keywords"
+
+    output:
+      language: "string"
+      confidence: "float (0-1)"
+      detected_patterns: "list"
+
+  - skill_id: "CHUNK_INT_002"
+    name: "structure_parsing"
+    type: "internal"
+    description: "Parse code structure to identify logical units"
+
+    detects:
+      - "functions"
+      - "methods"
+      - "classes"
+      - "procedures"
+      - "modules"
+      - "data_structures"
+      - "interfaces"
+
+    language_specific_rules:
+      ABAP:
+        method_start: "METHOD\\s+(\\w+)"
+        method_end: "ENDMETHOD"
+        function_start: "FUNCTION\\s+(\\w+)"
+        function_end: "ENDFUNCTION"
+        class_start: "CLASS\\s+(\\w+)"
+        class_end: "ENDCLASS"
+      Python:
+        function_start: "^def\\s+(\\w+)"
+        class_start: "^class\\s+(\\w+)"
+      CPP:
+        function_pattern: "^\\w+\\s+\\w+\\s*\\([^)]*\\)\\s*\\{"
+        class_start: "^class\\s+(\\w+)"
+
+  - skill_id: "CHUNK_INT_003"
+    name: "boundary_detection"
+    type: "internal"
+    description: "Find optimal chunk boundaries"
+
+    rules:
+      - rule: "never_split_mid_function"
+        priority: "critical"
+        description: "Never break a function/method in the middle"
+      - rule: "keep_related_together"
+        priority: "high"
+        description: "Keep related code (e.g., class + methods) together"
+      - rule: "respect_logical_units"
+        priority: "high"
+        description: "Respect imports, declarations, implementations"
+      - rule: "target_token_range"
+        priority: "medium"
+        description: "Target 2,000-4,000 tokens per chunk"
+      - rule: "include_context"
+        priority: "medium"
+        description: "Include imports and type definitions"
+
+  - skill_id: "CHUNK_INT_004"
+    name: "token_counting"
+    type: "internal"
+    description: "Count tokens for LLM context optimization"
+
+    thresholds:
+      minimum: 500
+      target: 2000
+      maximum: 8000
+      warning_low: 300
+      warning_high: 10000
+
+    model: "cl100k_base"  # OpenAI tokenizer, compatible with most LLMs
+
+  - skill_id: "CHUNK_INT_005"
+    name: "metadata_generation"
+    type: "internal"
+    description: "Generate rich metadata for each chunk"
+
+    required_fields:
+      - name: "chunk_id"
+        type: "string"
+        format: "chunk_{number:03d}_{type}_{name}"
+      - name: "type"
+        type: "enum"
+        values: ["method", "class", "file", "function", "semantic_group"]
+      - name: "file"
+        type: "string"
+        description: "Source file path"
+      - name: "language"
+        type: "string"
+      - name: "tokens"
+        type: "integer"
+      - name: "line_start"
+        type: "integer"
+      - name: "line_end"
+        type: "integer"
+
+    generated_fields:
+      - name: "summary"
+        method: "llm"
+        prompt: "Summarize this code in 1-2 sentences"
+      - name: "tags"
+        method: "hybrid"
+        sources: ["pattern_matching", "llm_extraction"]
+      - name: "complexity"
+        method: "heuristic"
+        factors: ["cyclomatic", "nesting", "lines", "dependencies"]
+      - name: "dependencies"
+        method: "pattern_matching"
+      - name: "used_by"
+        method: "cross_reference"
+
+  - skill_id: "CHUNK_INT_006"
+    name: "relationship_mapping"
+    type: "internal"
+    description: "Map dependencies between chunks"
+
+    relationship_types:
+      - type: "calls"
+        description: "Function/method calls another"
+      - type: "inherits"
+        description: "Class inherits from another"
+      - type: "imports"
+        description: "File imports another"
+      - type: "uses_data"
+        description: "Uses data structure from another chunk"
+      - type: "shared_component"
+        description: "Shared across multiple components"
+
+    output_format: "adjacency_list"
+
+  - skill_id: "CHUNK_INT_007"
+    name: "index_creation"
+    type: "internal"
+    description: "Create searchable index of all chunks"
+
+    index_structure:
+      master_index: "index.json"
+      by_language: "by_language/"
+      by_complexity: "by_complexity/"
+      by_tag: "by_tag/"
+      relationships: "relationships.json"
+
+---
+
+# OUTPUT SKILLS (File Generation)
+
+output_skills:
+
+  - skill_id: "CHUNK_OUT_001"
+    name: "chunk_export"
+    type: "output"
+    description: "Export chunks to files"
+
+    formats:
+      - name: "json"
+        extension: ".json"
+        includes: ["content", "metadata"]
+      - name: "markdown"
+        extension: ".md"
+        includes: ["content", "formatted_metadata"]
+      - name: "vector_db"
+        formats: ["pinecone", "chroma", "weaviate"]
+        includes: ["embedding_text", "metadata"]
+      - name: "graph_db"
+        formats: ["neo4j", "arangodb", "amazon_neptune"]
+        includes: ["nodes", "relationships", "metadata"]
+        description: "Export chunks as graph nodes with relationships for Neo4j and other graph databases"
+
+  - skill_id: "CHUNK_OUT_002"
+    name: "prompt_generation"
+    type: "output"
+    critical: true
+    description: "Generate DOCUMENTER_INSTRUCTIONS.md - instructive prompt for THE_DOCUMENTER"
+
+    output_file: "CHUNKS/DOCUMENTER_INSTRUCTIONS.md"
+
+    sections:
+      - section: "WHERE_TO_LOOK"
+        content:
+          - chunk_directory
+          - total_chunks
+          - languages_found
+          - index_file_location
+
+      - section: "HOW_TO_APPROACH"
+        content:
+          - entry_points
+          - core_components
+          - shared_elements
+          - recommended_order
+
+      - section: "HOW_TO_READ"
+        content:
+          - naming_convention
+          - metadata_location
+          - relationship_navigation
+
+      - section: "KEY_PATTERNS"
+        content:
+          - detected_patterns
+          - pattern_locations
+
+      - section: "CROSS_REFERENCES"
+        content:
+          - shared_components
+          - files_to_check
+
+      - section: "DOCUMENTATION_RECOMMENDATIONS"
+        content:
+          - recommended_order
+          - priority_components
+
+      - section: "WARNINGS_NOTES"
+        content:
+          - detected_issues
+          - special_considerations
+
+---
+
+# QUALITY SKILLS (Validation)
+
+quality_skills:
+
+  - skill_id: "CHUNK_QA_001"
+    name: "chunk_validation"
+    type: "quality"
+    description: "Validate chunk quality before export"
+
+    checks:
+      - check: "size_limits"
+        description: "Token count within limits (500-8,000)"
+        severity: "error"
+      - check: "complete_syntax"
+        description: "No broken/incomplete syntax"
+        severity: "error"
+      - check: "metadata_complete"
+        description: "All required metadata fields present"
+        severity: "warning"
+      - check: "relationships_mapped"
+        description: "Dependencies identified"
+        severity: "warning"
+      - check: "no_orphans"
+        description: "All chunks connected to at least one other"
+        severity: "info"
+
+---
+
+# CONFIGURATION
+
+configuration:
+
+  defaults:
+    output_directory: "./CHUNKS/"
+    output_format: "json"
+    token_target: 2000
+    include_metadata: true
+    generate_documenter_prompt: true
+
+  performance:
+    parallel_processing: true
+    max_workers: 4
+    batch_size: 50
+    cache_parsed_files: true
+
+---
+
+# DEPENDENCIES
+
+dependencies:
+
+  required_tools:
+    - "file_reader"
+    - "tokenizer"
+    - "json_writer"
+    - "markdown_writer"
+
+  optional_tools:
+    - "llm_summarizer"
+    - "vector_embedder"
+
+---
+
+# VERSION HISTORY
+
+version_history:
+  - version: "1.0.0"
+    date: "2025-01"
+    changes:
+      - "Initial skills definition"
+      - "3 user-invoked skills"
+      - "7 internal skills"
+      - "2 output skills"
+      - "1 quality skill"
+  - version: "1.0.1"
+    date: "2025-01"
+    changes:
+      - "Added explicit React language support with component patterns"
+      - "Added Graph DB (Neo4j, ArangoDB, Amazon Neptune) export format"
+      - "Aligned with agent_specification.md requirements"

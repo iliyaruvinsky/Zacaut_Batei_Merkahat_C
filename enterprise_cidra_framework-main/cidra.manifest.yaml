@@ -1,0 +1,174 @@
+# CIDRA Framework - Manifest
+# Chunker + Interpreter + Documenter + Recommender + Applicator
+# https://github.com/iliyaruvinsky/enterprise_cidra_framework
+
+name: "cidra-framework"
+display_name: "CIDRA Framework"
+description: "Universal AI agents for code chunking, documentation, and modernization recommendations"
+version: "1.0.0"
+license: "MIT"
+
+# CIDRA Acronym
+cidra:
+  C: "Chunker - Code preparation and segmentation"
+  I: "Interpreter - Code understanding (planned)"
+  D: "Documenter - Documentation generation"
+  R: "Recommender - Modernization recommendations"
+  A: "Applicator - Change application (planned)"
+
+# Minimum requirements
+requirements:
+  claude_code: ">=1.0.0"
+  cursor: ">=0.40.0"  # Optional
+  vscode: ">=1.80.0"  # Optional
+
+# Plugin metadata
+metadata:
+  author: "Iliya Ruvinsky"
+  repository: "https://github.com/iliyaruvinsky/enterprise_cidra_framework"
+  documentation: "https://github.com/iliyaruvinsky/enterprise_cidra_framework#readme"
+  issues: "https://github.com/iliyaruvinsky/enterprise_cidra_framework/issues"
+
+# Agents included in this framework
+agents:
+  - id: "THE_CHUNKER_AGENT"
+    path: "Agents/THE_CHUNKER_AGENT"
+    version: "1.0.1"
+    status: "production"
+    commands:
+      - "/chunk"
+      - "/chunk:analyze"
+      - "/chunk:status"
+
+  - id: "THE_DOCUMENTER_AGENT"
+    path: "Agents/THE_DOCUMENTER_AGENT"
+    version: "1.0.1"
+    status: "production"
+    commands:
+      - "/document"
+      - "/document:setup"
+      - "/document:validate"
+      - "/document:fix"
+
+  - id: "THE_RECOMMENDER_AGENT"
+    path: "Agents/THE_RECOMMENDER_AGENT"
+    version: "1.0.1"
+    status: "production"
+    commands:
+      - "/recommend"
+      - "/recommend:compare"
+      - "/recommend:risk"
+
+  - id: "THE_INTERPRETER_AGENT"
+    path: "Agents/THE_INTERPRETER_AGENT"
+    version: "0.0.1"
+    status: "planned"
+    commands:
+      - "/interpret"
+      - "/interpret:explain"
+      - "/interpret:trace"
+
+  - id: "THE_APPLICATOR_AGENT"
+    path: "Agents/THE_APPLICATOR_AGENT"
+    version: "0.0.1"
+    status: "planned"
+    commands:
+      - "/apply"
+      - "/apply:plan"
+      - "/apply:validate"
+
+# Shared resources
+shared:
+  - path: "Agents/shared/anti_hallucination_engine.yaml"
+    description: "Zero-hallucination rules for all agents"
+  - path: "Agents/shared/validation_framework.yaml"
+    description: "100-point quality validation system"
+  - path: "Agents/shared/templates/"
+    description: "Agent templates for creating new agents"
+
+# Integration targets
+integrations:
+  - target: "claude-code"
+    config_path: "Protocols/.claude/"
+  - target: "cursor"
+    config_path: "Protocols/.cursor/"
+  - target: "vscode"
+    config_path: "Protocols/.vscode/"
+
+# Installation configuration
+installation:
+  default_location: ".cidra"
+  creates:
+    - ".cidra/config.yaml"       # Project-specific configuration
+    - ".cidra/Agents/"           # Copy of agents
+    - ".cidra/shared/"           # Copy of shared resources
+
+  # Files to add to project root
+  root_files:
+    - source: "Protocols/.cursor/.cursorrules"
+      target: ".cursorrules"
+      mode: "merge"  # merge with existing or create new
+    - source: "Protocols/.vscode/cidra-settings.json"
+      target: ".vscode/cidra-settings.json"
+      mode: "create"
+    - source: "Protocols/.claude/CLAUDE.md"
+      target: "CLAUDE.md"
+      mode: "merge"
+
+# Update mechanism
+updates:
+  check_url: "https://api.github.com/repos/iliyaruvinsky/enterprise_cidra_framework/releases/latest"
+  auto_check: true
+  check_interval: "weekly"
+
+# Plugin hooks (lifecycle events)
+hooks:
+  post_install:
+    - "echo 'CIDRA Framework installed successfully!'"
+    - "echo 'Run /document:setup to configure your project'"
+  post_update:
+    - "echo 'CIDRA Framework updated to version ${VERSION}'"
+  pre_uninstall:
+    - "echo 'Removing CIDRA Framework...'"
+
+# Feature flags
+features:
+  enable_telemetry: false
+  enable_auto_update: true
+  enable_agent_suggestions: true
+
+# Supported technologies
+supported_technologies:
+  languages:
+    - "ABAP"
+    - "COBOL"
+    - "RPG"
+    - "C++"
+    - "Python"
+    - "Java"
+    - "JavaScript/TypeScript"
+    - "React"
+    - "SQL"
+
+  frameworks:
+    - "SAP NetWeaver"
+    - "AS/400"
+    - "Spring Boot"
+    - ".NET"
+    - "React"
+    - "Angular"
+    - "Vue.js"
+
+# Version history
+changelog:
+  - version: "1.0.0"
+    date: "2025-01"
+    changes:
+      - "Initial release"
+      - "3 production agents: Chunker, Documenter, Recommender"
+      - "2 planned agents: Interpreter, Applicator"
+      - "Cursor, VS Code, Claude Code integrations"
+      - "Anti-hallucination engine (10 Commandments)"
+      - "100-point validation framework"
+      - "Skills.yaml for all agents"
+      - "Agent registry and templates"

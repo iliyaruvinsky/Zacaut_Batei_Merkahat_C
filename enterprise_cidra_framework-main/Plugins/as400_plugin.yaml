@@ -1,0 +1,985 @@
+# AS/400 Documentation Plugin
+# Adapted from proven SAP WebDynpro ABAP methodology (MACCABI ICM Project)
+# Technology: IBM AS/400 (iSeries) - RPG, COBOL, CL programs
+# Status: Adapted from SAP plugin with AS/400-specific patterns
+
+plugin:
+  name: "as400_documenter"
+  version: "1.0.0"
+  technology: "IBM AS/400 (iSeries, IBM i)"
+  languages:
+    - "RPG IV (ILE RPG)"
+    - "RPG III (Fixed Format)"
+    - "COBOL/400"
+    - "CL (Control Language)"
+  adapted_from: "sap_plugin.yaml (proven in MACCABI project)"
+
+  description: |
+    AS/400 program documentation plugin using proven anti-hallucination methodology
+    from MACCABI SAP WebDynpro ABAP project.
+
+    Adapts the same principles:
+    - Exact counting (no estimates)
+    - Cross-reference validation (Copy members = Component Controller equivalent)
+    - Careful language ("appears to", "according to code")
+    - Mandatory limitations section (what is/isn't known from code)
+    - 100% accuracy requirement
+
+# ============================================================================
+# TECHNOLOGY DETECTION
+# ============================================================================
+
+detection:
+  file_extensions:
+    rpg_ile:
+      - ".rpgle"
+      - ".rpg"
+      - ".sqlrpgle"
+    rpg_fixed:
+      - ".rpg36"
+      - ".rpg38"
+    cobol:
+      - ".cbl"
+      - ".cblle"
+      - ".cob"
+    cl:
+      - ".clle"
+      - ".cl"
+      - ".cmd"
+    dds:
+      - ".dds"
+      - ".pf"
+      - ".lf"
+      - ".dspf"
+      - ".prtf"
+
+  source_member_patterns:
+    library_pattern: "QRPGLESRC|QRPGSRC|QCBLLESRC|QCLSRC|QDDSSRC"
+    member_pattern: "*.MBR"
+
+  identification_markers:
+    rpg_ile:
+      - "**free"
+      - "dcl-"
+      - "begsr"
+      - "endsr"
+    rpg_fixed:
+      - "H-spec line (columns 6 = H)"
+      - "F-spec line (columns 6 = F)"
+      - "D-spec line (columns 6 = D)"
+    cobol:
+      - "IDENTIFICATION DIVISION"
+      - "ENVIRONMENT DIVISION"
+      - "DATA DIVISION"
+      - "PROCEDURE DIVISION"
+    cl:
+      - "PGM"
+      - "ENDPGM"
+      - "DCL"
+      - "MONMSG"
+
+# ============================================================================
+# FILE SCANNING PATTERNS
+# Adapted from MACCABI: 133 files scanned → 2-7 relevant found
+# ============================================================================
+
+scanning:
+  philosophy: |
+    Same as SAP: Scan ALL source members first, then identify relevant files.
+    DO NOT assume which files are relevant - let code scanning reveal them.
+
+  scan_all_first:
+    purpose: "Find all source members related to program/module"
+    process:
+      - step: "List all members in source library (QRPGLESRC, QCLSRC, etc.)"
+      - step: "Search for program name across all members"
+      - step: "Identify main program + called modules + copy members + DDS files"
+      - step: "Typical result: 80-200 members scanned → 3-10 relevant found"
+
+    bash_commands:
+      list_members: |
+        # List all members in library:
+        find /QSYS.LIB/[LIBRARY].LIB/[SOURCE_FILE].FILE/*.MBR
+
+      search_program_name: |
+        # Search for program references:
+        grep -r "[PROGRAM_NAME]" /QSYS.LIB/[LIBRARY].LIB/[SOURCE_FILE].FILE/*.MBR
+
+      search_copy_members: |
+        # Find copy members (RPG: /COPY, COBOL: COPY):
+        grep -r "/COPY\|/INCLUDE\|COPY " [SOURCE_FILES]
+
+  relevant_file_types:
+    main_program:
+      description: "Primary program being documented"
+      typical_count: 1
+      file_types: ["*.RPGLE", "*.CBLLE", "*.CLLE"]
+
+    copy_members:
+      description: "Shared data structures, constants, prototypes (like Component Controller)"
+      typical_count: "2-8"
+      file_types: ["*.RPGLEINC", "*.COPYLIB"]
+      importance: "CRITICAL - equivalent to SAP Component Controller"
+
+    service_programs:
+      description: "Called modules/procedures"
+      typical_count: "1-5"
+      file_types: ["*.RPGLE (modules)", "*.SRVPGM (bindings)"]
+
+    dds_files:
+      description: "Database files, display files, printer files"
+      typical_count: "3-15"
+      file_types: ["*.PF", "*.LF", "*.DSPF", "*.PRTF"]
+
+    binding_sources:
+      description: "Service program binding directories"
+      typical_count: "0-2"
+      file_types: ["*.BND"]
+
+# ============================================================================
+# STRUCTURE DETECTION
+# Adapted from SAP: Context Nodes, Methods, Actions → RPG/COBOL equivalents
+# ============================================================================
+
+structure_detection:
+
+  rpg_ile_structures:
+    h_spec:
+      description: "Control specifications (program-level settings)"
+      columns: "Position 6 = H"
+      detect_pattern: "^\\s*[Hh]\\s"
+      extract:
+        - "DFTACTGRP (activation group)"
+        - "ACTGRP (named activation group)"
+        - "DATEDIT (date format)"
+        - "COPYRIGHT"
+        - "BNDDIR (binding directory)"
+      count: "Line count of H-specs"
+
+    f_spec:
+      description: "File specifications (database, display, printer files)"
+      columns: "Position 6 = F"
+      detect_pattern: "^\\s*[Ff]\\s"
+      extract:
+        - "File name (positions 7-16)"
+        - "File type (I=Input, O=Output, U=Update, C=Combined)"
+        - "Device (DISK, WORKSTN, PRINTER)"
+        - "USROPN (user open)"
+        - "KEYED/USAGE indicators"
+      count: "Exact count of F-spec lines (NO estimates)"
+      equivalent_to_sap: "Similar to SAP Context Nodes (data sources)"
+
+    d_spec:
+      description: "Data specifications (variables, data structures, prototypes)"
+      columns: "Position 6 = D"
+      detect_pattern: "^\\s*[Dd]\\s"
+      extract:
+        data_structures:
+          pattern: "DS\\s"
+          fields: "Count fields field-by-field (like SAP Context Node attributes)"
+        standalone_fields:
+          pattern: "\\s+S\\s"
+        constants:
+          pattern: "\\s+C\\s"
+        prototypes:
+          pattern: "\\s+PR\\s"
+          note: "External procedure interfaces (like SAP Methods)"
+        procedure_interfaces:
+          pattern: "\\s+PI\\s"
+      count: "Exact count of D-spec lines + count each DS field separately"
+      equivalent_to_sap: "Data structures = Context Nodes, Prototypes = Methods"
+
+    c_spec:
+      description: "Calculation specifications (program logic)"
+      columns: "Position 6 = C"
+      detect_pattern: "^\\s*[Cc]\\s"
+      extract:
+        operations:
+          - "CHAIN (read by key)"
+          - "READ (sequential read)"
+          - "UPDATE (update record)"
+          - "WRITE (write new record)"
+          - "EXSR (call subroutine)"
+          - "CALLP (call procedure)"
+          - "IF/ELSE/ENDIF (conditions)"
+          - "DOW/ENDDO (loops)"
+      count: "Line count + operation type counts"
+      equivalent_to_sap: "Similar to SAP Business Logic methods"
+
+    p_spec:
+      description: "Procedure specifications (subprocedures)"
+      columns: "Position 6 = P"
+      detect_pattern: "^\\s*[Pp]\\s"
+      extract:
+        - "Procedure name"
+        - "Begin/End boundaries"
+        - "Export status"
+      count: "Count procedures exactly (like SAP Methods)"
+      equivalent_to_sap: "Procedures = SAP Methods"
+
+  rpg_free_format:
+    dcl_blocks:
+      description: "Free-format declarations (modern RPG)"
+      patterns:
+        - "dcl-f (file declaration)"
+        - "dcl-s (standalone variable)"
+        - "dcl-ds (data structure)"
+        - "dcl-c (constant)"
+        - "dcl-pr (prototype)"
+        - "dcl-pi (procedure interface)"
+        - "dcl-proc (procedure)"
+      count_method: "grep '^\\s*dcl-' and count by type"
+
+    procedures:
+      pattern: "dcl-proc\\s+([A-Za-z0-9_]+);"
+      end_pattern: "end-proc;"
+      extract:
+        - "Procedure name"
+        - "Parameters (from dcl-pi block)"
+        - "Return value (if function)"
+      equivalent_to_sap: "Procedures = SAP Methods"
+
+  cobol_structures:
+    divisions:
+      identification:
+        required: true
+        contains: "Program name, author, date"
+      environment:
+        contains: "File assignments, special names"
+      data:
+        working_storage:
+          description: "Variables and data structures"
+          levels: "01-49 (hierarchical structures)"
+          count_method: "Count 01-level items exactly"
+          equivalent_to_sap: "01-level items = Context Nodes"
+        file_section:
+          description: "File record layouts"
+          equivalent_to_sap: "Similar to SAP Context Nodes from external sources"
+      procedure:
+        contains: "Program logic, paragraphs, sections"
+        count_method: "Count paragraphs/sections (like SAP Methods)"
+
+  cl_structures:
+    declarations:
+      pattern: "DCL VAR\\(|DCL\\s"
+      count: "Count declared variables exactly"
+
+    file_overrides:
+      pattern: "OVRDBF|OVRDSPF|OVRPRTF"
+      importance: "Shows which files are used (like SAP F-specs)"
+
+    program_calls:
+      pattern: "CALL PGM\\(|SBMJOB CMD\\("
+      count: "Count external program calls"
+
+# ============================================================================
+# EXACT COUNTING COMMANDS
+# Critical: NO estimates, NO approximations (proven in MACCABI)
+# ============================================================================
+
+counting_commands:
+
+  line_counts:
+    total_lines:
+      powershell: "(Get-Content [FILE_PATH]).Count"
+      bash: "wc -l [FILE_PATH]"
+      verification: "required - must be exact, no estimates"
+
+    spec_type_counts_rpg:
+      h_specs:
+        command: "grep -c '^\\s*[Hh]\\s' [FILE_PATH]"
+      f_specs:
+        command: "grep -c '^\\s*[Ff]\\s' [FILE_PATH]"
+      d_specs:
+        command: "grep -c '^\\s*[Dd]\\s' [FILE_PATH]"
+      c_specs:
+        command: "grep -c '^\\s*[Cc]\\s' [FILE_PATH]"
+      p_specs:
+        command: "grep -c '^\\s*[Pp]\\s' [FILE_PATH]"
+
+    data_structure_fields_rpg:
+      purpose: "Count fields in each data structure (like SAP Context Node attributes)"
+      method: "Manual count field-by-field - NO shortcuts"
+      example: |
+        D MyDS            DS
+        D   Field1              10A     <- Count: 1
+        D   Field2               5P 0   <- Count: 2
+        D   Field3              50A     <- Count: 3
+        Total fields: 3 (EXACT count required)
+
+    cobol_data_items:
+      command: "grep -c '^\\s*01\\s' [FILE_PATH]"
+      note: "Count 01-level items (equivalent to SAP Context Nodes)"
+
+    procedures_count:
+      rpg_ile:
+        command: "grep -c '^\\s*[Pp]\\s' [FILE_PATH] || grep -c 'dcl-proc' [FILE_PATH]"
+      cobol:
+        command: "grep -c '^[A-Z0-9-]\\+\\.$' [FILE_PATH] | grep -v 'DIVISION\\|SECTION'"
+      note: "Count exactly like SAP Methods - NO estimates"
+
+  file_operation_counts:
+    database_io:
+      chain_operations:
+        command: "grep -ci '\\sCHAIN\\s\\|\\sCHAIN(' [FILE_PATH]"
+      read_operations:
+        command: "grep -ci '\\sREAD\\s\\|\\sREAD(' [FILE_PATH]"
+      update_operations:
+        command: "grep -ci '\\sUPDATE\\s\\|\\sUPDATE(' [FILE_PATH]"
+      write_operations:
+        command: "grep -ci '\\sWRITE\\s\\|\\sWRITE(' [FILE_PATH]"
+      note: "Like counting SAP SELECT/UPDATE/INSERT statements"
+
+# ============================================================================
+# CROSS-REFERENCE VALIDATION
+# Critical: Like SAP Component Controller check (proven essential in MACCABI)
+# ============================================================================
+
+cross_reference:
+
+  copy_member_check:
+    purpose: "Identify shared vs unique data structures (like SAP Component Controller)"
+    importance: "CRITICAL - client feedback in MACCABI identified this as essential"
+
+    process:
+      - step: "Extract all /COPY and /INCLUDE directives from main program"
+      - step: "Read each copy member file"
+      - step: "For each data structure in main program:"
+        substeps:
+          - "Search for definition in copy members"
+          - "If found → mark as 'shared from [COPY_MEMBER_NAME]'"
+          - "If not found → mark as 'unique to this program'"
+
+    rpg_detection:
+      copy_directive: "/COPY [LIBRARY]/[FILE],[MEMBER]"
+      include_directive: "/INCLUDE [LIBRARY]/[FILE],[MEMBER]"
+      command: "grep '/COPY\\s\\|/INCLUDE\\s' [MAIN_PROGRAM]"
+
+    cobol_detection:
+      copy_directive: "COPY [MEMBER-NAME]"
+      command: "grep 'COPY\\s' [MAIN_PROGRAM]"
+
+    marking_format:
+      shared_structure: |
+        ### 2. CUSTOMER_DS (shared from COPYLIB member CUSTCPY!)
+        **Location in program**: D-spec line 145
+        **Primary definition**: QCPYLESRC/CUSTCPY line 23
+        **Note**: Data structure shared across multiple programs!
+
+      unique_structure: |
+        ### 3. TEMP_DS (unique to this program)
+        **Location in program**: D-spec lines 178-185
+        **Note**: Data structure unique to this program only
+
+    equivalent_to_sap: |
+      This is EXACTLY like SAP Component Controller check:
+      - SAP: Context Nodes shared from Component Controller (file 0008)
+      - AS/400: Data structures shared from Copy Members
+
+      MACCABI lesson: This was missed initially, client feedback required it.
+      ALWAYS check for shared vs unique structures!
+
+  service_program_references:
+    purpose: "Identify called procedures (like SAP Methods from other classes)"
+    detection:
+      rpg_ile: "CALLP procedureName | procedureName(params)"
+      cobol: "CALL 'PROGRAM-NAME'"
+      cl: "CALL PGM(PROGRAMNAME)"
+
+    validation:
+      - "For each called procedure, check if prototype exists in copy member"
+      - "Mark as external if prototype found in copy member"
+      - "Mark as internal if defined in current program"
+
+# ============================================================================
+# BUSINESS LOGIC EXTRACTION
+# Adapted from MACCABI: Extract from C-specs/Procedure Division
+# ============================================================================
+
+business_logic:
+
+  extraction_sources:
+    rpg_fixed_format:
+      primary: "C-spec lines (calculation specifications)"
+      secondary: "Subroutines (BEGSR/ENDSR blocks)"
+
+    rpg_free_format:
+      primary: "Procedures (dcl-proc blocks)"
+      secondary: "Main procedure logic"
+
+    cobol:
+      primary: "PROCEDURE DIVISION paragraphs"
+      secondary: "PERFORM statements flow"
+
+    cl:
+      primary: "Program logic between PGM and ENDPGM"
+      secondary: "Called programs sequence"
+
+  logic_patterns:
+    database_operations:
+      read_patterns:
+        - "CHAIN (read by key) - equivalent to SAP SELECT SINGLE"
+        - "READ (sequential read) - equivalent to SAP SELECT loop"
+        - "SETLL + READE (read equal) - equivalent to SAP SELECT WHERE"
+
+      write_patterns:
+        - "WRITE (insert) - equivalent to SAP INSERT"
+        - "UPDATE (modify) - equivalent to SAP UPDATE"
+        - "DELETE (remove) - equivalent to SAP DELETE"
+
+    calculation_operations:
+      - "EVAL (evaluate expression)"
+      - "IF/ELSE/ENDIF (conditions)"
+      - "DOW/DOU (loops)"
+      - "SELECT/WHEN/ENDSL (case statements)"
+
+    procedure_calls:
+      - "EXSR (call subroutine - internal)"
+      - "CALLP (call procedure - internal/external)"
+      - "CALL (call program - external)"
+
+  documentation_format:
+    careful_language: |
+      ✅ USE: "appears to read", "seems to update", "according to code"
+      ❌ NEVER: "the program reads", "the system updates"
+
+      Example:
+      "According to the C-spec code, the program appears to:
+      1. Read customer master (CHAIN operation on CUSTMAST)
+      2. Calculate balance (EVAL operations)
+      3. Update customer record (UPDATE operation)"
+
+    code_references: |
+      Always include specific line numbers:
+      "Customer read operation (C-spec line 234)"
+      "Balance calculation (C-spec lines 245-267)"
+
+    limitations: |
+      Always state what CANNOT be determined:
+      "Cannot determine from code:
+      - Database file field definitions (need to read PF-DDS)
+      - Display file layout (need to read DSPF-DDS)
+      - External program logic (CUSTPGM called but not analyzed)"
+
+# ============================================================================
+# DOCUMENTATION TEMPLATES
+# Adapted from MACCABI: 7 files per screen → 7 files per program
+# ============================================================================
+
+documentation_structure:
+
+  required_files_count: 7
+
+  file_01_program_specification:
+    filename: "01_PROGRAM_SPECIFICATION.md"
+    sections:
+      - "Program Details (based on actual code)"
+      - "General Description"
+      - "File Specifications (F-specs or dcl-f)"
+      - "Data Structures (D-specs or dcl-ds)"
+      - "Procedures/Subroutines"
+      - "Documentation Limitations"
+
+    format_example: |
+      # Program [PROGRAM_NAME] - [DESCRIPTION]
+
+      ## Program Details (based on actual code)
+      - **Program Name**: [NAME]
+      - **Language**: RPG ILE / COBOL / CL
+      - **Code Size**: **[EXACT] lines total**
+      - **Source File**: [LIBRARY]/[SOURCE_FILE]/[MEMBER]
+
+      ## File Specifications ([COUNT] files)
+
+      ### 1. CUSTMAST (Database File)
+      ```
+      F-spec line: 23
+      Type: Update (U)
+      Device: DISK
+      Access: Keyed
+      ```
+
+      ### 2. CUSTDSP (Display File - shared from DDS!)
+      **Location in program**: F-spec line 24
+      **Primary definition**: QDDSSRC/CUSTDSP (display file DDS)
+      **Note**: Display file shared across multiple programs!
+
+      ## Data Structures ([COUNT] structures, [COUNT] total fields)
+
+      ### 1. CUSTOMER_DS (shared from COPYLIB!)
+      ```rpg
+      D CUSTOMER_DS     DS
+      D   CUSTNO                       7P 0
+      D   CUSTNAME                    50A
+      D   BALANCE                     11P 2
+      ```
+      **Location in program**: D-spec line 145
+      **Primary definition**: QCPYLESRC/CUSTCPY line 23
+      **Total fields**: 3 (counted field-by-field)
+      **Note**: Shared from copy member CUSTCPY!
+
+      ## Procedures ([COUNT] procedures)
+
+      1. `CALC_BALANCE` - Calculate customer balance (P-spec line 234)
+      2. `UPDATE_RECORD` - Update customer record (P-spec line 289)
+
+      ## Documentation Limitations
+
+      ### What CANNOT be determined from code:
+      - Database file field definitions (need PF-DDS files)
+      - Display file screen layout (need DSPF-DDS files)
+      - External program logic (called programs not analyzed)
+
+      ### What IS known from code:
+      - File specifications (F-specs: [COUNT] files)
+      - Data structure definitions ([COUNT] structures, [COUNT] fields)
+      - Procedure flow and database operations
+
+  file_02_ui_interface:
+    filename: "02_UI_INTERFACE.md"
+    purpose: "Document display files (DSPF) if present"
+    note: "Only for programs with WORKSTN files - equivalent to SAP UI mockup"
+
+  file_03_technical_analysis:
+    filename: "03_TECHNICAL_ANALYSIS.md"
+    purpose: "Detailed technical breakdown"
+    sections:
+      - "Technical characteristics"
+      - "Detailed file specifications"
+      - "Data structure analysis (all fields listed)"
+      - "Procedure/Subroutine details"
+
+  file_04_business_logic:
+    filename: "04_BUSINESS_LOGIC.md"
+    purpose: "Document program flow and business rules"
+    extract_from:
+      - "C-spec calculation logic"
+      - "Procedure implementations"
+      - "Database I/O operations"
+
+  file_05_code_artifacts:
+    filename: "05_CODE_ARTIFACTS.md"
+    purpose: "Key code snippets"
+    include:
+      - "H-spec/F-spec sections"
+      - "Main data structures"
+      - "Key procedures/subroutines"
+
+  file_06_readme:
+    filename: "README.md"
+    purpose: "Quick overview"
+    sections:
+      - "Program characteristics"
+      - "File list ([COUNT] files)"
+      - "Data structures ([COUNT] structures)"
+      - "Procedures ([COUNT] procedures)"
+      - "Limitations section"
+
+  file_07_validation_report:
+    filename: "דוח_אימות_[PROGRAM_NAME].md"
+    purpose: "Verification against actual code"
+    sections:
+      - "Verification checklist"
+      - "Accuracy confirmation"
+      - "Cross-reference validation"
+      - "Quality score (target: 100/100)"
+
+# ============================================================================
+# QUALITY CHECKS
+# Proven in MACCABI: 100/100 accuracy requirement
+# ============================================================================
+
+quality_standards:
+
+  forbidden_words:
+    hebrew:
+      - "מתקדם" (advanced)
+      - "חכם" (smart)
+      - "אינטליגנטי" (intelligent)
+      - "מתוחכם" (sophisticated)
+      - "אוטומטי" (automatic - unless provably automated)
+    english:
+      - "advanced"
+      - "smart"
+      - "intelligent"
+      - "sophisticated"
+      - "state-of-the-art"
+
+    detection_command: |
+      grep -i "advanced\|smart\|intelligent\|sophisticated\|מתקדם\|חכם" [DOC_FILES]
+
+    action_if_found: "Remove or replace with factual description"
+
+  required_language:
+    careful_phrases:
+      - "appears to" / "נראה ש"
+      - "seems to" / "נראה כי"
+      - "according to code" / "לפי הקוד"
+      - "based on code" / "מבוסס על הקוד"
+
+    forbidden_phrases:
+      - "the program does" (too confident without verification)
+      - "the system performs" (assumes knowledge beyond code)
+      - "will execute" (future tense implies certainty)
+
+    verification: "Scan all documentation for careful language compliance"
+
+  required_sections:
+    limitations_section:
+      required: true
+      format: |
+        ## Documentation Limitations
+
+        ### What CANNOT be determined from code:
+        - [List what's unknown]
+
+        ### What IS known from code:
+        - [List what's verified]
+
+      examples_unknown:
+        - "Database file field definitions (need DDS files)"
+        - "Display file screen layout (need DSPF-DDS)"
+        - "External program logic (not analyzed)"
+        - "Called service program internals"
+
+      examples_known:
+        - "File specifications (F-specs: exact count)"
+        - "Data structures (exact count with fields)"
+        - "Procedures (exact count with names)"
+        - "Database operations (CHAIN/READ/UPDATE counts)"
+
+  exact_counting:
+    requirement: "ALL counts must be exact - NO estimates, NO approximations"
+    forbidden:
+      - "approximately"
+      - "around"
+      - "~" (tilde)
+      - "+" (plus sign for estimates)
+      - "several"
+      - "many"
+
+    required:
+      - Exact PowerShell/grep command results
+      - Manual field-by-field counting for data structures
+      - Verification after counting
+
+    examples:
+      correct: "12 procedures (counted exactly from P-specs)"
+      wrong: "~12 procedures" or "approximately 12 procedures"
+
+  cross_reference_mandatory:
+    copy_member_check:
+      required: true
+      process: "Check EVERY data structure against copy members"
+      marking: "Mark as shared/unique explicitly"
+
+    service_program_check:
+      required: true
+      process: "Identify all called procedures"
+      verification: "Check prototypes in copy members"
+
+# ============================================================================
+# AUTOMATED VALIDATION
+# Adapted from MACCABI quality gates
+# ============================================================================
+
+automated_checks:
+
+  pre_documentation_checks:
+    - name: "Scan all source members"
+      command: "find [LIBRARY]/*.MBR | wc -l"
+      verify: "Count matches expected source member count"
+
+    - name: "Identify relevant files"
+      command: "grep -r '[PROGRAM_NAME]' [SOURCE_FILES]"
+      verify: "Found main program + copy members + DDS files"
+
+    - name: "Check copy members"
+      command: "grep '/COPY\\|/INCLUDE\\|COPY ' [MAIN_PROGRAM]"
+      verify: "All copy members identified for cross-reference"
+
+  post_documentation_checks:
+    - name: "File count verification"
+      check: "Count created documentation files"
+      expected: "Exactly 7 files"
+      command: "ls -1 [DOC_DIR]/*.md | wc -l"
+
+    - name: "Forbidden words scan"
+      check: "Scan for forbidden words"
+      expected: "Zero occurrences"
+      command: "grep -i 'advanced\\|smart\\|intelligent\\|מתקדם\\|חכם' [DOC_FILES]"
+
+    - name: "Careful language verification"
+      check: "Verify careful language usage"
+      command: "grep 'appears to\\|seems to\\|according to\\|נראה ש\\|לפי הקוד' [DOC_FILES]"
+      expected: "Multiple occurrences throughout documentation"
+
+    - name: "Exact counting verification"
+      check: "Verify no estimate language"
+      command: "grep -i 'approximately\\|around\\|~\\|several\\|many' [DOC_FILES]"
+      expected: "Zero occurrences"
+
+    - name: "Limitations section check"
+      check: "Verify limitations section exists"
+      command: "grep -A 5 'Documentation Limitations\\|מגבלות תיעוד' [SPEC_FILE]"
+      expected: "Section found with what is/isn't known"
+
+    - name: "Cross-reference marking check"
+      check: "Verify shared structures are marked"
+      command: "grep 'shared from\\|משותף מ' [SPEC_FILE]"
+      expected: "At least 1 occurrence if copy members used"
+
+    - name: "Line count accuracy"
+      check: "Verify actual line counts match documentation"
+      process:
+        - "Read documented line count from 01_PROGRAM_SPECIFICATION.md"
+        - "Run actual count: (Get-Content [SOURCE]).Count"
+        - "Compare - must match exactly"
+
+  quality_score_calculation:
+    total_points: 100
+
+    deductions:
+      - item: "Forbidden word found"
+        penalty: -5 per word
+
+      - item: "Missing careful language"
+        penalty: -10
+
+      - item: "Estimate instead of exact count"
+        penalty: -15 per estimate
+
+      - item: "Missing limitations section"
+        penalty: -20
+
+      - item: "Cross-reference not checked"
+        penalty: -25
+
+      - item: "File count wrong (not 7 files)"
+        penalty: -30
+
+      - item: "Line count inaccurate"
+        penalty: -40
+
+    passing_score: 100
+    note: "Same as MACCABI - ONLY 100/100 is acceptable"
+
+# ============================================================================
+# STANDARDS AND REFERENCES
+# ============================================================================
+
+standards:
+
+  proven_methodology:
+    source: "MACCABI ICM SAP WebDynpro ABAP Project"
+    results:
+      - "9/33 screens documented at 100% accuracy"
+      - "Zero hallucinations across all documentation"
+      - "Client feedback: 'Built very well'"
+      - "18x productivity improvement (18 hours → 1 hour per screen)"
+
+    adapted_for_as400:
+      mapping:
+        - "SAP Context Nodes → AS/400 Data Structures"
+        - "SAP Methods → AS/400 Procedures/Subroutines"
+        - "SAP Component Controller → AS/400 Copy Members"
+        - "SAP Actions/Events → AS/400 Database I/O operations"
+        - "SAP 7 files per screen → AS/400 7 files per program"
+
+  reference_examples:
+    when_available:
+      gold_standard: "First completed AS/400 program (becomes reference)"
+      simple_example: "Simple program with minimal dependencies"
+      complex_example: "Complex program with multiple copy members and service programs"
+
+    structure_to_follow:
+      - "Same as SAP: careful language throughout"
+      - "Same as SAP: exact counting only"
+      - "Same as SAP: cross-reference validation"
+      - "Same as SAP: mandatory limitations section"
+      - "Same as SAP: 7 files per program/screen"
+
+# ============================================================================
+# LESSONS FROM MACCABI PROJECT
+# ============================================================================
+
+lessons_learned:
+
+  critical_discoveries:
+    - lesson: "Cross-reference check is ESSENTIAL"
+      detail: |
+        In MACCABI: Component Controller check was initially missed.
+        Client feedback required it.
+        For AS/400: Copy member check is equivalent and equally critical.
+
+    - lesson: "Count field-by-field, not structure-by-structure"
+      detail: |
+        MACCABI: Counted Context Nodes but missed field counts initially.
+        AS/400: Must count data structure fields individually, not just DS count.
+
+    - lesson: "Event handlers can be numerous"
+      detail: |
+        MACCABI: V_DETAIL had 140+ event handlers, initially missed.
+        AS/400: Database operations (CHAIN/READ/UPDATE) can be numerous - count all.
+
+    - lesson: "Careful language prevents hallucinations"
+      detail: |
+        MACCABI: "appears to" instead of "does" prevented overconfidence.
+        AS/400: Same principle - never claim certainty without verification.
+
+    - lesson: "Limitations section shows honesty"
+      detail: |
+        MACCABI: Stating what's unknown (Types, backend logic) built trust.
+        AS/400: State what's unknown (DDS layouts, external programs) equally important.
+
+  anti_hallucination_keys:
+    - "Read ALL source members before claiming relevance"
+    - "Count exactly using commands, never estimate"
+    - "Check cross-references (copy members) always"
+    - "Use careful language consistently"
+    - "Include limitations section in every document"
+    - "Verify after every claim"
+    - "Mark shared vs unique explicitly"
+
+# ============================================================================
+# USAGE WORKFLOW
+# ============================================================================
+
+workflow:
+
+  phase_1_analyze:
+    duration: "5 minutes"
+    steps:
+      - "Scan all source members in libraries"
+      - "Identify program name references"
+      - "Find main program + copy members + DDS files"
+      - "List relevant files (typical: 3-10 out of 80-200)"
+
+    output: "List of relevant source files to document"
+
+  phase_2_count:
+    duration: "5 minutes"
+    steps:
+      - "Count total lines exactly (PowerShell/wc)"
+      - "Count spec types (H/F/D/C/P) exactly"
+      - "Count data structure fields field-by-field"
+      - "Count procedures/subroutines exactly"
+      - "Count database operations by type"
+
+    output: "Exact counts for all elements"
+
+  phase_3_cross_reference:
+    duration: "5 minutes"
+    steps:
+      - "Extract all /COPY, /INCLUDE, COPY directives"
+      - "Read each copy member"
+      - "Check each data structure against copy members"
+      - "Mark as shared (with source) or unique"
+      - "Check procedure prototypes against copy members"
+
+    output: "Shared vs unique marking for all structures"
+
+  phase_4_document:
+    duration: "15 minutes"
+    steps:
+      - "Create 7 documentation files from templates"
+      - "Use careful language throughout"
+      - "Include exact counts (no estimates)"
+      - "Mark shared/unique structures explicitly"
+      - "Add limitations section"
+      - "Reference specific line numbers"
+
+    output: "7 documentation files completed"
+
+  phase_5_validate:
+    duration: "5 minutes"
+    steps:
+      - "Run automated quality checks"
+      - "Verify forbidden words = 0"
+      - "Verify careful language present"
+      - "Verify limitations section exists"
+      - "Verify cross-references marked"
+      - "Verify exact counts match code"
+      - "Calculate quality score"
+
+    output: "Quality score (target: 100/100)"
+
+  total_time: "~35 minutes per program (same as MACCABI per screen)"
+
+# ============================================================================
+# SUCCESS CRITERIA
+# ============================================================================
+
+success_metrics:
+
+  accuracy:
+    target: "100% code alignment"
+    measure: "Everything documented exists in actual code"
+    verification: "Line number references validate correctly"
+
+  hallucinations:
+    target: "Zero hallucinations"
+    measure: "No invented structures, fields, or operations"
+    verification: "All elements traceable to source code"
+
+  completeness:
+    target: "7 files per program"
+    measure: "All required files created"
+    verification: "File count = 7 exactly"
+
+  cross_reference:
+    target: "All shared structures marked"
+    measure: "Every copy member reference identified"
+    verification: "grep for 'shared from' finds occurrences"
+
+  language:
+    target: "Careful language throughout"
+    measure: "Uses 'appears to', 'according to code'"
+    verification: "grep finds careful phrases, zero confident claims"
+
+  counting:
+    target: "Exact counts only"
+    measure: "No estimates or approximations"
+    verification: "grep for estimate words = 0 results"
+
+  quality_score:
+    target: "100/100"
+    measure: "Automated quality check score"
+    note: "Same as MACCABI - only 100/100 acceptable"
+
+# ============================================================================
+# PLUGIN METADATA
+# ============================================================================
+
+metadata:
+  created_from: "sap_plugin.yaml"
+  methodology_source: "MACCABI ICM SAP WebDynpro ABAP Project"
+  proven_results: "9 screens at 100% accuracy, 18x productivity"
+  adapted_for: "IBM AS/400 (iSeries, IBM i) programs"
+  languages_supported: "RPG IV, RPG III, COBOL/400, CL"
+
+  confidence_level: "Medium-High"
+  confidence_reasoning: |
+    Methodology is proven in SAP (100% accuracy).
+    Structure mapping is logical (DS→Nodes, Procedures→Methods, Copy→Controller).
+    AS/400 is well-documented technology with clear patterns.
+
+    Requires validation:
+    - Field testing on real AS/400 programs
+    - Adjustment of counting commands for AS/400 specifics
+    - Refinement of copy member detection patterns
+
+  recommended_first_use:
+    - "Start with simple RPG program (minimal copy members)"
+    - "Verify counting commands work correctly"
+    - "Validate cross-reference detection accuracy"
+    - "Establish reference example (gold standard)"
+    - "Refine plugin based on first results"
+
+  future_enhancements:
+    - "Add SQL embedded in RPG detection (EXEC SQL)"
+    - "Add commitment control detection"
+    - "Add data area usage detection"
+    - "Add data queue operations detection"
+    - "Enhance display file (DSPF) documentation"
+    - "Add printer file (PRTF) layout documentation"

@@ -1,0 +1,29 @@
+{
+    "excluded_patterns": [
+        ".git",
+        "node_modules",
+        "*.log",
+        "*.tmp",
+        "dist",
+        "build",
+        "__pycache__",
+        "*.pyc",
+        "*.class",
+        "*.o",
+        "*.zip",
+        "*.tar",
+        "*.gz"
+    ],
+    "default": {
+        "default_include_all_files": false,
+        "default_include_entire_project_structure": true
+    },
+    "included_patterns": [
+        "*.md",
+        "*.json",
+        "*.yaml",
+        "package.json",
+        "requirements.txt",
+        "README*"
+    ]
+}

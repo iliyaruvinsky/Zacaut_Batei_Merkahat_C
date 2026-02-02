@@ -1,0 +1,408 @@
+# CIDRA Agent Registry
+# This file defines all available agents in the framework
+# New agents are added here to be discovered by the system
+
+registry_version: "1.1.0"
+last_updated: "2026-01-28"
+
+# Agent pipeline order (defines the default workflow)
+pipeline_order:
+  - stage: 0
+    agent: "THE_CHUNKER_AGENT"
+    description: "Code preparation and segmentation"
+    produces: "CHUNKS/, DOCUMENTER_INSTRUCTIONS.md"
+
+  - stage: 1
+    agent: "THE_DOCUMENTER_AGENT"
+    description: "Standardized documentation generation"
+    consumes: "CHUNKS/, DOCUMENTER_INSTRUCTIONS.md"
+    produces: "Screens/[COMPONENT]/ (7-file structure)"
+
+  - stage: 2
+    agent: "THE_RECOMMENDER_AGENT"
+    description: "Modernization recommendations"
+    consumes: "Screens/[COMPONENT]/"
+    produces: "RECOMMENDATIONS/"
+
+  - stage: 3
+    agent: "THE_INTERPRETER_AGENT"
+    description: "Real-time code understanding and context"
+    status: "planned"
+    consumes: "CHUNKS/, Source code"
+    produces: "Context insights, code understanding"
+
+  - stage: 4
+    agent: "THE_APPLICATOR_AGENT"
+    description: "Automated application of changes and recommendations"
+    status: "planned"
+    consumes: "RECOMMENDATIONS/, modernization plans"
+    produces: "Applied changes, migration artifacts"
+
+# Registered agents
+agents:
+
+  # ============================================
+  # THE_CHUNKER_AGENT
+  # ============================================
+  - id: "THE_CHUNKER_AGENT"
+    display_name: "The Chunker"
+    version: "1.0.1"
+    status: "production"  # production | beta | alpha | planned
+    category: "preparation"
+
+    description: |
+      AI agent that breaks down large source code files into semantically
+      meaningful, LLM-digestible chunks with proper metadata and relationships.
+
+    mission: "Optimize legacy code for LLM consumption through intelligent chunking"
+
+    entry_points:
+      primary: "/chunk [path]"
+      secondary:
+        - "/chunk:analyze [path]"
+        - "/chunk:status"
+
+    files:
+      specification: "THE_CHUNKER_AGENT/agent_specification.md"
+      skills: "THE_CHUNKER_AGENT/skills.yaml"
+      strategies: "THE_CHUNKER_AGENT/chunking_strategies.yaml"
+
+    dependencies:
+      requires: []
+      optional: []
+
+    # Pipeline communication (per agent_handoff_protocol.md)
+    consumes:
+      - type: "source_code"
+        path: "Source Code/"
+        description: "Raw source code files to chunk"
+
+    produces:
+      - type: "chunks"
+        path: "CHUNKS/repository.json"
+        description: "All chunks with metadata"
+      - type: "relationships"
+        path: "CHUNKS/graph.json"
+        description: "Dependency relationships between chunks"
+      - type: "analysis"
+        path: "CHUNKS/analysis.json"
+        description: "Codebase inventory and statistics"
+      - type: "handoff"
+        path: "CHUNKS/DOCUMENTER_INSTRUCTIONS.md"
+        description: "Human-readable instructions for Documenter"
+      - type: "manifest"
+        path: "CHUNKS/run_manifest.json"
+        description: "Machine-readable run metadata"
+
+    next_agent: "THE_DOCUMENTER_AGENT"
+
+    outputs:  # Legacy format (kept for compatibility)
+      - type: "directory"
+        path: "CHUNKS/"
+        description: "Chunked code with metadata"
+      - type: "file"
+        path: "DOCUMENTER_INSTRUCTIONS.md"
+        description: "Instructive prompt for THE_DOCUMENTER_AGENT"
+      - type: "file"
+        path: "CHUNK_INDEX.json"
+        description: "Master index of all chunks"
+
+  # ============================================
+  # THE_DOCUMENTER_AGENT
+  # ============================================
+  - id: "THE_DOCUMENTER_AGENT"
+    display_name: "The Documenter"
+    version: "1.0.1"
+    status: "production"
+    category: "documentation"
+    priority: "critical"  # This is the MOST IMPORTANT agent
+
+    description: |
+      AI agent that creates comprehensive, standardized documentation for
+      legacy code components following strict anti-hallucination principles.
+
+    mission: "Generate perfect, hallucination-free documentation with 100/100 validation scores"
+
+    entry_points:
+      primary: "/document [component]"
+      secondary:
+        - "/document:setup"
+        - "/document:validate [path]"
+        - "/document:fix [path]"
+
+    files:
+      specification: "THE_DOCUMENTER_AGENT/agent_specification.md"
+      skills: "THE_DOCUMENTER_AGENT/skills.yaml"
+      templates: "THE_DOCUMENTER_AGENT/template_config.yaml"
+      validation: "THE_DOCUMENTER_AGENT/validation_framework.md"
+
+    dependencies:
+      requires:
+        - agent: "THE_CHUNKER_AGENT"
+          reason: "Needs chunked code and DOCUMENTER_INSTRUCTIONS.md"
+      optional: []
+
+    # Pipeline communication (per agent_handoff_protocol.md)
+    consumes:
+      - type: "chunks"
+        path: "CHUNKS/"
+        description: "Chunked code from Chunker"
+      - type: "handoff"
+        path: "CHUNKS/DOCUMENTER_INSTRUCTIONS.md"
+        description: "Instructions from Chunker"
+      - type: "source_code"
+        path: "Source Code/"
+        description: "Original source for verification"
+
+    produces:
+      - type: "documentation"
+        path: "Screens/<COMPONENT>/"
+        description: "7-file documentation structure"
+        files:
+          - "01_SCREEN_SPECIFICATION.md"
+          - "02_UI_MOCKUP.md"
+          - "03_TECHNICAL_ANALYSIS.md"
+          - "04_BUSINESS_LOGIC.md"
+          - "05_CODE_ARTIFACTS.md"
+          - "README.md"
+          - "VALIDATION_REPORT.md"
+      - type: "manifest"
+        path: "Screens/<COMPONENT>/run_manifest.json"
+        description: "Machine-readable run metadata"
+
+    next_agent: "THE_RECOMMENDER_AGENT"
+
+    outputs:  # Legacy format (kept for compatibility)
+      - type: "directory"
+        path: "Screens/[COMPONENT]/"
+        description: "7-file documentation structure"
+        files:
+          - "01_SCREEN_SPECIFICATION.md"
+          - "02_UI_MOCKUP.md"
+          - "03_TECHNICAL_ANALYSIS.md"
+          - "04_BUSINESS_LOGIC.md"
+          - "05_CODE_ARTIFACTS.md"
+          - "README.md"
+          - "validation_report.md"
+
+    critical_rules:
+      - "Zero hallucinations - verify everything"
+      - "Exact counting - never estimate"
+      - "Careful language - avoid forbidden words"
+      - "Cross-reference all claims"
+      - "100/100 validation required"
+
+  # ============================================
+  # THE_RECOMMENDER_AGENT
+  # ============================================
+  - id: "THE_RECOMMENDER_AGENT"
+    display_name: "The Recommender"
+    version: "1.0.1"
+    status: "production"
+    category: "analysis"
+
+    description: |
+      AI agent that analyzes documented code and provides intelligent
+      modernization recommendations through interactive dialog with users.
+
+    mission: "Provide evidence-based modernization recommendations with clear risk assessment"
+
+    entry_points:
+      primary: "/recommend [component]"
+      secondary:
+        - "/recommend:compare [tech1] [tech2]"
+        - "/recommend:risk [component]"
+
+    files:
+      specification: "THE_RECOMMENDER_AGENT/agent_specification.md"
+      skills: "THE_RECOMMENDER_AGENT/skills.yaml"
+      strategies: "THE_RECOMMENDER_AGENT/recommendation_strategies.yaml"
+
+    dependencies:
+      requires:
+        - agent: "THE_DOCUMENTER_AGENT"
+          reason: "Needs documented components for analysis"
+      optional:
+        - agent: "THE_CHUNKER_AGENT"
+          reason: "Can use chunks for deeper analysis"
+
+    # Pipeline communication (per agent_handoff_protocol.md)
+    consumes:
+      - type: "documentation"
+        path: "Screens/<COMPONENT>/"
+        description: "7-file documentation from Documenter"
+        required_files:
+          - "01_SCREEN_SPECIFICATION.md"
+          - "README.md"
+      - type: "validation"
+        path: "Screens/<COMPONENT>/VALIDATION_REPORT.md"
+        description: "Quality validation (should be 100/100)"
+
+    produces:
+      - type: "recommendation_report"
+        path: "RECOMMENDATIONS/<COMPONENT>/RECOMMENDATION_REPORT.md"
+        description: "Full recommendation document (20-40 pages)"
+      - type: "technology_comparison"
+        path: "RECOMMENDATIONS/<COMPONENT>/TECHNOLOGY_COMPARISON.md"
+        description: "Technology alternatives comparison"
+      - type: "architecture"
+        path: "RECOMMENDATIONS/<COMPONENT>/ARCHITECTURE_DIAGRAMS.md"
+        description: "Current vs target architecture"
+      - type: "roadmap"
+        path: "RECOMMENDATIONS/<COMPONENT>/MIGRATION_ROADMAP.md"
+        description: "Step-by-step migration plan"
+      - type: "risk"
+        path: "RECOMMENDATIONS/<COMPONENT>/RISK_ASSESSMENT.md"
+        description: "Risk analysis and mitigations"
+      - type: "cost_benefit"
+        path: "RECOMMENDATIONS/<COMPONENT>/COST_BENEFIT_ANALYSIS.md"
+        description: "Financial model and ROI"
+      - type: "structured"
+        path: "RECOMMENDATIONS/<COMPONENT>/recommendation_structured.json"
+        description: "Machine-readable for Stage 3 agent"
+      - type: "manifest"
+        path: "RECOMMENDATIONS/<COMPONENT>/run_manifest.json"
+        description: "Machine-readable run metadata"
+
+    next_agent: "THE_APPLICATOR_AGENT"  # Future
+
+    outputs:  # Legacy format (kept for compatibility)
+      - type: "directory"
+        path: "RECOMMENDATIONS/"
+        description: "Recommendation reports"
+      - type: "file"
+        path: "RECOMMENDATION_REPORT.md"
+        description: "Full recommendation document"
+      - type: "file"
+        path: "EXECUTIVE_SUMMARY.md"
+        description: "Stakeholder-friendly summary"
+
+    dialog_required: true
+    dialog_message: "Always ask user for direction before analyzing"
+
+  # ============================================
+  # THE_INTERPRETER_AGENT (Planned - CIDRA "I")
+  # ============================================
+  - id: "THE_INTERPRETER_AGENT"
+    display_name: "The Interpreter"
+    version: "0.0.1"
+    status: "planned"
+    category: "understanding"
+
+    description: |
+      AI agent that provides real-time code understanding and context
+      interpretation for complex legacy systems.
+
+    mission: "Enable deep understanding of code semantics and behavior"
+
+    entry_points:
+      primary: "/interpret [code]"
+      secondary:
+        - "/interpret:explain [function]"
+        - "/interpret:trace [flow]"
+        - "/interpret:context [component]"
+
+    planned_features:
+      - "Real-time code explanation"
+      - "Behavior prediction"
+      - "Context-aware suggestions"
+      - "Cross-reference resolution"
+      - "Business logic interpretation"
+
+  # ============================================
+  # THE_APPLICATOR_AGENT (Planned - CIDRA "A")
+  # ============================================
+  - id: "THE_APPLICATOR_AGENT"
+    display_name: "The Applicator"
+    version: "0.0.1"
+    status: "planned"
+    category: "implementation"
+
+    description: |
+      AI agent that automatically applies changes, recommendations,
+      and migration strategies to codebases.
+
+    mission: "Transform recommendations into working implementations"
+
+    entry_points:
+      primary: "/apply [recommendation]"
+      secondary:
+        - "/apply:plan [migration]"
+        - "/apply:validate [changes]"
+        - "/apply:rollback [version]"
+
+    planned_features:
+      - "Automated code generation"
+      - "Migration execution"
+      - "Test generation"
+      - "CI/CD pipeline setup"
+      - "Rollback capabilities"
+
+# Agent categories
+categories:
+  - id: "preparation"
+    name: "Code Preparation"
+    description: "Agents that prepare code for processing"
+    agents: ["THE_CHUNKER_AGENT"]
+
+  - id: "documentation"
+    name: "Documentation"
+    description: "Agents that generate documentation"
+    agents: ["THE_DOCUMENTER_AGENT"]
+
+  - id: "analysis"
+    name: "Analysis & Recommendations"
+    description: "Agents that analyze and recommend"
+    agents: ["THE_RECOMMENDER_AGENT"]
+
+  - id: "understanding"
+    name: "Code Understanding"
+    description: "Agents that interpret and explain code"
+    agents: ["THE_INTERPRETER_AGENT"]
+
+  - id: "implementation"
+    name: "Implementation"
+    description: "Agents that apply changes"
+    agents: ["THE_APPLICATOR_AGENT"]
+
+# CIDRA Framework Explanation
+cidra_acronym:
+  C: "Chunker - Code preparation and segmentation"
+  I: "Interpreter - Code understanding (planned)"
+  D: "Documenter - Documentation generation"
+  R: "Recommender - Modernization recommendations"
+  A: "Applicator - Change application (planned)"
+
+# How to add a new agent
+adding_new_agent:
+  steps:
+    - step: 1
+      action: "Create agent directory"
+      path: "Agents/THE_NEW_AGENT/"
+    - step: 2
+      action: "Create agent_specification.md"
+      template: "shared/templates/agent_specification_template.md"
+    - step: 3
+      action: "Create skills.yaml"
+      template: "shared/templates/skills_template.yaml"
+    - step: 4
+      action: "Register in this file (registry.yaml)"
+      section: "agents"
+    - step: 5
+      action: "Add to pipeline_order if applicable"
+      section: "pipeline_order"
+    - step: 6
+      action: "Update cidra.manifest.yaml"
+      file: "cidra.manifest.yaml"
+    - step: 7
+      action: "Test the agent"
+      command: "cidra test THE_NEW_AGENT"
+
+  required_files:
+    - "agent_specification.md"
+    - "skills.yaml"
+
+  optional_files:
+    - "strategies.yaml"
+    - "templates/"
+    - "examples/"

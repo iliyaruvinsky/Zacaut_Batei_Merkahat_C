@@ -1,0 +1,628 @@
+# Recommendation Strategies Configuration
+# Version: 1.0.0
+# Purpose: Technology mappings and recommendation rules
+
+---
+
+# Global Settings
+global:
+  confidence_threshold: 0.70  # Minimum confidence to recommend
+  max_alternatives: 3         # Max alternatives to present
+  risk_tolerance: "medium"    # low, medium, high
+  default_timeline_months: 12
+  default_budget_usd: 300000
+
+# Technology Mapping Database
+
+## SAP Technologies → Modern Alternatives
+
+sap_abap:
+  type: "language"
+  retirement_timeline: "10-15 years"  # Industry trend
+  talent_availability: "declining"    # Avg dev age 45+, few new grads
+
+  alternatives:
+    - name: "Java + Spring Boot"
+      confidence: 0.95
+      learning_curve: "medium"
+      migration_complexity: "medium-high"
+
+      pros:
+        - "Enterprise-grade with mature ecosystem"
+        - "Strong typing similar to ABAP"
+        - "Rich business logic frameworks (Spring, Hibernate)"
+        - "Large talent pool (9M+ developers worldwide)"
+        - "Excellent tooling (IntelliJ, Eclipse)"
+
+      cons:
+        - "More verbose than modern languages"
+        - "JVM overhead (larger memory footprint)"
+        - "Not as cutting-edge as newer languages"
+
+      best_for:
+        - "Large enterprise migrations"
+        - "Teams with Java experience"
+        - "Strong typing requirements"
+        - "Need for mature ecosystem"
+
+      migration_tools:
+        - "SAP Java Connector (JCo) for gradual migration"
+        - "Automated code translation (partial)"
+
+    - name: "C# + .NET"
+      confidence: 0.90
+      learning_curve: "medium"
+      migration_complexity: "medium"
+
+      pros:
+        - "Similar OOP model to ABAP Objects"
+        - "Strong enterprise support from Microsoft"
+        - "Excellent tooling (Visual Studio)"
+        - "Good performance"
+        - "Growing cross-platform support (.NET Core)"
+
+      cons:
+        - "Historically Windows-centric (improving)"
+        - "Smaller ecosystem than Java"
+        - "Microsoft dependency"
+
+      best_for:
+        - "Microsoft shop organizations"
+        - "Azure cloud migrations"
+        - "Teams with .NET experience"
+
+    - name: "Python + FastAPI/Django"
+      confidence: 0.75
+      learning_curve: "low"
+      migration_complexity: "low-medium"
+
+      pros:
+        - "Rapid development (3-5x faster than Java)"
+        - "Great for data processing and analytics"
+        - "Easier learning curve"
+        - "Huge ecosystem (400K+ packages)"
+        - "Popular for AI/ML integration"
+
+      cons:
+        - "Dynamic typing vs ABAP strong typing"
+        - "Slower runtime performance"
+        - "Less mature enterprise tooling"
+        - "GIL limits multi-threading"
+
+      best_for:
+        - "Data-heavy applications"
+        - "Rapid prototyping"
+        - "AI/ML integration needed"
+        - "Startups and smaller teams"
+
+    - name: "Go (Golang)"
+      confidence: 0.70
+      learning_curve: "low-medium"
+      migration_complexity: "medium"
+
+      pros:
+        - "Excellent performance (compiled, concurrent)"
+        - "Simple language (easy to learn)"
+        - "Great for microservices"
+        - "Strong standard library"
+        - "Fast compilation"
+
+      cons:
+        - "Less mature business logic frameworks"
+        - "Smaller enterprise adoption"
+        - "Limited OOP features"
+        - "Smaller talent pool than Java/C#"
+
+      best_for:
+        - "Cloud-native microservices"
+        - "High-performance requirements"
+        - "DevOps-oriented teams"
+
+sap_webdynpro:
+  type: "ui_framework"
+  retirement_timeline: "5-10 years"
+
+  alternatives:
+    - name: "React + TypeScript"
+      confidence: 0.95
+      learning_curve: "medium"
+
+      pros:
+        - "Component model matches WebDynpro architecture"
+        - "Most popular frontend framework (12M+ developers)"
+        - "Huge ecosystem (npm packages)"
+        - "TypeScript provides type safety"
+        - "Excellent tooling and community"
+        - "Backed by Meta/Facebook"
+
+      cons:
+        - "Frequent updates (can be breaking)"
+        - "Many ways to do same thing (decision fatigue)"
+        - "Need additional libraries (React is just view layer)"
+
+      best_for:
+        - "Modern, interactive UIs"
+        - "Large development teams"
+        - "Component-based architecture"
+
+      migration_mapping:
+        webdynpro_view: "React functional component"
+        webdynpro_component_controller: "React Context API / Redux"
+        context_node: "React state (useState/useReducer)"
+        event_handler: "Event handler function"
+        data_binding: "React props and state"
+
+    - name: "Angular"
+      confidence: 0.90
+      learning_curve: "high"
+
+      pros:
+        - "Enterprise-focused (backed by Google)"
+        - "Comprehensive framework (batteries included)"
+        - "Strong TypeScript integration"
+        - "Opinionated (less decision fatigue)"
+        - "Good for large enterprise apps"
+
+      cons:
+        - "Steep learning curve"
+        - "More complex than React/Vue"
+        - "Verbose code"
+        - "Smaller ecosystem than React"
+
+      best_for:
+        - "Large enterprise applications"
+        - "Teams wanting comprehensive framework"
+        - "Strong typing requirements"
+
+    - name: "Vue.js"
+      confidence: 0.85
+      learning_curve: "low"
+
+      pros:
+        - "Gentle learning curve (easiest of three)"
+        - "Excellent documentation"
+        - "Good performance"
+        - "Flexible (can be simple or complex)"
+        - "Growing enterprise adoption"
+
+      cons:
+        - "Smaller ecosystem than React"
+        - "Less enterprise adoption than React/Angular"
+        - "Fewer job opportunities"
+
+      best_for:
+        - "Teams new to modern frontend"
+        - "Smaller to medium applications"
+        - "Rapid development needed"
+
+    - name: "Svelte"
+      confidence: 0.75
+      learning_curve: "low"
+
+      pros:
+        - "Extremely fast (compiles to vanilla JS)"
+        - "Less boilerplate than React"
+        - "Built-in state management"
+        - "Growing popularity"
+
+      cons:
+        - "Smaller ecosystem"
+        - "Less enterprise adoption"
+        - "Fewer developers with experience"
+
+      best_for:
+        - "Performance-critical apps"
+        - "Smaller teams willing to adopt newer tech"
+
+sap_bw:
+  type: "data_warehouse"
+
+  alternatives:
+    - name: "PostgreSQL + TimescaleDB"
+      confidence: 0.90
+      cost: "low"  # Open source
+
+      pros:
+        - "Open source (no licensing costs)"
+        - "Strong ACID compliance"
+        - "Excellent for time-series data (TimescaleDB)"
+        - "Rich analytics features"
+        - "Large community"
+
+      cons:
+        - "Requires more operational overhead than managed services"
+        - "Scaling requires expertise"
+
+    - name: "Snowflake"
+      confidence: 0.95
+      cost: "medium-high"
+
+      pros:
+        - "Purpose-built for analytics"
+        - "Auto-scaling (pay for what you use)"
+        - "Near-zero maintenance"
+        - "Excellent performance"
+        - "Multi-cloud support"
+
+      cons:
+        - "Can be expensive at scale"
+        - "Vendor lock-in"
+
+    - name: "Azure Synapse Analytics"
+      confidence: 0.85
+      cost: "medium"
+
+      pros:
+        - "Integrated with Microsoft ecosystem"
+        - "Good for Azure shops"
+        - "Unified analytics platform"
+
+      cons:
+        - "Complex pricing model"
+        - "Azure-specific"
+
+## AS/400 Technologies → Modern Alternatives
+
+as400_rpg:
+  type: "language"
+
+  alternatives:
+    - name: "Java (on IBM i / standalone)"
+      confidence: 0.90
+
+      pros:
+        - "IBM supports Java on AS/400 (gradual migration possible)"
+        - "Can call RPG programs via JNI"
+        - "Mature ecosystem"
+
+      migration_approach: "Gradual (RPG → Java incrementally)"
+
+    - name: "Python"
+      confidence: 0.80
+
+      pros:
+        - "Modern, readable syntax"
+        - "Great for business logic"
+        - "Can integrate with AS/400 via ODBC"
+
+      migration_approach: "Rewrite (Python microservices)"
+
+    - name: "Node.js"
+      confidence: 0.75
+
+      pros:
+        - "Fast development"
+        - "Microservices-friendly"
+        - "JavaScript everywhere (frontend + backend)"
+
+      migration_approach: "Rewrite (Node.js microservices)"
+
+as400_cobol:
+  type: "language"
+
+  alternatives:
+    - name: "COBOL → Java (automated)"
+      confidence: 0.85
+
+      tools:
+        - "AWS Blu Age (automated migration)"
+        - "Micro Focus (COBOL modernization)"
+        - "LzLabs (containerized COBOL)"
+
+      pros:
+        - "80%+ automation possible"
+        - "Faster than manual rewrite"
+        - "Preserves business logic"
+
+      cons:
+        - "Generated code not idiomatic"
+        - "Still need manual cleanup"
+        - "Licensing costs for tools"
+
+    - name: "Manual rewrite to Java/C#"
+      confidence: 0.75
+
+      pros:
+        - "Modern, maintainable code"
+        - "Opportunity to refactor"
+        - "Better long-term"
+
+      cons:
+        - "Time-consuming (3-5x slower than automated)"
+        - "Risk of losing business logic"
+        - "Expensive"
+
+## Architecture Patterns
+
+architecture_patterns:
+
+  monolith_to_microservices:
+    pattern: "Strangler Fig"
+    description: "Gradually replace monolith with microservices"
+
+    applicability:
+      - "Large monolith with clear bounded contexts"
+      - "Need for independent scaling"
+      - "Multiple teams"
+
+    steps:
+      1. "Identify bounded contexts (from business logic)"
+      2. "Extract one context at a time as microservice"
+      3. "Route traffic through API gateway"
+      4. "Gradually retire monolith components"
+
+    technologies:
+      api_gateway: ["Kong", "Apigee", "AWS API Gateway"]
+      service_mesh: ["Istio", "Linkerd"]
+      messaging: ["Kafka", "RabbitMQ", "AWS SQS"]
+
+  modular_monolith:
+    pattern: "Modular Monolith"
+    description: "Restructure monolith into modules before splitting"
+
+    applicability:
+      - "Team not ready for microservices"
+      - "Deployment simplicity preferred"
+      - "Data consistency critical"
+
+    benefits:
+      - "Simpler deployment"
+      - "No distributed transactions"
+      - "Easier debugging"
+      - "Can evolve to microservices"
+
+    structure:
+      modules:
+        - "module-patient (domain + data)"
+        - "module-treatment (domain + data)"
+        - "module-payment (domain + data)"
+
+  event_driven:
+    pattern: "Event-Driven Architecture"
+    description: "Decouple via async events"
+
+    applicability:
+      - "Loose coupling needed"
+      - "Audit trail required"
+      - "Multiple consumers of same data"
+
+    components:
+      event_bus: ["Kafka", "RabbitMQ", "AWS EventBridge"]
+      event_store: ["EventStoreDB", "PostgreSQL"]
+
+## Migration Strategies
+
+migration_strategies:
+
+  rewrite:
+    name: "Complete Rewrite (Greenfield)"
+
+    when_to_use:
+      - "Legacy code unmaintainable"
+      - "Technology too obsolete"
+      - "Business logic well-understood"
+      - "Budget available"
+
+    pros:
+      - "Clean architecture"
+      - "Modern best practices"
+      - "Team motivation high"
+
+    cons:
+      - "High risk (big bang)"
+      - "Long time to production"
+      - "May lose hidden logic"
+
+    risk_level: "high"
+
+    risk_mitigation:
+      - "Parallel run (old + new)"
+      - "Extensive regression tests"
+      - "Gradual cutover"
+
+  refactor:
+    name: "Incremental Refactoring (Brownfield)"
+
+    when_to_use:
+      - "Code maintainable"
+      - "Continuous delivery required"
+      - "Low risk tolerance"
+
+    pros:
+      - "Low risk"
+      - "Continuous value delivery"
+      - "Learn as you go"
+
+    cons:
+      - "Takes longer"
+      - "May never reach ideal"
+      - "Technical debt accumulates"
+
+    risk_level: "low-medium"
+
+    approach:
+      - "Boy Scout Rule (leave better)"
+      - "Strangler pattern"
+      - "Automated tests first"
+
+  replatform:
+    name: "Replatform (Lift & Shift Plus)"
+
+    when_to_use:
+      - "Need cloud benefits"
+      - "Code works, infra outdated"
+      - "Want quick wins"
+
+    pros:
+      - "Quick (weeks vs months)"
+      - "Immediate cloud benefits"
+      - "Incremental modernization"
+
+    cons:
+      - "Doesn't fix code quality"
+      - "May not leverage cloud-native"
+      - "Still need to modernize"
+
+    risk_level: "low"
+
+    approach:
+      - "Containerize (Docker)"
+      - "Deploy to K8s/Cloud Run"
+      - "Managed databases"
+      - "Cloud monitoring"
+
+  retire:
+    name: "Retire Component"
+
+    when_to_use:
+      - "Feature no longer needed"
+      - "Duplicate functionality"
+      - "Cost > value"
+
+    validation:
+      - "Usage metrics (3-6 months)"
+      - "Stakeholder interviews"
+      - "Dependency check"
+
+## Risk Assessment Framework
+
+risk_factors:
+
+  technical_complexity:
+    weight: 0.30
+
+    indicators:
+      lines_of_code:
+        low: "< 1000"
+        medium: "1000-5000"
+        high: "> 5000"
+
+      cyclomatic_complexity:
+        low: "< 10 per method"
+        medium: "10-30 per method"
+        high: "> 30 per method"
+
+      dependencies:
+        low: "< 5"
+        medium: "5-15"
+        high: "> 15"
+
+  business_criticality:
+    weight: 0.25
+
+    indicators:
+      user_impact:
+        low: "< 10 users"
+        medium: "10-100 users"
+        high: "> 100 users"
+
+      financial_impact:
+        low: "< $10K/month"
+        medium: "$10K-$100K/month"
+        high: "> $100K/month"
+
+      regulatory:
+        low: "No compliance"
+        medium: "Industry standards (PCI, HIPAA)"
+        high: "Critical (FDA, SOX)"
+
+  team_readiness:
+    weight: 0.20
+
+    indicators:
+      skill_gap:
+        low: "Has skills"
+        medium: "1-2 months training"
+        high: "3+ months or new hires"
+
+      domain_knowledge:
+        low: "Well documented"
+        medium: "Some tribal knowledge"
+        high: "1-2 people have critical knowledge"
+
+  testing_coverage:
+    weight: 0.15
+
+    indicators:
+      test_automation:
+        low: "> 80% coverage"
+        medium: "30-80% coverage"
+        high: "< 30% coverage"
+
+      test_environment:
+        low: "Production-like"
+        medium: "Basic"
+        high: "None"
+
+  timeline_pressure:
+    weight: 0.10
+
+    indicators:
+      deadline:
+        low: "> 6 months"
+        medium: "3-6 months"
+        high: "< 3 months"
+
+risk_score_ranges:
+  low: "0-30"
+  medium: "31-60"
+  high: "61-100"
+
+## Cost Model
+
+cost_categories:
+
+  development:
+    backend_developer_annual_salary: 120000
+    frontend_developer_annual_salary: 110000
+    devops_engineer_annual_salary: 130000
+
+  infrastructure:
+    aws_monthly_estimate: 2500  # ECS + RDS + S3 + CloudWatch
+    azure_monthly_estimate: 2800
+    gcp_monthly_estimate: 2600
+
+  training:
+    per_developer_react_course: 2000
+    per_developer_spring_boot_course: 2500
+    per_developer_aws_course: 3000
+
+  risk_contingency:
+    percentage: 0.20  # 20% buffer
+
+## Quality Thresholds
+
+quality:
+  recommendation:
+    min_confidence: 0.70
+    min_alternatives: 2
+    max_alternatives: 3
+
+  risk_assessment:
+    require_all_factors: true
+    validate_mitigations: true
+
+  cost_benefit:
+    min_roi_percent: 50   # 50% ROI required
+    max_payback_months: 24  # 2 years max
+
+## Output Formats
+
+output:
+  markdown:
+    enabled: true
+    template: "recommendation_report_template.md"
+    include_diagrams: true
+
+  json:
+    enabled: true
+    schema_version: "1.0.0"
+    for_stage_3_agent: true
+
+  slides:
+    enabled: true
+    format: "markdown → Marp"
+    executive_summary_only: true
+
+---
+# End of Configuration

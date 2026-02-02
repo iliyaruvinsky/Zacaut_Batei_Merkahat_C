@@ -1,0 +1,205 @@
+# CIDRA Python Documentation Plugin
+# Version: 1.0.0
+# Technology: Python (Django, FastAPI, Flask, General)
+
+plugin:
+  name: "Python Documentation Plugin"
+  technology: "Python"
+  version: "1.0.0"
+  author: "CIDRA Team"
+  description: "Documentation rules for Python projects"
+
+# Supported frameworks
+frameworks:
+  - Django
+  - FastAPI
+  - Flask
+  - SQLAlchemy
+  - Pure Python classes/modules
+
+# Anti-hallucination rules
+anti_hallucination:
+  rules:
+    - "MUST count actual methods in class definition"
+    - "NEVER invent decorators (@) not in code"
+    - "ALWAYS verify import statements"
+    - "MUST trace inheritance chain from code"
+    - "NEVER assume async/await without seeing keywords"
+    - "ALWAYS cite line numbers for code references"
+    - "MUST verify function signatures (parameters, return types)"
+    - "NEVER invent type hints not in code"
+
+  verification_steps:
+    - step: "Count methods"
+      command: "grep -c 'def ' [FILE]"
+    - step: "List decorators"
+      command: "grep '@' [FILE]"
+    - step: "Verify imports"
+      command: "grep '^import\\|^from' [FILE]"
+    - step: "Check class hierarchy"
+      command: "grep 'class.*\\(' [FILE]"
+
+# Documentation structure
+documentation:
+  files:
+    - name: "01_MODULE_SPECIFICATION.md"
+      sections:
+        - "מבנה המודול"
+        - "ייבואים (Imports)"
+        - "מחלקות (Classes)"
+        - "פונקציות (Functions)"
+        - "קבועים (Constants)"
+      
+    - name: "02_API_ENDPOINTS.md"
+      sections:
+        - "נקודות קצה (Endpoints)"
+        - "Request/Response Schemas"
+        - "Authentication & Authorization"
+        - "Error Handling"
+      required_if: "FastAPI|Django REST"
+      
+    - name: "03_DATA_MODELS.md"
+      sections:
+        - "מודלים (Models)"
+        - "שדות (Fields)"
+        - "קשרים (Relationships)"
+        - "Validators"
+      required_if: "Django|SQLAlchemy"
+      
+    - name: "04_BUSINESS_LOGIC.md"
+      sections:
+        - "לוגיקה עסקית"
+        - "Validations"
+        - "Business Rules"
+        - "Calculations"
+        
+    - name: "05_CODE_REFERENCE.md"
+      sections:
+        - "קטעי קוד מרכזיים"
+        - "ציטוטים מהקוד"
+        - "דוגמאות שימוש"
+        
+    - name: "README.md"
+      sections:
+        - "סקירה"
+        - "שימוש"
+        - "תלותים (Dependencies)"
+        
+    - name: "VALIDATION_REPORT.md"
+      sections:
+        - "בדיקות שבוצעו"
+        - "ציון איכות"
+        - "ממצאים"
+
+# Naming conventions
+naming:
+  modules: "snake_case"
+  classes: "PascalCase"
+  functions: "snake_case"
+  constants: "UPPER_SNAKE_CASE"
+  private: "_leading_underscore"
+
+# Code patterns to detect
+patterns:
+  class_definition: "^class\\s+(\\w+)"
+  function_definition: "^(async\\s+)?def\\s+(\\w+)"
+  decorator: "^@(\\w+)"
+  import_statement: "^(from\\s+\\S+\\s+)?import\\s+"
+  type_hint: "->\\s*(\\w+|None)"
+
+# Django-specific
+django:
+  model_fields:
+    - "CharField"
+    - "IntegerField"
+    - "DateTimeField"
+    - "ForeignKey"
+    - "ManyToManyField"
+  views:
+    - "ListView"
+    - "DetailView"
+    - "CreateView"
+    - "UpdateView"
+  admin: "admin.site.register"
+
+# FastAPI-specific
+fastapi:
+  decorators:
+    - "@app.get"
+    - "@app.post"
+    - "@app.put"
+    - "@app.delete"
+  models: "BaseModel"
+  dependency_injection: "Depends"
+
+# Validation rules
+validation:
+  required_sections:
+    - "מבנה המודול"
+    - "לוגיקה עסקית"
+    - "קטעי קוד מרכזיים"
+  
+  quality_gates:
+    - check: "All methods documented"
+      severity: "error"
+    - check: "All imports verified"
+      severity: "error"
+    - check: "Type hints documented (if present)"
+      severity: "warning"
+    - check: "Decorators cited with line numbers"
+      severity: "error"
+  
+  min_quality_score: 100
+
+# Examples and templates
+examples:
+  good:
+    - description: "Correct method count"
+      example: "מחלקה User מכילה 5 methods (שורות 10-50)"
+    
+    - description: "Verified decorator"
+      example: "@app.get('/users') (שורה 25)"
+    
+    - description: "Accurate inheritance"
+      example: "class User(BaseModel): (שורה 10)"
+  
+  bad:
+    - description: "Assumed method"
+      example: "המחלקה כנראה מכילה method login()"
+    
+    - description: "Invented decorator"
+      example: "יש decorator @cached אבל לא נמצא בקוד"
+    
+    - description: "Guessed type hint"
+      example: "הפונקציה מחזירה str (לא מצוין בקוד)"
+
+# Integration with IDEs
+ide_integration:
+  vscode:
+    tasks:
+      - name: "Document Python Module"
+        command: "@THE_DOCUMENTER_AGENT document module ${file}"
+    
+    snippets:
+      - trigger: "pydoc"
+        description: "Generate Python documentation"
+  
+  cursor:
+    activation: "@THE_DOCUMENTER_AGENT document python [MODULE_NAME]"
+  
+  claude_code:
+    rules_file: ".claude/rules/python-documentation.md"
+
+# Performance expectations
+performance:
+  chunking: "5-10 minutes per module"
+  documentation: "15-25 minutes per module"
+  validation: "2-5 minutes"
+
+---
+# Notes for maintainers
+# - Keep rules specific and measurable
+# - Provide examples for each rule
+# - Update patterns when Python evolves
+# - Test with real projects before releasing
+

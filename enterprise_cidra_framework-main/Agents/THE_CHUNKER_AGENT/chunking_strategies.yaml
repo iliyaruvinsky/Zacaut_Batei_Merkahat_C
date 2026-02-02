@@ -1,0 +1,509 @@
+# Chunking Strategies Configuration
+# Version: 1.0.0
+# Purpose: Define language-specific chunking rules
+
+---
+
+# Global Settings
+global:
+  max_tokens_per_chunk: 4000
+  min_tokens_per_chunk: 500
+  target_tokens_per_chunk: 2000
+  overlap_tokens: 200  # Token overlap between chunks for context
+  embedding_model: "text-embedding-3-small"  # For metadata generation
+
+# Language-Specific Strategies
+
+## ABAP (SAP)
+abap:
+  file_patterns:
+    - "*.abap"
+    - "*.txt"  # MACCABI convention
+
+  chunking_strategy:
+    default: "method_level"
+
+    rules:
+      - condition: "tokens < 4000"
+        strategy: "file_complete"
+
+      - condition: "is_class_method"
+        strategy: "method_level"
+        boundaries:
+          start: "METHOD"
+          end: "ENDMETHOD"
+        include_context:
+          before: ["method_signature", "local_types"]
+          after: []
+
+      - condition: "is_function_module"
+        strategy: "function_level"
+        boundaries:
+          start: "FUNCTION"
+          end: "ENDFUNCTION"
+        include_context:
+          before: ["function_signature", "data_declarations"]
+          after: []
+
+      - condition: "is_include"
+        strategy: "semantic_section"
+        boundaries:
+          markers:
+            - "^\\*-{50,}"  # Comment dividers
+            - "^FORM"
+            - "^ENDFORM"
+
+  metadata_extraction:
+    dependencies:
+      patterns:
+        - "CALL FUNCTION '([^']+)'"
+        - "CALL METHOD ([\\w-]+)"
+        - "DATA\\(\\w+\\) TYPE REF TO ([\\w]+)"
+
+    database_tables:
+      patterns:
+        - "SELECT.*FROM\\s+([\\w/]+)"
+        - "INSERT INTO\\s+([\\w/]+)"
+        - "UPDATE\\s+([\\w/]+)"
+        - "DELETE FROM\\s+([\\w/]+)"
+
+    tags:
+      patterns:
+        validation: ["CHECK", "VALIDATE", "VERIFY"]
+        data_retrieval: ["SELECT", "READ TABLE", "GET"]
+        data_modification: ["INSERT", "UPDATE", "DELETE", "MODIFY"]
+        ui_related: ["MESSAGE", "SET_TEXT", "SET_PROPERTY"]
+        authorization: ["AUTHORITY-CHECK", "CHECK_AUTH"]
+        calculation: ["COMPUTE", "CALCULATE", "ADD", "SUBTRACT"]
+
+## WebDynpro ABAP
+webdynpro:
+  file_patterns:
+    - "*_S_*.txt"  # Interface files
+    - "*_B_*.txt"  # Implementation files
+
+  chunking_strategy:
+    default: "context_aware"
+
+    rules:
+      - condition: "is_interface"
+        strategy: "node_definition_level"
+        boundaries:
+          start: "begin of Element_"
+          end: "end of Element_"
+        group_related: true
+        metadata:
+          mark_shared: true
+          check_component_controller: "0008_*.txt"
+
+      - condition: "is_implementation"
+        strategy: "handler_level"
+        boundaries:
+          patterns:
+            - "METHOD\\s+(ON\\w+)"
+            - "METHOD\\s+(WDD\\w+)"
+        include_context:
+          before: ["local_data"]
+          after: []
+
+      - condition: "is_component_controller"
+        strategy: "shared_component"
+        special_handling:
+          mark_as_shared: true
+          link_to_all_views: true
+          high_priority: true
+
+  metadata_extraction:
+    context_nodes:
+      patterns:
+        - "begin of Element_(\\w+)"
+        - "Context_\\w+\\s+type ref to\\s+(\\w+)"
+
+    shared_markers:
+      check_file: "0008_*.txt"
+      if_found: "shared from Component Controller"
+      if_not_found: "unique to this screen"
+
+## AS/400 (RPG/COBOL)
+as400:
+  rpg:
+    file_patterns:
+      - "*.rpgle"
+      - "*.sqlrpgle"
+      - "*.rpg"
+
+    chunking_strategy:
+      default: "procedure_level"
+
+      rules:
+        - condition: "is_free_format"
+          strategy: "procedure_level"
+          boundaries:
+            start: "dcl-proc\\s+(\\w+)"
+            end: "end-proc"
+          include_context:
+            before: ["prototypes", "data_structures"]
+            after: []
+
+        - condition: "is_fixed_format"
+          strategy: "spec_section"
+          boundaries:
+            h_specs: "^H"
+            f_specs: "^F"
+            d_specs: "^D"
+            c_specs: "^C"
+          group_by_type: true
+
+        - condition: "has_copy_members"
+          strategy: "cross_reference"
+          detect_shared:
+            patterns:
+              - "/COPY\\s+(\\w+)"
+              - "/INCLUDE\\s+(\\w+)"
+            mark_as_shared: true
+
+    metadata_extraction:
+      procedures:
+        patterns:
+          - "dcl-proc\\s+(\\w+)"
+          - "^\\s*P\\s+(\\w+)\\s+B"
+
+      data_structures:
+        patterns:
+          - "dcl-ds\\s+(\\w+)"
+          - "^\\s*D\\s+(\\w+)\\s+DS"
+
+      database_files:
+        patterns:
+          - "^\\s*F(\\w+)"
+          - "EXEC SQL SELECT.*FROM\\s+(\\w+)"
+
+  cobol:
+    file_patterns:
+      - "*.cbl"
+      - "*.cob"
+
+    chunking_strategy:
+      default: "paragraph_level"
+
+      rules:
+        - condition: "has_divisions"
+          strategy: "division_section"
+          boundaries:
+            identification: "IDENTIFICATION DIVISION"
+            environment: "ENVIRONMENT DIVISION"
+            data: "DATA DIVISION"
+            procedure: "PROCEDURE DIVISION"
+
+        - condition: "in_procedure_division"
+          strategy: "paragraph_level"
+          boundaries:
+            start: "^\\s*(\\w+)\\s+SECTION"
+            end: "^\\s*\\w+\\s+SECTION|^\\s*END PROGRAM"
+
+## JavaScript/TypeScript
+javascript:
+  file_patterns:
+    - "*.js"
+    - "*.jsx"
+    - "*.ts"
+    - "*.tsx"
+
+  chunking_strategy:
+    default: "function_component_level"
+
+    rules:
+      - condition: "is_react_component"
+        strategy: "component_level"
+        boundaries:
+          function_component: "^(export\\s+)?(default\\s+)?function\\s+(\\w+)"
+          class_component: "^(export\\s+)?(default\\s+)?class\\s+(\\w+).*extends.*Component"
+        include_context:
+          before: ["imports", "types"]
+          after: ["exports"]
+
+      - condition: "is_module"
+        strategy: "export_level"
+        boundaries:
+          named_export: "^export\\s+(function|const|class)"
+          default_export: "^export\\s+default"
+
+      - condition: "is_utility_file"
+        strategy: "function_level"
+        boundaries:
+          start: "^(export\\s+)?(async\\s+)?function\\s+(\\w+)"
+          end: "^}"
+
+  metadata_extraction:
+    imports:
+      patterns:
+        - "import\\s+.*from\\s+['\"]([^'\"]+)['\"]"
+        - "require\\(['\"]([^'\"]+)['\"]\\)"
+
+    exports:
+      patterns:
+        - "export\\s+(default\\s+)?\\{?([\\w,\\s]+)\\}?"
+
+    react_hooks:
+      patterns:
+        - "use(State|Effect|Context|Reducer|Callback|Memo|Ref)"
+
+## Python
+python:
+  file_patterns:
+    - "*.py"
+
+  chunking_strategy:
+    default: "class_function_level"
+
+    rules:
+      - condition: "is_class"
+        strategy: "class_level"
+        boundaries:
+          start: "^class\\s+(\\w+)"
+          end: "^class\\s+|^def\\s+|^$"
+        include_methods: true
+
+      - condition: "is_function"
+        strategy: "function_level"
+        boundaries:
+          start: "^def\\s+(\\w+)"
+          end: "^def\\s+|^class\\s+|^$"
+
+      - condition: "is_module"
+        strategy: "semantic_section"
+        boundaries:
+          markers:
+            - "^# -{50,}"  # Comment dividers
+            - "^if __name__ == ['\"]__main__['\"]"
+
+  metadata_extraction:
+    imports:
+      patterns:
+        - "^import\\s+([\\w.]+)"
+        - "^from\\s+([\\w.]+)\\s+import"
+
+    decorators:
+      patterns:
+        - "@(\\w+)"
+
+    type_hints:
+      patterns:
+        - "->\\s+([\\w\\[\\]]+)"
+        - ":\\s+([\\w\\[\\]]+)\\s+="
+
+## SQL
+sql:
+  file_patterns:
+    - "*.sql"
+    - "*.prc"
+    - "*.fnc"
+
+  chunking_strategy:
+    default: "object_level"
+
+    rules:
+      - condition: "is_stored_procedure"
+        strategy: "procedure_level"
+        boundaries:
+          start: "CREATE\\s+PROCEDURE\\s+(\\w+)"
+          end: "END\\s+PROCEDURE|GO|;"
+
+      - condition: "is_function"
+        strategy: "function_level"
+        boundaries:
+          start: "CREATE\\s+FUNCTION\\s+(\\w+)"
+          end: "END\\s+FUNCTION|GO|;"
+
+      - condition: "is_view"
+        strategy: "view_level"
+        boundaries:
+          start: "CREATE\\s+VIEW\\s+(\\w+)"
+          end: "GO|;"
+
+      - condition: "is_trigger"
+        strategy: "trigger_level"
+        boundaries:
+          start: "CREATE\\s+TRIGGER\\s+(\\w+)"
+          end: "END\\s+TRIGGER|GO|;"
+
+# Adaptive Strategy Rules
+adaptive_strategy:
+  # Automatically select best strategy based on file analysis
+
+  rules:
+    - name: "Small file optimization"
+      condition: "file_tokens < 4000"
+      action: "use_file_complete"
+      priority: 1
+
+    - name: "Class-based optimization"
+      condition: "has_clear_classes AND class_count < 5"
+      action: "use_class_level"
+      priority: 2
+
+    - name: "Function-based optimization"
+      condition: "has_many_functions AND avg_function_size < 3000"
+      action: "use_function_level"
+      priority: 3
+
+    - name: "Semantic grouping"
+      condition: "lacks_clear_boundaries OR very_large_file"
+      action: "use_semantic_grouping"
+      priority: 4
+
+    - name: "Shared component priority"
+      condition: "is_referenced_by_multiple"
+      action: "use_cross_reference"
+      priority: 0  # Highest priority
+
+# Cross-Reference Detection
+cross_reference:
+  maccabi_icm:
+    component_controller_files:
+      - "0008_*.txt"
+
+    shared_detection:
+      method: "grep"
+      command: "grep -l '{node_name}' WD/0008_*.txt"
+      if_found: "mark_as_shared"
+      if_not_found: "mark_as_unique"
+
+    shared_markers:
+      in_metadata: true
+      in_summary: true
+      prefix: "### {node_name} (shared from Component Controller!)"
+
+  as400:
+    copy_member_detection:
+      method: "scan_includes"
+      patterns:
+        - "/COPY\\s+(\\w+)"
+        - "/INCLUDE\\s+(\\w+)"
+      mark_as_shared: true
+
+# Metadata Template
+metadata_template:
+  required_fields:
+    - chunk_id
+    - type
+    - file
+    - language
+    - tokens
+    - content
+    - summary
+    - tags
+    - dependencies
+    - used_by
+    - complexity
+
+  optional_fields:
+    - related_chunks
+    - parent_chunk
+    - child_chunks
+    - business_process
+    - database_tables
+    - external_systems
+    - search_keywords
+    - embedding_description
+
+  generated_fields:
+    summary:
+      method: "llm"
+      prompt: "Summarize this code in 1-2 sentences"
+
+    tags:
+      method: "hybrid"
+      sources:
+        - "pattern_matching"
+        - "llm_extraction"
+      min_tags: 3
+      max_tags: 7
+
+    complexity:
+      method: "heuristic"
+      factors:
+        - "cyclomatic_complexity"
+        - "nesting_depth"
+        - "line_count"
+        - "dependency_count"
+      thresholds:
+        low: "score < 10"
+        medium: "score < 30"
+        high: "score >= 30"
+
+    embedding_description:
+      method: "llm"
+      prompt: "Create a 2-3 sentence description optimized for semantic search"
+
+# Quality Thresholds
+quality:
+  chunk_size:
+    min: 500
+    target: 2000
+    max: 8000
+    warn_if_below: 300
+    error_if_above: 10000
+
+  metadata_completeness:
+    required_fields_present: 100  # %
+    optional_fields_present: 70   # %
+
+  relationship_mapping:
+    dependencies_mapped: 90  # %
+    bidirectional_links: 95  # %
+
+  boundary_accuracy:
+    respect_logical_boundaries: 95  # %
+    minimal_incomplete_statements: 98  # %
+
+# Output Formats
+output:
+  json:
+    enabled: true
+    path: "CHUNKS/repository.json"
+    pretty_print: true
+    include_content: true
+
+  markdown:
+    enabled: true
+    path: "CHUNKS/documentation.md"
+    include_code: false  # Link to chunks instead
+    include_relationships: true
+
+  vector_db:
+    enabled: true
+    format: "pinecone"  # or "chroma", "weaviate", "qdrant"
+    path: "CHUNKS/vectors.jsonl"
+    embedding_model: "text-embedding-3-small"
+    metadata_fields:
+      - "summary"
+      - "tags"
+      - "language"
+      - "file"
+      - "dependencies"
+
+  graph_db:
+    enabled: false
+    format: "neo4j"  # or "cypher", "gremlin"
+    path: "CHUNKS/graph.cypher"
+    include_all_relationships: true
+
+# Performance Tuning
+performance:
+  parallel_processing:
+    enabled: true
+    max_workers: 4
+
+  caching:
+    enabled: true
+    cache_parsed_ast: true
+    cache_metadata: true
+    cache_embeddings: true
+
+  batching:
+    llm_requests: 10  # Batch size for LLM calls
+    embedding_requests: 100
+
+---
+# End of Configuration
