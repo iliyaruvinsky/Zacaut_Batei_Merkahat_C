@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "component": "ShrinkPharm",
+    "generated_at": "2026-02-03T12:00:00Z",
+    "total_nodes": 4,
+    "total_edges": 6
+  },
+  "nodes": [
+    {"id": "ch_shrink_001_globals_main", "type": "globals_and_function", "function": "main", "file": "ShrinkPharm.c"},
+    {"id": "ch_shrink_002_terminate_handler", "type": "function", "function": "TerminateHandler", "file": "ShrinkPharm.c"},
+    {"id": "ch_shrink_003_odbc_operators", "type": "file_complete", "file": "MacODBC_MyOperators.c"},
+    {"id": "ch_shrink_004_build", "type": "file_complete", "file": "Makefile"}
+  ],
+  "edges": [
+    {"from": "ch_shrink_001_globals_main", "to": "ch_shrink_002_terminate_handler", "type": "registers_handler"},
+    {"from": "ch_shrink_001_globals_main", "to": "ch_shrink_003_odbc_operators", "type": "uses_operators"},
+    {"from": "ch_shrink_002_terminate_handler", "to": "ch_shrink_001_globals_main", "type": "uses_globals"},
+    {"from": "ch_shrink_004_build", "to": "ch_shrink_001_globals_main", "type": "builds"}
+  ],
+  "call_graph": {
+    "main": {
+      "calls_internal": ["TerminateHandler (via sigaction registration)"],
+      "calls_external": [
+        "getpid", "GetDate", "GetTime", "strcpy", "getenv", "GerrLogFnameMini",
+        "gethostname", "strcmp", "memset", "sigaction", "GerrLogReturn",
+        "SQLMD_connect", "sleep", "DeclareAndOpenCursorInto", "SQLERR_error_test",
+        "FetchCursor", "SQLERR_code_cmp", "strip_spaces", "IncrementDate",
+        "sprintf", "ExecSQL", "CommitAllWork", "CloseCursor", "FreeStatement",
+        "SQLMD_disconnect", "exit"
+      ],
+      "uses_operators": [
+        "ShrinkPharmControlCur",
+        "ShrinkPharmSelectQuantity",
+        "ShrinkPharmSelectCur",
+        "ShrinkPharmDeleteCurrentRow",
+        "ShrinkPharmSaveStatistics"
+      ]
+    },
+    "TerminateHandler": {
+      "calls_external": [
+        "sigaction", "GetTime", "GerrLogReturn", "SQLMD_disconnect",
+        "SQLERR_error_test", "ExitSonProcess", "RollbackAllWork"
+      ],
+      "triggered_by": ["SIGFPE"]
+    }
+  },
+  "external_dependencies": {
+    "GenLib": {
+      "functions": ["GetDate", "GetTime", "IncrementDate", "strip_spaces", "GerrLogFnameMini", "GerrLogReturn", "ExitSonProcess"]
+    },
+    "GenSql": {
+      "functions": ["SQLMD_connect", "SQLMD_disconnect", "SQLERR_error_test", "SQLERR_code_cmp", "DeclareAndOpenCursorInto", "FetchCursor", "CloseCursor", "ExecSQL", "FreeStatement", "CommitAllWork", "RollbackAllWork"],
+      "data": ["MAIN_DB", "SQLCODE", "LOCK_TIMEOUT", "DEADLOCK_PRIORITY", "ODBC_PRESERVE_CURSORS"]
+    },
+    "system": {
+      "functions": ["getpid", "gethostname", "getenv", "strcpy", "strcmp", "memset", "sprintf", "sigaction", "sleep", "exit"]
+    }
+  },
+  "database_tables": {
+    "control_table": {
+      "name": "shrinkpharm",
+      "columns_used": ["table_name", "days_to_retain", "date_column_name", "use_where_clause", "commit_count", "purge_enabled", "last_run_date", "last_run_time", "last_run_num_purged"],
+      "operations": ["SELECT (read config)", "UPDATE (write stats)"]
+    },
+    "target_tables": {
+      "name": "dynamic (from shrinkpharm.table_name)",
+      "operations": ["SELECT (scan rows)", "DELETE (purge old rows)"]
+    }
+  },
+  "data_flow": {
+    "input": "shrinkpharm control table (config rows with purge_enabled <> 0)",
+    "processing": "For each target table: compute MinDateToRetain, SELECT rows, DELETE old rows, COMMIT in batches",
+    "output": "UPDATE shrinkpharm with last_run_date, last_run_time, last_run_num_purged; logs"
+  }
+}

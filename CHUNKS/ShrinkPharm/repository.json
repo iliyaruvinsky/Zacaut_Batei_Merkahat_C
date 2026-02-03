@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "project": "Zacaut_Batei_Merkahat_C",
+    "component": "ShrinkPharm",
+    "chunked_at": "2026-02-03T12:00:00Z",
+    "total_chunks": 4,
+    "total_lines": 600,
+    "total_files": 4,
+    "language": "C",
+    "agent": "CIDRA Chunker v1.0.0",
+    "task_id": "CH-SHRINK-001"
+  },
+  "chunks": [
+    {
+      "chunk_id": "ch_shrink_001_globals_main",
+      "file": "ShrinkPharm.c",
+      "type": "globals_and_function",
+      "function": "main",
+      "line_start": 1,
+      "line_end": 359,
+      "tokens": 4500,
+      "summary": "File header, includes (MacODBC.h), global variables (restart_flg, caught_signal, TikrotProductionMode, sig_act_terminate, need_rollback, recs_to_commit, recs_committed), and main() function. Main connects to DB via SQLMD_connect retry loop, reads purge configuration from shrinkpharm control table, iterates target tables, deletes rows older than retention cutoff using DELETE WHERE CURRENT OF cursor, commits in batches, writes statistics back to shrinkpharm table, logs totals.",
+      "tags": ["main", "database", "odbc", "purge", "housekeeping", "cursor", "commit", "shrinkpharm"],
+      "dependencies": ["MacODBC.h", "GenSql", "GenLib"],
+      "includes": ["MacODBC.h"],
+      "globals": ["restart_flg", "caught_signal", "TikrotProductionMode", "sig_act_terminate", "need_rollback", "recs_to_commit", "recs_committed"],
+      "calls": ["getpid", "GetDate", "GetTime", "strcpy", "getenv", "GerrLogFnameMini", "gethostname", "strcmp", "memset", "sigaction", "GerrLogReturn", "SQLMD_connect", "sleep", "DeclareAndOpenCursorInto", "SQLERR_error_test", "FetchCursor", "SQLERR_code_cmp", "strip_spaces", "IncrementDate", "sprintf", "ExecSQL", "CommitAllWork", "CloseCursor", "FreeStatement", "SQLMD_disconnect", "exit"],
+      "database_operations": {
+        "connection": "SQLMD_connect in retry loop until MAIN_DB->Connected",
+        "cursors": ["ShrinkPharmControlCur", "ShrinkPharmSelectCur"],
+        "sql_operators": ["ShrinkPharmControlCur", "ShrinkPharmSelectQuantity", "ShrinkPharmSelectCur", "ShrinkPharmDeleteCurrentRow", "ShrinkPharmSaveStatistics"],
+        "tables_accessed": ["shrinkpharm (control table)", "dynamic target tables from config"]
+      },
+      "key_logic": {
+        "purge_calculation": "MinDateToRetain = IncrementDate(SysDate, 0 - days_to_retain)",
+        "delete_method": "DELETE FROM <table> WHERE CURRENT OF ShrinkPharmSelCur",
+        "commit_batching": "CommitAllWork() every commit_count rows"
+      },
+      "configuration": {
+        "LOCK_TIMEOUT": "1000 ms",
+        "DEADLOCK_PRIORITY": "-2 (below normal)",
+        "ODBC_PRESERVE_CURSORS": "1 (preserve cursors after COMMIT)"
+      },
+      "complexity": "medium"
+    },
+    {
+      "chunk_id": "ch_shrink_002_terminate_handler",
+      "file": "ShrinkPharm.c",
+      "type": "function",
+      "function": "TerminateHandler",
+      "line_start": 363,
+      "line_end": 431,
+      "tokens": 800,
+      "summary": "Signal handler for terminating/fatal signals (SIGFPE, SIGSEGV, SIGTERM). Resets signal handling via sigaction, detects endless loops (same signal at same time), performs RollbackAllWork on SIGFPE/SIGSEGV, logs descriptive message, calls ExitSonProcess. Note: Log messages incorrectly reference 'As400UnixServer' (copy-paste artifact).",
+      "tags": ["signal_handler", "SIGFPE", "SIGSEGV", "SIGTERM", "error_handling", "rollback"],
+      "dependencies": ["sigaction", "GerrLogReturn", "RollbackAllWork", "ExitSonProcess", "SQLMD_disconnect"],
+      "calls": ["sigaction", "GetTime", "GerrLogReturn", "SQLMD_disconnect", "SQLERR_error_test", "ExitSonProcess", "RollbackAllWork"],
+      "signals_handled": ["SIGFPE", "SIGSEGV", "SIGTERM"],
+      "notes": ["Contains copy-paste artifact: logs 'As400UnixServer' instead of 'ShrinkPharm'"],
+      "complexity": "low"
+    },
+    {
+      "chunk_id": "ch_shrink_003_odbc_operators",
+      "file": "MacODBC_MyOperators.c",
+      "type": "file_complete",
+      "line_start": 1,
+      "line_end": 133,
+      "tokens": 1600,
+      "summary": "ODBC SQL operator case definitions for ShrinkPharm, inserted into a switch statement. Defines 5 operators: ShrinkPharmControlCur (SELECT from shrinkpharm where purge_enabled<>0), ShrinkPharmSaveStatistics (UPDATE shrinkpharm WHERE CURRENT OF), ShrinkPharmSelectQuantity (dynamic COUNT query), ShrinkPharmSelectCur (dynamic SELECT cursor for deletion), ShrinkPharmDeleteCurrentRow (dynamic DELETE with sticky statement). Includes GenSql_ODBC_Operators.c for shared operators.",
+      "tags": ["database", "odbc", "sql", "cursor", "operators", "switch_case"],
+      "dependencies": ["GenSql_ODBC_Operators.c"],
+      "sql_operators": {
+        "ShrinkPharmControlCur": {
+          "sql": "SELECT table_name, days_to_retain, date_column_name, use_where_clause, commit_count FROM shrinkpharm WHERE purge_enabled <> 0 ORDER BY table_name",
+          "cursor_name": "ShrinkPharmCtrlCur",
+          "output_columns": 5,
+          "output_spec": "char(30), int, char(30), short, int"
+        },
+        "ShrinkPharmSaveStatistics": {
+          "sql": "UPDATE shrinkpharm SET last_run_date = ?, last_run_time = ?, last_run_num_purged = ? WHERE CURRENT OF ShrinkPharmCtrlCur",
+          "input_columns": 3,
+          "input_spec": "int, int, int"
+        },
+        "ShrinkPharmSelectQuantity": {
+          "sql": "NULL (dynamic - COUNT query)",
+          "output_columns": 1,
+          "output_spec": "int"
+        },
+        "ShrinkPharmSelectCur": {
+          "sql": "NULL (dynamic - SELECT date_column FROM table)",
+          "cursor_name": "ShrinkPharmSelCur",
+          "output_columns": 1,
+          "output_spec": "int"
+        },
+        "ShrinkPharmDeleteCurrentRow": {
+          "sql": "NULL (dynamic - DELETE WHERE CURRENT OF)",
+          "sticky": true
+        }
+      },
+      "complexity": "low"
+    },
+    {
+      "chunk_id": "ch_shrink_004_build",
+      "file": "Makefile",
+      "type": "file_complete",
+      "line_start": 1,
+      "line_end": 26,
+      "tokens": 200,
+      "summary": "Unix Makefile for building ShrinkPharm.exe. Includes shared Defines.mak and Rules.mak. Links with -lodbc and defines _GNU_SOURCE. Provides 'all' and 'clean' targets.",
+      "tags": ["build", "makefile", "odbc", "unix"],
+      "dependencies": ["../Util/Defines.mak", "../Util/Rules.mak"],
+      "build_info": {
+        "target": "ShrinkPharm.exe",
+        "sources": ["ShrinkPharm.c"],
+        "objects": ["ShrinkPharm.o"],
+        "link_flags": "-lodbc -D_GNU_SOURCE"
+      },
+      "complexity": "low"
+    }
+  ]
+}

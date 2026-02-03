@@ -111,7 +111,8 @@ source_code/
 | ID | Task | Status | Output |
 |----|------|--------|--------|
 | RES-CONTEXT-001 | Build system context map | ✅ COMPLETE | RESEARCH/*.md |
-| RES-DEEPDIVE-001 | Folder-by-folder deep dive | 🔵 ACTIVE | RESEARCH/*_deepdive.md |
+| RES-DEEPDIVE-001 | Folder-by-folder deep dive | ⏸️ PAUSED | RESEARCH/*_deepdive.md |
+| RES-SHRINKPHARM-001 | ShrinkPharm deep dive | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
 
 ### CHUNKER (CH) - Stage 0
 
@@ -122,6 +123,7 @@ source_code/
 | CH-AS400-001 | As400UnixServer | 📋 PLANNED | - | CHUNKS/As400UnixServer/ |
 | CH-PHARM-001 | PharmTcpServer | 📋 PLANNED | - | CHUNKS/PharmTcpServer/ |
 | CH-GENLIB-001 | GenLib | 📋 PLANNED | - | CHUNKS/GenLib/ |
+| CH-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | RES-SHRINKPHARM-001 ✅ | CHUNKS/ShrinkPharm/ |
 
 ### DOCUMENTER (DOC) - Stage 1
 
@@ -132,6 +134,7 @@ source_code/
 | DOC-AS400-001 | As400UnixServer | 📋 PLANNED | CH-AS400-001 | Documentation/As400UnixServer/ |
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
 | DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
+| DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
 
 ### RECOMMENDER (REC) - Stage 2
 
@@ -251,6 +254,56 @@ METHOD:
 OUTPUT: RESEARCH/{ComponentName}_deepdive.md for each
 FINAL: RESEARCH/cross_reference_matrix.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-03] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 PRIORITY DISPATCH: RES-SHRINKPHARM-001
+PRIORITY: P0 - CLIENT REQUEST - START NOW
+PAUSE: RES-DEEPDIVE-001 (resume after ShrinkPharm complete)
+
+TARGET: source_code/ShrinkPharm/
+PURPOSE: ODBC database shrink/cleanup utility for MS-SQL Pharmacy
+
+FILE INVENTORY (verified):
+| File | Lines | Purpose |
+|------|-------|---------|
+| ShrinkPharm.c | 431 | Main utility - ODBC database shrink tool |
+| MacODBC_MyOperators.c | 133 | ODBC operator helpers |
+| MacODBC_MyCustomWhereClauses.c | 10 | Custom SQL clauses |
+| Makefile | ~20 | Build configuration |
+| **TOTAL** | **574** | Small utility component |
+
+RESEARCH OBJECTIVES:
+1. Purpose Analysis - What does it shrink? What tables? What criteria?
+2. Function Inventory - ALL functions with file:line citations
+3. Database Operations - ODBC calls, SQL queries, tables accessed
+4. Dependencies - Headers, GenLib/GenSql usage
+5. Configuration - Args, env vars, setup params
+6. Cross-References - Relationship to FatherProcess, PharmTcpServer
+
+OUTPUT: RESEARCH/ShrinkPharm_deepdive.md
+PIPELINE: RES-SHRINKPHARM-001 → CH-SHRINK-001 → DOC-SHRINK-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### To Chunker (CH)
+```
+[2026-02-02] RES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: RES-SHRINKPHARM-001 COMPLETE
+OUTPUT: RESEARCH/ShrinkPharm_deepdive.md
+
+Exact counts verified (source files only): 574 lines total
+- ShrinkPharm.c: 431
+- MacODBC_MyOperators.c: 133
+- MacODBC_MyCustomWhereClauses.c: 10
+
+Key anchors (see deep-dive for full citations):
+- Purge plan driven by DB table shrinkpharm (purge_enabled <> 0); each row supplies table_name/date_column_name/days_to_retain/commit_count.
+- Deletes execute via DELETE ... WHERE CURRENT OF ShrinkPharmSelCur with CommitAllWork batching; ODBC_PRESERVE_CURSORS is set TRUE in ShrinkPharm.
+
+NEXT: You can start CH-SHRINK-001 now.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Chunker (CH)
@@ -319,6 +372,40 @@ KEY FINDINGS:
 
 READY FOR: DOC-FATHER-001
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-03] CHUNKER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: CH-SHRINK-001 COMPLETE
+
+RESULTS:
+- Chunks: 4
+- Lines: 600 (574 source + 26 build)
+- Files: 4 (ShrinkPharm.c, MacODBC_MyOperators.c, MacODBC_MyCustomWhereClauses.c, Makefile)
+- Strategy: File-level (small component with 2 functions)
+
+OUTPUT: CHUNKS/ShrinkPharm/
+- repository.json (all 4 chunks with metadata)
+- graph.json (dependency relationships)
+- analysis.json (codebase statistics)
+- run_manifest.json (execution metadata)
+- DOCUMENTER_INSTRUCTIONS.md (handoff document)
+
+KEY FINDINGS:
+- Standalone DB housekeeping utility - NOT a long-running server
+- Purges old rows from target tables based on shrinkpharm control table config
+- DELETE WHERE CURRENT OF with batch CommitAllWork; ODBC_PRESERVE_CURSORS=1
+- Does NOT use InitSonProcess() - connects directly via SQLMD_connect
+- DEADLOCK_PRIORITY=-2 (below normal) to privilege real-time operations
+
+CODE QUALITY NOTES:
+- TerminateHandler logs "As400UnixServer" instead of "ShrinkPharm" (copy-paste artifact)
+- Unused globals: need_rollback, recs_to_commit, recs_committed
+
+SECURITY NOTE:
+- Dynamic SQL built from shrinkpharm table values - document risk but do NOT copy table names
+
+READY FOR: DOC-SHRINK-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Documenter (DOC)
@@ -355,6 +442,35 @@ OUTPUT: Documentation/FatherProcess/
 
 READY FOR: Client review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-03] DOCUMENTER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: DOC-SHRINK-001 COMPLETE
+
+RESULTS:
+- Files: 7 documentation files created
+- Score: 100/100
+- Forbidden words: 0
+- Careful language: 55 occurrences
+- Source lines verified: 574 (3 source files + 1 build file = 600 total)
+- Functions documented: 2 (main, TerminateHandler)
+- SQL Operators documented: 5
+
+OUTPUT: Documentation/ShrinkPharm/
+- 01_PROGRAM_SPECIFICATION.md
+- 02_SYSTEM_ARCHITECTURE.md
+- 03_TECHNICAL_ANALYSIS.md
+- 04_BUSINESS_LOGIC.md
+- 05_CODE_ARTIFACTS.md
+- README.md
+- VALIDATION_REPORT.md
+
+CODE QUALITY NOTES DOCUMENTED:
+- Copy-paste artifact: TerminateHandler logs "As400UnixServer" (ShrinkPharm.c:388-390, 426-429)
+- Unused globals: need_rollback, recs_to_commit, recs_committed (ShrinkPharm.c:30-32)
+
+READY FOR: Client review
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Recommender (REC)
@@ -371,14 +487,24 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** FatherProcess chunking + Deep-dive research (parallel)
+**Sprint Goal:** ShrinkPharm pipeline (client priority)
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
-| P0 | RES-CONTEXT-001 | Researcher | ✅ COMPLETE | Research complete |
-| P0 | RES-DEEPDIVE-001 | Researcher | 🔵 ACTIVE | Folder-by-folder deep dives |
-| P0 | CH-FATHER-001 | Chunker | ✅ COMPLETE | CHUNKS/FatherProcess/ |
-| P1 | DOC-FATHER-001 | Documenter | ✅ COMPLETE | Documentation/FatherProcess/ |
+| P0 | RES-SHRINKPHARM-001 | Researcher | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
+| P1 | CH-SHRINK-001 | Chunker | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
+| P2 | DOC-SHRINK-001 | Documenter | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
+| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after ShrinkPharm |
+
+**Completed This Session:**
+| Task | Status | Output |
+|------|--------|--------|
+| RES-CONTEXT-001 | ✅ COMPLETE | RESEARCH/*.md |
+| RES-SHRINKPHARM-001 | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
+| CH-FATHER-001 | ✅ COMPLETE | CHUNKS/FatherProcess/ |
+| DOC-FATHER-001 | ✅ COMPLETE | Documentation/FatherProcess/ (100/100) |
+| CH-SHRINK-001 | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
+| DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
 
 ---
 
@@ -426,4 +552,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-02*
+*Maintained by Orc. Last sync: 2026-02-03 (DOC-SHRINK-001 complete)*

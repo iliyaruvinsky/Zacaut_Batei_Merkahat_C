@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "component": "ShrinkPharm",
+    "analyzed_at": "2026-02-03T12:00:00Z",
+    "analyzer": "CIDRA Chunker v1.0.0"
+  },
+  "file_statistics": {
+    "total_files": 4,
+    "total_lines": 600,
+    "source_files": {
+      "count": 3,
+      "lines": 574
+    },
+    "build_files": {
+      "count": 1,
+      "lines": 26
+    },
+    "files": [
+      {
+        "file": "ShrinkPharm.c",
+        "lines": 431,
+        "functions": 2,
+        "complexity": "medium",
+        "purpose": "Main utility - DB housekeeping via purge"
+      },
+      {
+        "file": "MacODBC_MyOperators.c",
+        "lines": 133,
+        "sql_operators": 5,
+        "complexity": "low",
+        "purpose": "ODBC SQL operator definitions"
+      },
+      {
+        "file": "MacODBC_MyCustomWhereClauses.c",
+        "lines": 10,
+        "where_clauses": 0,
+        "complexity": "low",
+        "purpose": "Placeholder for custom WHERE clauses"
+      },
+      {
+        "file": "Makefile",
+        "lines": 26,
+        "complexity": "low",
+        "purpose": "Unix build configuration"
+      }
+    ]
+  },
+  "function_inventory": {
+    "total_functions": 2,
+    "functions": [
+      {
+        "name": "main",
+        "line_start": 35,
+        "line_end": 359,
+        "lines": 324,
+        "complexity": "medium",
+        "description": "Entry point - connects to DB, reads shrinkpharm config, purges old rows from target tables"
+      },
+      {
+        "name": "TerminateHandler",
+        "line_start": 370,
+        "line_end": 430,
+        "lines": 60,
+        "complexity": "low",
+        "description": "Signal handler for SIGFPE/SIGSEGV/SIGTERM"
+      }
+    ]
+  },
+  "preprocessor_analysis": {
+    "defines": [
+      {"name": "MAIN", "line": 13, "purpose": "Mark this as main program file"}
+    ],
+    "includes": [
+      {"header": "MacODBC.h", "line": 16, "type": "system/project"}
+    ]
+  },
+  "global_variables": {
+    "total": 7,
+    "variables": [
+      {"name": "GerrSource", "type": "char*", "value": "__FILE__", "purpose": "Error logging source file"},
+      {"name": "restart_flg", "type": "static int", "value": "0", "purpose": "Restart flag (unused)"},
+      {"name": "caught_signal", "type": "int", "value": "0", "purpose": "Signal caught for shutdown"},
+      {"name": "TikrotProductionMode", "type": "int", "value": "1", "purpose": "Production vs test flag"},
+      {"name": "sig_act_terminate", "type": "struct sigaction", "purpose": "Signal handler config"},
+      {"name": "need_rollback", "type": "static int", "value": "0", "purpose": "Rollback needed flag (unused)"},
+      {"name": "recs_to_commit", "type": "static int", "value": "0", "purpose": "Records pending commit (unused)"},
+      {"name": "recs_committed", "type": "static int", "value": "0", "purpose": "Records committed count (unused)"}
+    ]
+  },
+  "database_operations": {
+    "connection": {
+      "method": "SQLMD_connect in retry loop",
+      "condition": "until MAIN_DB->Connected",
+      "retry_delay": "10 seconds",
+      "line": "128-137"
+    },
+    "configuration": {
+      "LOCK_TIMEOUT": {"value": 1000, "unit": "ms", "line": 124},
+      "DEADLOCK_PRIORITY": {"value": -2, "meaning": "below normal", "line": 125},
+      "ODBC_PRESERVE_CURSORS": {"value": 1, "meaning": "preserve cursors after COMMIT", "line": 126}
+    },
+    "cursors": [
+      {
+        "name": "ShrinkPharmCtrlCur",
+        "operator": "ShrinkPharmControlCur",
+        "purpose": "Read shrinkpharm control rows",
+        "cursor_type": "read with update"
+      },
+      {
+        "name": "ShrinkPharmSelCur",
+        "operator": "ShrinkPharmSelectCur",
+        "purpose": "Select rows to delete from target table",
+        "cursor_type": "read for delete"
+      }
+    ],
+    "tables_accessed": {
+      "shrinkpharm": {
+        "type": "control_table",
+        "operations": ["SELECT", "UPDATE"],
+        "columns": ["table_name", "days_to_retain", "date_column_name", "use_where_clause", "commit_count", "purge_enabled", "last_run_date", "last_run_time", "last_run_num_purged"]
+      },
+      "target_tables": {
+        "type": "dynamic",
+        "source": "shrinkpharm.table_name",
+        "operations": ["SELECT", "DELETE"]
+      }
+    }
+  },
+  "business_logic": {
+    "purpose": "Database housekeeping - purge old rows from configured tables",
+    "stated_as": "ODBC equivalent of ShrinkDoctor for MS-SQL Pharmacy application",
+    "algorithm": {
+      "step_1": "Connect to database via ODBC",
+      "step_2": "Read purge config from shrinkpharm table (WHERE purge_enabled <> 0)",
+      "step_3": "For each target table: compute MinDateToRetain = SysDate - days_to_retain",
+      "step_4": "SELECT rows where date_column < MinDateToRetain",
+      "step_5": "DELETE each row using WHERE CURRENT OF cursor",
+      "step_6": "COMMIT every commit_count deletions",
+      "step_7": "Update shrinkpharm with run statistics",
+      "step_8": "Log totals and exit"
+    },
+    "purge_calculation": "MinDateToRetain = IncrementDate(SysDate, 0 - days_to_retain)",
+    "deletion_method": "DELETE FROM <table> WHERE CURRENT OF ShrinkPharmSelCur",
+    "commit_model": "Batch commit every commit_count rows; ODBC_PRESERVE_CURSORS=1"
+  },
+  "runtime_configuration": {
+    "logging": {
+      "directory": "getenv(MAC_LOG)",
+      "filename": "ShrinkPharm_log"
+    },
+    "production_detection": {
+      "test_hostnames": ["linux01-test", "linux01-qa", "pharmlinux-test", "pharmlinux-qa"],
+      "production_default": true
+    }
+  },
+  "complexity_metrics": {
+    "overall": "low",
+    "factors": [
+      "Small codebase (574 source lines)",
+      "Only 2 functions",
+      "Simple linear control flow",
+      "Batch processing pattern",
+      "No IPC or shared memory"
+    ]
+  },
+  "key_findings": [
+    "ShrinkPharm is a standalone DB housekeeping utility - not a long-running server",
+    "Purge plan is configuration-driven via shrinkpharm control table",
+    "Uses DELETE WHERE CURRENT OF for row-by-row deletion with batch commits",
+    "Does NOT use InitSonProcess() - connects directly via SQLMD_connect",
+    "Sets below-normal DEADLOCK_PRIORITY to privilege real-time operations",
+    "ODBC_PRESERVE_CURSORS=1 allows cursors to survive COMMITs"
+  ],
+  "security_notes": [
+    "Dynamic SQL built from shrinkpharm table values (table_name, date_column_name) - potential SQL injection if control table is compromised",
+    "LogDir uses getenv(MAC_LOG) without NULL check - will crash if unset"
+  ],
+  "code_quality_notes": [
+    "TerminateHandler contains copy-paste artifact: logs 'As400UnixServer' instead of 'ShrinkPharm' (lines 388-390, 426-429)",
+    "Several global variables declared but appear unused (need_rollback, recs_to_commit, recs_committed)"
+  ],
+  "cross_references": {
+    "similar_to_FatherProcess": "Both use SQLMD_connect retry loop until MAIN_DB->Connected",
+    "different_from_servers": "Does NOT use InitSonProcess() bootstrap pattern",
+    "noted_by_SqlServer": "SqlServer.c comments mention ShrinkPharm as suitable for ODBC_PRESERVE_CURSORS"
+  }
+}

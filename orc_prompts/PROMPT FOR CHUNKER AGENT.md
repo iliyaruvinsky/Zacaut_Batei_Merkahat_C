@@ -243,6 +243,45 @@ KEY FINDINGS:
 HANDOFF: Ready for DOC-FATHER-001
 ```
 
+### [2026-02-03] Chunker:
+```
+STATUS: COMPLETE (CH-SHRINK-001)
+
+EXECUTION SUMMARY:
+- Started: 2026-02-03
+- Completed: 2026-02-03
+- Strategy: File-level (small component with 2 functions)
+
+RESULTS:
+- Total Chunks: 4
+- Total Lines: 600 (574 source + 26 build)
+- Total Files: 4 (ShrinkPharm.c, MacODBC_MyOperators.c, MacODBC_MyCustomWhereClauses.c, Makefile)
+
+OUTPUT FILES:
+- CHUNKS/ShrinkPharm/repository.json (all 4 chunks with metadata)
+- CHUNKS/ShrinkPharm/graph.json (dependency relationships)
+- CHUNKS/ShrinkPharm/analysis.json (codebase statistics)
+- CHUNKS/ShrinkPharm/run_manifest.json (execution metadata)
+- CHUNKS/ShrinkPharm/DOCUMENTER_INSTRUCTIONS.md (handoff document)
+
+KEY FINDINGS:
+- ShrinkPharm is standalone DB housekeeping utility - NOT a long-running server
+- Purges old rows from target tables based on shrinkpharm control table config
+- DELETE WHERE CURRENT OF with batch CommitAllWork; ODBC_PRESERVE_CURSORS=1
+- Does NOT use InitSonProcess() - connects directly via SQLMD_connect
+- DEADLOCK_PRIORITY=-2 (below normal) to privilege real-time operations
+
+CODE QUALITY NOTES:
+- TerminateHandler logs "As400UnixServer" instead of "ShrinkPharm" (copy-paste artifact at lines 388-390, 426-429)
+- Unused globals: need_rollback, recs_to_commit, recs_committed
+
+SECURITY NOTE:
+- Dynamic SQL built from shrinkpharm table values (table_name, date_column_name)
+- Document risk but do NOT copy actual table names from production
+
+HANDOFF: Ready for DOC-SHRINK-001
+```
+
 ---
 
 ## RULES

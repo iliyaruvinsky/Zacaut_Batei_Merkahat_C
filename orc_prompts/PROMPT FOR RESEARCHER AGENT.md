@@ -1,6 +1,6 @@
 # PROMPT FOR RESEARCHER AGENT (RES)
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-03
 **Updated By:** Orc
 **Status:** 🔵 ACTIVE
 
@@ -43,13 +43,126 @@
 
 ---
 
-## CURRENT TASK: RES-DEEPDIVE-001
+## 🚨 PRIORITY TASK: RES-SHRINKPHARM-001
 
-**Status:** 🔵 ACTIVE - START NOW
+**Status:** ✅ COMPLETE
+
+**Goal:** Deep-dive research on ShrinkPharm component (client priority)
+
+**Priority:** P0 - Client wants this component documented next
+
+**Target:** `source_code/ShrinkPharm/`
+
+---
+
+## RES-SHRINKPHARM-001: SHRINKPHARM RESEARCH
+
+### File Inventory (verified)
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| ShrinkPharm.c | 431 | Main utility - ODBC database shrink/cleanup |
+| MacODBC_MyOperators.c | 133 | ODBC operator helpers |
+| MacODBC_MyCustomWhereClauses.c | 10 | Custom SQL WHERE clauses |
+| Makefile | ~20 | Build configuration |
+| **TOTAL** | **574** | Small utility component |
+
+### Research Objectives
+
+1. **Purpose Analysis**
+   - What is "ShrinkPharm" vs "ShrinkDoctor"?
+   - What database records does it delete/shrink?
+   - What tables does it operate on?
+   - What is the deletion criteria (date-based? count-based?)?
+
+2. **Function Inventory**
+   - List ALL functions with exact file:line citations
+   - Document main() flow
+   - Document TerminateHandler signal handling
+
+3. **Database Operations**
+   - What ODBC calls are made?
+   - What SQL queries are executed (DELETE, SELECT)?
+   - What tables are accessed?
+   - Transaction handling (commit patterns, rollback)
+
+4. **Dependencies**
+   - Headers included (especially MacODBC.h usage)
+   - GenLib/GenSql functions used
+   - External system calls
+
+5. **Configuration**
+   - Command line arguments
+   - Environment variables
+   - Setup table parameters (if any)
+
+6. **Cross-References**
+   - Relationship to FatherProcess (is it spawned as child?)
+   - Relationship to PharmTcpServer/PharmWebServer
+   - Relationship to SqlServer component
+
+### Output
+
+Create: `RESEARCH/ShrinkPharm_deepdive.md`
+
+```markdown
+# ShrinkPharm - Deep Dive
+
+## Overview
+[What this utility does - from code analysis]
+
+## File Inventory
+| File | Lines | Purpose |
+|------|-------|---------|
+(exact counts verified)
+
+## Key Functions
+| Function | File:Line | Purpose |
+|----------|-----------|---------|
+(cite exact line numbers)
+
+## Database Operations
+- Tables accessed (with SQL patterns)
+- Query types (DELETE, SELECT)
+- Transaction handling
+
+## Dependencies
+- Headers included
+- Library functions used
+
+## Cross-References
+- Called by (which components)
+- Relationship to other components
+
+## Configuration
+- Arguments/parameters
+- Environment dependencies
+
+## Security Notes
+- Credentials (location only, redact values)
+
+## Open Questions
+- Unclear sections
+```
+
+### Quality Gates
+
+- [ ] All 3 .c files read completely
+- [ ] Exact line counts verified (574 total)
+- [ ] All functions listed with file:line citations
+- [ ] Database tables identified
+- [ ] ODBC call patterns documented
+- [ ] Cross-references to other components identified
+
+---
+
+## PAUSED TASK: RES-DEEPDIVE-001
+
+**Status:** ⏸️ PAUSED - Resume after RES-SHRINKPHARM-001 complete
 
 **Goal:** Deep-dive research into each source_code/ component, folder by folder
 
-**Priority:** P0 - Chunker needs detailed context for each component
+**Priority:** P1 - Chunker needs detailed context for each component
 
 **Approach:** Read ALL files in each folder. Comprehend thoroughly before moving to next.
 
@@ -438,6 +551,25 @@ Key findings (high-signal):
 
 Security note (values redacted in outputs):
 - Hard-coded secret values exist in source_code/Include/TikrotRPC.h and source_code/Include/global_1.h (documented by location only).
+```
+
+### [2026-02-02] Researcher:
+```
+Task: RES-SHRINKPHARM-001
+Status: COMPLETE
+Output:
+- RESEARCH/ShrinkPharm_deepdive.md
+
+Exact counts verified:
+- source_code/ShrinkPharm/ShrinkPharm.c: 431 lines
+- source_code/ShrinkPharm/MacODBC_MyOperators.c: 133 lines
+- source_code/ShrinkPharm/MacODBC_MyCustomWhereClauses.c: 10 lines
+TOTAL (source files): 574 lines exact
+
+High-signal findings (with citations in the deep-dive):
+- ShrinkPharm is an ODBC “ShrinkDoctor-equivalent” for Pharmacy MS-SQL housekeeping.
+- Purge plan is driven by DB control table shrinkpharm (purge_enabled <> 0) which supplies table_name/date_column_name/days_to_retain/commit_count.
+- Deletes are executed row-by-row via DELETE ... WHERE CURRENT OF ShrinkPharmSelCur, with CommitAllWork() batching and ODBC_PRESERVE_CURSORS=1.
 ```
 
 ---
