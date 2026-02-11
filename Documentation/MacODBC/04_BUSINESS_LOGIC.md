@@ -1,236 +1,236 @@
-# MacODBC.h - לוגיקה עסקית
+# MacODBC.h - Business Logic
 
-**רכיב**: MacODBC (שכבת תשתית ODBC)
-**מזהה משימה**: DOC-MACODBC-001
-**תאריך יצירה**: 2026-02-11
+**Component**: MacODBC (ODBC Infrastructure Layer)
+**Task ID**: DOC-MACODBC-002
+**Date Created**: 2026-02-11
 
 ---
 
-## מחזור חיי Cursor
+## Cursor Lifecycle
 
-על פי 25 המאקרואים ב-`MacODBC.h:311-335` ו-switch ה-CommandType ב-`MacODBC.h:634-763`, נראה כי מחזור חיי cursor מלא כולל:
+According to the 25 macros at `MacODBC.h:311-335` and the CommandType switch at `MacODBC.h:634-763`, the full cursor lifecycle appears to include:
 
-### 1. הצהרה (Declare)
+### 1. Declare
 ```
 DeclareCursor(db, op_id, &output_var)           → DECLARE_CURSOR
 DeclareCursorInto(db, op_id, &out1, &out2, ...) → DECLARE_CURSOR_INTO
 ```
-מגדיר: `NeedToPrepare=1`, `NeedToInterpretOp=1`
-**לא** מגדיר: `NeedToExecute` או `NeedToFetch`
+Sets: `NeedToPrepare=1`, `NeedToInterpretOp=1`
+Does **not** set: `NeedToExecute` or `NeedToFetch`
 
-### 2. הצהרה ופתיחה (Declare + Open)
+### 2. Declare + Open
 ```
 DeclareAndOpenCursor(db, op_id, &output_var, input_var)    → DECLARE_AND_OPEN_CURSOR
 DeclareAndOpenCursorInto(db, op_id, &o1, &o2, ..., in)     → DECLARE_AND_OPEN_CURSOR_INTO
 ```
-מגדיר: `NeedToPrepare=1`, `NeedToExecute=1`, `NeedToInterpretOp=1`
-**לא** מגדיר: `NeedToFetch`
+Sets: `NeedToPrepare=1`, `NeedToExecute=1`, `NeedToInterpretOp=1`
+Does **not** set: `NeedToFetch`
 
-### 3. פתיחה (Open)
+### 3. Open
 ```
 OpenCursor(db, op_id)                           → OPEN_CURSOR
 OpenCursorUsing(db, op_id, input_var)           → OPEN_CURSOR_USING
 ```
-מגדיר: `NeedToExecute=1`
+Sets: `NeedToExecute=1`
 
 ### 4. Fetch
 ```
 FetchCursor(db, op_id)                          → FETCH_CURSOR
 FetchCursorInto(db, op_id, &o1, &o2, ...)      → FETCH_CURSOR_INTO
 ```
-מגדיר: `NeedToFetch=1`
-FetchCursorInto גם מגדיר: `NeedToInterpretOp=1`, `InterpretOutputOnly=1`
+Sets: `NeedToFetch=1`
+FetchCursorInto also sets: `NeedToInterpretOp=1`, `InterpretOutputOnly=1`
 
-### 5. סגירה ושחרור
+### 5. Close and Free
 ```
 CloseCursor(db, op_id)                          → CLOSE_CURSOR
 FreeStatement(db, op_id)                        → FREE_STATEMENT
 ```
-`CloseCursor`: soft close (SQLCloseCursor) — statement נשאר prepared
-`FreeStatement`: full free (SQLFreeHandle) — שחרור מלא
+`CloseCursor`: soft close (SQLCloseCursor) — statement remains prepared
+`FreeStatement`: full free (SQLFreeHandle) — complete release
 
-### 6. הרצת SQL חד-פעמית
+### 6. Singleton SQL Execution
 ```
 ExecSQL(db, op_id, &output_var, input_var)      → SINGLETON_SQL_CALL
 ```
-מגדיר: `NeedToPrepare=1`, `NeedToExecute=1`, `NeedToFetch=1`, `NeedToInterpretOp=1`
+Sets: `NeedToPrepare=1`, `NeedToExecute=1`, `NeedToFetch=1`, `NeedToInterpretOp=1`
 
 ---
 
-## ניהול טרנזקציות
+## Transaction Management
 
-על פי `MacODBC.h:2396-2490`, נראה כי ישנם שני מודלים:
+According to `MacODBC.h:2396-2490`, there appear to be two models:
 
-### CommitWork / RollbackWork (ברמת DBC)
-על פי שורות 2428-2446, נראה כי:
-- `SQLEndTran(SQL_HANDLE_DBC, Database->HDBC, SQL_COMMIT)` — commit ל-DB ספציפי
-- אם ה-DB אינו MAIN_DB, גם מנקה `ALTERNATE_DB_USED`
+### CommitWork / RollbackWork (DBC level)
+According to lines 2428-2446:
+- `SQLEndTran(SQL_HANDLE_DBC, Database->HDBC, SQL_COMMIT)` — commit to specific DB
+- If the DB is not MAIN_DB, also clears `ALTERNATE_DB_USED`
 
-### CommitAllWork / RollbackAllWork (ברמת ENV או DBC)
-על פי שורות 2396-2427, נראה כי:
-- אם `ALTERNATE_DB_USED`: `SQLEndTran(SQL_HANDLE_ENV, ODBC_henv, SQL_COMMIT)` — commit ברמת ENV (שני DBs)
-- אם לא: `SQLEndTran(SQL_HANDLE_DBC, MAIN_DB->HDBC, SQL_COMMIT)` — commit ל-MAIN_DB בלבד (אופטימיזציה)
+### CommitAllWork / RollbackAllWork (ENV or DBC level)
+According to lines 2396-2427:
+- If `ALTERNATE_DB_USED`: `SQLEndTran(SQL_HANDLE_ENV, ODBC_henv, SQL_COMMIT)` — commit at ENV level (both DBs)
+- If not: `SQLEndTran(SQL_HANDLE_DBC, MAIN_DB->HDBC, SQL_COMMIT)` — commit to MAIN_DB only (optimization)
 
-**משמעות**: CommitAllWork משתמש ב-ENV level רק כשני DBs היו בשימוש, מונע commit מיותר ל-DB שלא נגע.
+**Implication**: CommitAllWork uses ENV level only when both DBs were used, avoiding an unnecessary commit to the DB that was not touched.
 
 ### Isolation Levels
-על פי שורות 2493-2529:
+According to lines 2493-2529:
 - `SetDirtyRead` → `SQL_TXN_READ_UNCOMMITTED`
 - `SetCommittedRead` → `SQL_TXN_READ_COMMITTED`
 - `SetRepeatableRead` → `SQL_TXN_REPEATABLE_READ`
 
-הערה: מדלג על Informix, כפי שנצפה בבדיקת `Database->Provider != ODBC_Informix`.
+Note: Skips Informix, as seen in the `Database->Provider != ODBC_Informix` check.
 
 ---
 
-## החלטת שיקוף
+## Mirroring Decision
 
-על פי ניתוח שלב 3 של ODBC_Exec (שורות 888-1072), נראה כי החלטת השיקוף מתבצעת ב-3 שלבים:
+According to analysis of ODBC_Exec phase 3 (lines 888-1072), the mirroring decision appears to occur in 3 steps:
 
-### שלב 1: בדיקת דגל גלובלי
+### Step 1: Global flag check
 ```
-CommandIsMirrored = ODBC_MIRRORING_ENABLED (שורה 918)
+CommandIsMirrored = ODBC_MIRRORING_ENABLED (line 918)
 ```
-`ODBC_MIRRORING_ENABLED` נקבע ב-`GenSql.c` ממשתנה סביבה.
+`ODBC_MIRRORING_ENABLED` is set in `GenSql.c` from an environment variable.
 
-### שלב 2: בדיקת דגל לכל פעולה
-ה-`Mirrored` flag מגיע מ-`SQL_GetMainOperationParameters` — כל operation מגדיר האם הוא צריך שיקוף.
+### Step 2: Per-operation flag check
+The `Mirrored` flag comes from `SQL_GetMainOperationParameters` — each operation defines whether it needs mirroring.
 
-### שלב 3: מניעת שיקוף ל-SELECTs
+### Step 3: SELECT exclusion
 ```
-if (IsSelectStatement) CommandIsMirrored = 0;  (שורות 994-996)
+if (IsSelectStatement) CommandIsMirrored = 0;  (lines 994-996)
 ```
 
-### סיכום לוגיקה:
+### Logic summary:
 ```
 CommandIsMirrored = ODBC_MIRRORING_ENABLED
                   && per-operation Mirrored flag
                   && NOT SELECT
 ```
 
-### סדר הרצה
-על פי `MacODBC.h:2029`, נראה כי ה-**mirror מבוצע קודם**:
-1. `SQLExecute` על `MirrorStatementPtr` (שורה 2029)
-2. בדיקת שגיאות mirror — כישלון נרשם אך **אינו fatal** (שורות 2047-2079)
-3. `SQLExecute` על `ThisStatementPtr` (שורה 2100)
-4. מיזוג תוצאות: rows-affected = min(primary, mirror), SQLCODE = mirror אם non-zero (שורות 2266-2284)
+### Execution order
+According to `MacODBC.h:2029`, the **mirror executes first**:
+1. `SQLExecute` on `MirrorStatementPtr` (line 2029)
+2. Mirror error check — failure is logged but **not fatal** (lines 2047-2079)
+3. `SQLExecute` on `ThisStatementPtr` (line 2100)
+4. Result merging: rows-affected = min(primary, mirror), SQLCODE = mirror if non-zero (lines 2266-2284)
 
 ---
 
-## בקרת כניסה (Admission Control) לstatements דביקים
+## Admission Control for Sticky Statements
 
-על פי `MacODBC.h:1145-1159`, נראה כי:
+According to `MacODBC.h:1145-1159`:
 
-### מנגנון:
-1. כל prepared statement שסומן כדביק (StatementIsSticky) מחזיק handle פתוח
-2. מונה `NumStickyHandlesUsed` עוקב אחרי handles פעילים
-3. כשמגיעים לגבול `ODBC_MAX_STICKY_STATEMENTS` (120):
-   - ה-statement החדש **מאבד** את הדביקות שלו
-   - אבחון נרשם
-   - ה-statement עדיין עובד אך לא יישמר ב-cache
+### Mechanism:
+1. Each prepared statement marked as sticky (StatementIsSticky) holds an open handle
+2. Counter `NumStickyHandlesUsed` tracks active handles
+3. When the limit `ODBC_MAX_STICKY_STATEMENTS` (120) is reached:
+   - The new statement **loses** its stickiness
+   - A diagnostic is logged
+   - The statement still works but will not be cached
 
-### מחזור חיי statement דביק:
+### Sticky statement lifecycle:
 ```
-הקצאה (SQLAllocStmt)
+Allocation (SQLAllocStmt)
     ↓
 PREPARE (SQLPrepare) → StatementPrepared[op] = 1
     ↓
-Execute/Fetch (ניתן לחזור מספר פעמים)
+Execute/Fetch (can repeat multiple times)
     ↓
-Close (SQLCloseCursor — soft close, statement נשאר prepared)
+Close (SQLCloseCursor — soft close, statement remains prepared)
     ↓
-[הקריאה הבאה: מדלג על PREPARE, ישר ל-Bind/Execute]
+[Next call: skips PREPARE, goes straight to Bind/Execute]
     ↓
-Free (SQLFreeHandle — שחרור, NumStickyHandlesUsed--)
+Free (SQLFreeHandle — release, NumStickyHandlesUsed--)
 ```
 
-### וולידציית prepared-state
-על פי שורות 1182-1202, כש-`ENABLE_PREPARED_STATE_VALIDATION=1`:
-- קורא `SQLNumParams` על ה-statement
-- אם נכשל → ה-handle מושחרר ומתבצע re-PREPARE
-- מנגנון הגנה נגד statements שהפכו "stale" (למשל אחרי reconnect)
+### Prepared-state validation
+According to lines 1182-1202, when `ENABLE_PREPARED_STATE_VALIDATION=1`:
+- Calls `SQLNumParams` on the statement
+- If it fails → the handle is released and re-PREPARE is performed
+- Protection mechanism against statements that became "stale" (e.g., after reconnect)
 
 ---
 
-## שרשראות המרת שגיאות
+## Error Conversion Chains
 
-על פי `ODBC_ErrorHandler` (שורות 3823-4004), נראה כי שתי שרשראות המרה עיקריות:
+According to `ODBC_ErrorHandler` (lines 3823-4004), there appear to be two main conversion chains:
 
-### שרשרת 1: המרת access-conflict (שורות 3903-3926)
+### Chain 1: Access-conflict conversion (lines 3903-3926)
 ```
-שגיאות native -11103 (S1002), -11031, -211
+Native errors -11103 (S1002), -11031, -211
     ↓
-מומרות ל: SQLERR_CANNOT_POSITION_WITHIN_TABL (-243)
+Converted to: SQLERR_CANNOT_POSITION_WITHIN_TABL (-243)
     ↓
-מטרה: להפעיל retry אוטומטי ברמת הקורא
+Purpose: trigger automatic retry at caller level
     ↓
-פעולה נוספת: שחרור handle sticky + הפחתת מונה
+Additional action: release sticky handle + decrement counter
 ```
 
-### שרשרת 2: המרת auto-reconnect (שורות 3936-3959)
+### Chain 2: Auto-reconnect conversion (lines 3936-3959)
 ```
 SQL_TRN_CLOSED_BY_OTHER_SESSION
 DB_TCP_PROVIDER_ERROR
 TABLE_SCHEMA_CHANGED
 DB_CONNECTION_BROKEN
     ↓
-מומרות ל: DB_CONNECTION_BROKEN
+Converted to: DB_CONNECTION_BROKEN
     ↓
-פעולות: SQLMD_disconnect + איפוס ODBC_Exec_FirstTimeCalled
+Actions: SQLMD_disconnect + reset ODBC_Exec_FirstTimeCalled
     ↓
-מטרה: הקריאה הבאה תבצע אתחול מלא מחדש
+Purpose: next call will perform full re-initialization
 ```
 
 ---
 
-## הקמת חיבור
+## Connection Establishment
 
-על פי `ODBC_CONNECT` (שורות 3443-3794), נראה כי תהליך החיבור:
+According to `ODBC_CONNECT` (lines 3443-3794), the connection process appears to be:
 
-### רצף אתחול
-1. אתחול כותרות DB: MS_DB (ODBC_MS_SqlServer), INF_DB (ODBC_Informix) — שורות 3476-3482
-2. `setlocale(LC_ALL, "he_IL.UTF-8")` — שורה 3488
-3. `SQLAllocEnv` עבור ODBC environment (רק פעם ראשונה) — שורות 3494-3505
-4. `SQLAllocConnect` — שורה 3513
-5. הגדרת timeouts (login, connection) — שורות 3525-3536
-6. MS-SQL: `SQL_COPT_SS_PRESERVE_CURSORS` אם `ODBC_PRESERVE_CURSORS` — שורות 3542-3547
-7. `SQLConnect(DSN, username, password)` — שורה 3552
+### Initialization sequence
+1. DB header initialization: MS_DB (ODBC_MS_SqlServer), INF_DB (ODBC_Informix) — lines 3476-3482
+2. `setlocale(LC_ALL, "he_IL.UTF-8")` — line 3488
+3. `SQLAllocEnv` for ODBC environment (first time only) — lines 3494-3505
+4. `SQLAllocConnect` — line 3513
+5. Timeout settings (login, connection) — lines 3525-3536
+6. MS-SQL: `SQL_COPT_SS_PRESERVE_CURSORS` if `ODBC_PRESERVE_CURSORS` — lines 3542-3547
+7. `SQLConnect(DSN, username, password)` — line 3552
 
-### הגדרות post-connect ספציפיות לספק
-**MS-SQL** (שורות 3630-3721):
-- `USE <dbname>` — מעבר ל-database הרצוי
-- `SET LOCK_TIMEOUT <ms>` — timeout נעילה
-- `SET DEADLOCK_PRIORITY <level>` — עדיפות deadlock
+### Post-connect provider-specific settings
+**MS-SQL** (lines 3630-3721):
+- `USE <dbname>` — switch to target database
+- `SET LOCK_TIMEOUT <ms>` — lock timeout
+- `SET DEADLOCK_PRIORITY <level>` — deadlock priority
 
-**Informix** (שורות 3752-3761):
-- disable `SQL_INFX_ATTR_AUTO_FREE` — מנגנון auto-free של Informix
+**Informix** (lines 3752-3761):
+- Disable `SQL_INFX_ATTR_AUTO_FREE` — Informix auto-free mechanism
 
-**כל הספקים** (שורות 3729-3742):
+**All providers** (lines 3729-3742):
 - AUTOCOMMIT off
-- dirty-read isolation default
+- Dirty-read isolation default
 
-### CleanupODBC (שורות 3798-3819)
+### CleanupODBC (lines 3798-3819)
 - `SQLDisconnect` + `SQLFreeConnect` + `Connected=0`
-- מפחית `NUM_ODBC_DBS_CONNECTED`
-- אם אחרון: `SQLFreeEnv` — שורות 3812-3814
+- Decrements `NUM_ODBC_DBS_CONNECTED`
+- If last: `SQLFreeEnv` — lines 3812-3814
 
 ---
 
-## זיהוי כישלון INSERT שקט
+## Silent INSERT Failure Detection
 
-על פי `MacODBC.h:2252-2261`, נראה כי ב-MS-SQL, INSERT שנכשל בשקט (ללא שגיאה אך עם `sqlerrd[2]==0`) מזוהה ומטופל:
-- בודק אם הפעולה היא INSERT ו-`sqlerrd[2]==0` (0 שורות הושפעו)
-- בודק אם זו לא תוצאה צפויה (IsSelectStatement)
-- אם מזוהה — מגדיר `ReturnCode` בהתאם
-
----
-
-## בדיקת Cardinality
-
-על פי `MacODBC.h:2385-2392`, לאחר fetch ראשון מוצלח, מבוצע fetch שני:
-- אם ה-fetch השני מצליח → יותר משורה אחת קיימת
-- משמש להתרעה על cardinality לא צפויה (singleton query שמחזיר יותר משורה)
+According to `MacODBC.h:2252-2261`, in MS-SQL, an INSERT that fails silently (no error but `sqlerrd[2]==0`) is detected and handled:
+- Checks if the operation is an INSERT and `sqlerrd[2]==0` (0 rows affected)
+- Checks if this is not an expected result (IsSelectStatement)
+- If detected — sets `ReturnCode` accordingly
 
 ---
 
-*נוצר על ידי סוכן המתעד של CIDRA — DOC-MACODBC-001*
+## Cardinality Check
+
+According to `MacODBC.h:2385-2392`, after a successful first fetch, a second fetch is performed:
+- If the second fetch succeeds → more than one row exists
+- Used to warn about unexpected cardinality (singleton query returning more than one row)
+
+---
+
+*Generated by the CIDRA Documenter Agent — DOC-MACODBC-002*

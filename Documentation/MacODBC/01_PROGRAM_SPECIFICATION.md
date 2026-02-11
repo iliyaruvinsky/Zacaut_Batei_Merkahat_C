@@ -1,74 +1,74 @@
-# MacODBC.h - מפרט התוכנית
+# MacODBC.h - Program Specification
 
-**רכיב**: MacODBC (שכבת תשתית ODBC)
-**מזהה משימה**: DOC-MACODBC-001
-**תאריך יצירה**: 2026-02-11
-**מקור**: `source_code/Include/MacODBC.h`
-
----
-
-## סקירה כללית
-
-על פי כותרת הקובץ ב-`MacODBC.h:14-15`, הקובץ נכתב על ידי **Don Radlauer** בדצמבר 2019. נראה כי MacODBC.h מהווה את שכבת תשתית ה-ODBC המרכזית עבור כל מערכת ה-C Backend של מכבי, ומחליפה את גישת Informix Embedded SQL (ESQL) הקודמת בממשק ODBC התומך בחיבורים בו-זמניים ל-MS-SQL ו-Informix.
-
-זהו קובץ היברידי (header/implementation): כל הקוד מוגן תחת `#ifdef MAIN` — קובץ ה-`.c` שמגדיר `MAIN` לפני ה-include מקבל את המימוש מקומפל לתוכו, כפי שנצפה ב-`MacODBC.h:168` ו-`MacODBC.h:422`.
+**Component**: MacODBC (ODBC Infrastructure Layer)
+**Task ID**: DOC-MACODBC-002
+**Date Created**: 2026-02-11
+**Source**: `source_code/Include/MacODBC.h`
 
 ---
 
-## מטרה
+## Overview
 
-על בסיס ניתוח הקוד, נראה כי MacODBC.h:
+According to the file header at `MacODBC.h:14-15`, the file was written by **Don Radlauer** in December 2019. MacODBC.h appears to be the central ODBC infrastructure layer for the entire MACCABI C Backend system, replacing the previous Informix Embedded SQL (ESQL) approach with an ODBC interface that supports simultaneous connections to MS-SQL and Informix.
 
-1. **מספק API מאקרואי** — 25 מאקרואים ציבוריים (כגון `ExecSQL`, `DeclareCursor`, `CommitWork`) המנתבים לפונקציית dispatcher יחידה (שורות 311-335)
-2. **מנהל חיבורי מסד נתונים** — חיבור, ניתוק, ו-reconnect אוטומטי עבור MS-SQL ו-Informix (שורות 3443-3819)
-3. **תומך בשיקוף מסד נתונים** — כתיבה כפולה ל-MAIN_DB ו-ALT_DB (שורות 918, 2023-2094)
-4. **מנהל cache של prepared statements** — עד 120 statements "דביקים" (שורות 1086-1231)
-5. **מאמת מצביעים בזמן ריצה** — מנגנון SIGSEGV/sigsetjmp/siglongjmp לוולידציה של va_arg pointers (שורות 4013-4118)
-6. **מבצע התאמות SQL לפי ספק** — החלפת טוקנים בין תחביר Informix ו-MS-SQL (שורות 2906-3136)
+This is a hybrid header/implementation file: all code is guarded under `#ifdef MAIN` — the `.c` file that defines `MAIN` before the include receives the full implementation compiled into it, as seen in `MacODBC.h:168` and `MacODBC.h:422`.
 
 ---
 
-## מבנה קבצים
+## Purpose
 
-| קובץ | שורות | מטרה |
-|------|------:|------|
-| MacODBC.h | 4121 | תשתית ODBC — קובץ היברידי header/implementation |
+Based on code analysis, MacODBC.h appears to:
 
-*ספירת שורות מאומתת מנתוני הצ'אנקר ב-`CHUNKS/MacODBC/repository.json`*
-
-**הערה**: זהו קובץ יחיד שמשמש את כל 8 רכיבי המערכת, כפי שנצפה בסריקת ה-include chain ב-`RESEARCH/MacODBC_deepdive.md`.
-
----
-
-## פונקציות
-
-על פי ניתוח הקוד ב-`MacODBC.h`, 11 פונקציות ממומשות תחת `#ifdef MAIN`:
-
-| פונקציה | שורות | מיקום | מטרה |
-|---------|------:|-------|------|
-| ODBC_Exec | 2212 | 446-2657 | dispatcher מרכזי — מקבל כל 25 סוגי פקודות |
-| SQL_GetMainOperationParameters | 157 | 2661-2817 | פענוח OperationID למטאדטה של SQL |
-| SQL_GetWhereClauseParameters | 82 | 2821-2902 | פענוח WhereClauseID לטקסט ופרמטרים |
-| SQL_CustomizePerDB | 231 | 2906-3136 | החלפת טוקנים ספציפיים לספק DB |
-| ParseColumnList | 191 | 3140-3330 | פענוח מחרוזת column-spec למערך ODBC_ColumnParams |
-| find_FOR_UPDATE_or_GEN_VALUES | 106 | 3334-3439 | זיהוי INSERT/SELECT/FOR UPDATE בפקודת SQL |
-| ODBC_CONNECT | 352 | 3443-3794 | הקמת חיבור מלא — env, connect, הגדרות ספציפיות |
-| CleanupODBC | 22 | 3798-3819 | ניתוק ושחרור — env release כשאחרון מתנתק |
-| ODBC_ErrorHandler | 182 | 3823-4004 | טיפול מרכזי בשגיאות — SQLGetDiagRec, המרת שגיאות |
-| ODBC_IsValidPointer | 58 | 4013-4070 | בדיקת תקינות מצביע באמצעות sigsetjmp/siglongjmp |
-| macODBC_SegmentationFaultCatcher | 46 | 4073-4118 | מטפל SIGSEGV — מצב validation vs מצב fatal |
-
-**סה"כ פונקציות: 11**
+1. **Provide a macro API** — 25 public macros (such as `ExecSQL`, `DeclareCursor`, `CommitWork`) that route to a single dispatcher function (lines 311-335)
+2. **Manage database connections** — connect, disconnect, and auto-reconnect for MS-SQL and Informix (lines 3443-3819)
+3. **Support database mirroring** — dual writes to MAIN_DB and ALT_DB (lines 918, 2023-2094)
+4. **Manage a prepared statement cache** — up to 120 "sticky" statements (lines 1086-1231)
+5. **Validate pointers at runtime** — SIGSEGV/sigsetjmp/siglongjmp mechanism for va_arg pointer validation (lines 4013-4118)
+6. **Perform per-provider SQL adaptation** — token replacement between Informix and MS-SQL syntax (lines 2906-3136)
 
 ---
 
-## API מאקרואי ציבורי (25 מאקרואים)
+## File Structure
 
-על פי שורות 311-335 ב-`MacODBC.h`, כל המאקרואים מנתבים ל-`ODBC_Exec` עם ערך `ODBC_CommandType` מתאים:
+| File | Lines | Purpose |
+|------|------:|---------|
+| MacODBC.h | 4121 | ODBC infrastructure — hybrid header/implementation file |
 
-### ניהול סמנים (Cursors)
-| מאקרו | שורה | CommandType |
-|--------|------|-------------|
+*Line count verified from chunker data in `CHUNKS/MacODBC/repository.json`*
+
+**Note**: This is a single file that serves all 8 system components, as seen in the include chain scan in `RESEARCH/MacODBC_deepdive.md`.
+
+---
+
+## Functions
+
+According to code analysis of `MacODBC.h`, 11 functions are implemented under `#ifdef MAIN`:
+
+| Function | Lines | Location | Purpose |
+|----------|------:|----------|---------|
+| ODBC_Exec | 2212 | 446-2657 | Central dispatcher — handles all 25 command types |
+| SQL_GetMainOperationParameters | 157 | 2661-2817 | Decode OperationID to SQL metadata |
+| SQL_GetWhereClauseParameters | 82 | 2821-2902 | Decode WhereClauseID to text and parameters |
+| SQL_CustomizePerDB | 231 | 2906-3136 | Provider-specific token replacement |
+| ParseColumnList | 191 | 3140-3330 | Parse column-spec string to ODBC_ColumnParams array |
+| find_FOR_UPDATE_or_GEN_VALUES | 106 | 3334-3439 | Detect INSERT/SELECT/FOR UPDATE in SQL command |
+| ODBC_CONNECT | 352 | 3443-3794 | Full connection setup — env, connect, provider-specific settings |
+| CleanupODBC | 22 | 3798-3819 | Disconnect and release — env release when last disconnects |
+| ODBC_ErrorHandler | 182 | 3823-4004 | Central error handler — SQLGetDiagRec, error conversion |
+| ODBC_IsValidPointer | 58 | 4013-4070 | Pointer validity check via sigsetjmp/siglongjmp |
+| macODBC_SegmentationFaultCatcher | 46 | 4073-4118 | SIGSEGV handler — validation mode vs fatal mode |
+
+**Total functions: 11**
+
+---
+
+## Public Macro API (25 macros)
+
+According to lines 311-335 in `MacODBC.h`, all macros route to `ODBC_Exec` with the appropriate `ODBC_CommandType` value:
+
+### Cursor Management
+| Macro | Line | CommandType |
+|-------|------|-------------|
 | DeclareCursor | 311 | DECLARE_CURSOR |
 | DeclareCursorInto | 312 | DECLARE_CURSOR_INTO |
 | DeclareAndOpenCursor | 313 | DECLARE_AND_OPEN_CURSOR |
@@ -82,17 +82,17 @@
 | CloseCursor | 321 | CLOSE_CURSOR |
 | FreeStatement | 322 | FREE_STATEMENT |
 
-### הרצת SQL
-| מאקרו | שורה | CommandType |
-|--------|------|-------------|
+### SQL Execution
+| Macro | Line | CommandType |
+|-------|------|-------------|
 | ExecSQL | 318 | SINGLETON_SQL_CALL |
 | ExecSql | 319 | SINGLETON_SQL_CALL |
 
-**הערה**: על פי `MacODBC.h:318-319`, שני האיותים (`ExecSQL` ו-`ExecSql`) קיימים עבור תאימות לאחור.
+**Note**: According to `MacODBC.h:318-319`, both spellings (`ExecSQL` and `ExecSql`) exist for backward compatibility.
 
-### טרנזקציות
-| מאקרו | שורה | CommandType |
-|--------|------|-------------|
+### Transactions
+| Macro | Line | CommandType |
+|-------|------|-------------|
 | CommitWork | 323 | COMMIT_WORK |
 | RollbackWork | 324 | ROLLBACK_WORK |
 | RollBackWork | 325 | ROLLBACK_WORK |
@@ -100,211 +100,211 @@
 | RollbackAllWork | 327 | ROLLBACK_WORK (ENV level) |
 | RollBackAllWork | 328 | ROLLBACK_WORK (ENV level) |
 
-**הערה**: על פי `MacODBC.h:324-325`, שני האיותים (`RollbackWork` ו-`RollBackWork`) קיימים.
+**Note**: According to `MacODBC.h:324-325`, both spellings (`RollbackWork` and `RollBackWork`) exist.
 
-### בידוד ושירותים
-| מאקרו | שורה | CommandType |
-|--------|------|-------------|
+### Isolation and Utility
+| Macro | Line | CommandType |
+|-------|------|-------------|
 | SetDirtyRead | 329 | SET_DIRTY_READ |
 | SetCommittedRead | 330 | SET_COMMITTED_READ |
 | SetRepeatableRead | 331 | SET_REPEATABLE_READ |
 | GetLengthsRead | 332 | GET_LENGTHS_READ |
 | SetCustomSegmentationFaultHandler | 335 | SET_CUSTOM_SIGSEGV_HANDLER |
 
-### מאקרואים שירותיים
-על פי שורות 277-278 ב-`MacODBC.h`:
-- `SQL_WORKED(R)` — בודק אם ערך ההחזרה מציין הצלחה
-- `SQL_FAILED(R)` — בודק אם ערך ההחזרה מציין כישלון
+### Utility Macros
+According to lines 277-278 in `MacODBC.h`:
+- `SQL_WORKED(R)` — checks if return value indicates success
+- `SQL_FAILED(R)` — checks if return value indicates failure
 
-### מאקרואי שגיאות
-על פי שורות 346-348 ב-`MacODBC.h`:
-- `ODBC_EnvironmentError` — מנתב ל-ODBC_ErrorHandler עם ODBC_ENVIRONMENT_ERR
-- `ODBC_DB_ConnectionError` — מנתב ל-ODBC_ErrorHandler עם ODBC_DB_HANDLE_ERR
-- `ODBC_StatementError` — מנתב ל-ODBC_ErrorHandler עם ODBC_STATEMENT_ERR
+### Error Macros
+According to lines 346-348 in `MacODBC.h`:
+- `ODBC_EnvironmentError` — routes to ODBC_ErrorHandler with ODBC_ENVIRONMENT_ERR
+- `ODBC_DB_ConnectionError` — routes to ODBC_ErrorHandler with ODBC_DB_HANDLE_ERR
+- `ODBC_StatementError` — routes to ODBC_ErrorHandler with ODBC_STATEMENT_ERR
 
 ---
 
-## הגדרות enum
+## Enum Definitions
 
 ### ODBC_DatabaseProvider (`MacODBC.h:104-111`)
-| ערך | משמעות |
-|-----|--------|
-| ODBC_NoProvider | אין ספק |
+| Value | Meaning |
+|-------|---------|
+| ODBC_NoProvider | No provider |
 | ODBC_Informix | Informix |
 | ODBC_DB2 | DB2 |
 | ODBC_MS_SqlServer | MS-SQL Server |
 | ODBC_Oracle | Oracle |
 
-**הערה**: על פי ניתוח הקוד, רק Informix ו-MS-SQL מיושמים בפועל. DB2 ו-Oracle קיימים ב-enum בלבד.
+**Note**: Based on code analysis, only Informix and MS-SQL are actually implemented. DB2 and Oracle exist in the enum only.
 
 ### ODBC_CommandType (`MacODBC.h:117-139`)
-20 ערכים הממפים את כל סוגי הפקודות הנתמכות:
+20 values mapping all supported command types:
 `DECLARE_CURSOR`, `DECLARE_CURSOR_INTO`, `DECLARE_AND_OPEN_CURSOR`, `DECLARE_AND_OPEN_CURSOR_INTO`, `DEFERRED_INPUT_CURSOR`, `DEFERRED_INPUT_CURSOR_INTO`, `OPEN_CURSOR`, `OPEN_CURSOR_USING`, `FETCH_CURSOR`, `FETCH_CURSOR_INTO`, `CLOSE_CURSOR`, `FREE_STATEMENT`, `SINGLETON_SQL_CALL`, `COMMIT_WORK`, `ROLLBACK_WORK`, `GET_LENGTHS_READ`, `SET_DIRTY_READ`, `SET_COMMITTED_READ`, `SET_REPEATABLE_READ`, `SET_CUSTOM_SIGSEGV_HANDLER`.
 
 ### tag_bool (`MacODBC.h:145-151`)
-| ערך | משמעות |
-|-----|--------|
+| Value | Meaning |
+|-------|---------|
 | false | 0 |
 | true | 1 |
 
-מוגן תחת `#ifndef BOOL_DEFINED`.
+Guarded under `#ifndef BOOL_DEFINED`.
 
 ### ODBC_ErrorCategory (`MacODBC.h:339-344`)
-| ערך | משמעות |
-|-----|--------|
-| ODBC_ENVIRONMENT_ERR | שגיאת סביבה |
-| ODBC_DB_HANDLE_ERR | שגיאת handle חיבור |
-| ODBC_STATEMENT_ERR | שגיאת statement |
+| Value | Meaning |
+|-------|---------|
+| ODBC_ENVIRONMENT_ERR | Environment error |
+| ODBC_DB_HANDLE_ERR | Connection handle error |
+| ODBC_STATEMENT_ERR | Statement error |
 
 ---
 
-## מבני נתונים (structs)
+## Data Structures (structs)
 
 ### ODBC_DB_HEADER (`MacODBC.h:163`)
 
-| שדה | טיפוס | מטרה |
-|------|--------|------|
-| Provider | int | מזהה ספק DB (מ-enum ODBC_DatabaseProvider) |
-| Connected | int | דגל מצב חיבור |
-| HDBC | SQLHDBC | handle חיבור ODBC |
-| Name[21] | char[21] | שם DB לאבחון |
+| Field | Type | Purpose |
+|-------|------|---------|
+| Provider | int | DB provider identifier (from ODBC_DatabaseProvider enum) |
+| Connected | int | Connection state flag |
+| HDBC | SQLHDBC | ODBC connection handle |
+| Name[21] | char[21] | DB name for diagnostics |
 
 ### ODBC_ColumnParams (`MacODBC.h:164`)
 
-| שדה | טיפוס | מטרה |
-|------|--------|------|
-| type | int | קוד טיפוס ODBC/C עבור binding |
-| length | int | אורך עבור string/buffer binds |
+| Field | Type | Purpose |
+|-------|------|---------|
+| type | int | ODBC/C type code for binding |
+| length | int | Length for string/buffer binds |
 
 ---
 
-## קבועים (#define)
+## Constants (#define)
 
-על פי שורות 47-101 ב-`MacODBC.h`:
+According to lines 47-101 in `MacODBC.h`:
 
-| קבוע | ערך | שורה | מטרה |
-|------|-----|------|------|
-| SQL_COPT_SS_PRESERVE_CURSORS | 1204 | 48 | תכונת MS-SQL לשימור סמנים |
-| SQL_PC_ON | 1L | 49 | הפעלת שימור סמנים |
-| SQL_PC_OFF | 0L | 50 | כיבוי שימור סמנים |
-| SQL_INFX_ATTR_AUTO_FREE | 2263 | 53 | תכונת Informix auto-free |
-| ENABLE_POINTER_VALIDATION | 1 | 62 | הפעלת מנגנון SIGSEGV pointer validation |
-| CHECK_VALIDITY_ONLY | 0 | 63 | בדיקת קריאה בלבד |
-| CHECK_POINTER_IS_WRITABLE | 1 | 64 | בדיקת קריאה וכתיבה |
-| ENABLE_PREPARED_STATE_VALIDATION | 1 | 76 | הפעלת בדיקת SQLNumParams לתוקף prepared |
-| ODBC_MAX_STICKY_STATEMENTS | 120 | 90 | גבול מירבי של statements דביקים |
-| ODBC_MAX_PARAMETERS | 300 | 101 | גבול מירבי של פרמטרי bind/output |
-
----
-
-## משתנים גלובליים
-
-על פי שורות 168-273 ב-`MacODBC.h`, המשתנים מוגדרים תחת `#ifdef MAIN` (שורה 168) עם הצהרות `extern` תחת `#else` (שורה 242):
-
-### כותרות מסד נתונים
-| משתנה | שורה MAIN | שורה extern | טיפוס | מטרה |
-|--------|-----------|------------|--------|------|
-| MS_DB | 171 | 243 | ODBC_DB_HEADER | כותרת MS-SQL |
-| INF_DB | 172 | 244 | ODBC_DB_HEADER | כותרת Informix |
-| MAIN_DB | 173 | 245 | ODBC_DB_HEADER* | מצביע ל-DB הראשי |
-| ALT_DB | 174 | 246 | ODBC_DB_HEADER* | מצביע ל-DB החלופי |
-
-### מצב שיקוף
-| משתנה | שורה MAIN | שורה extern | מטרה |
-|--------|-----------|------------|------|
-| ODBC_MIRRORING_ENABLED | 180 | 248 | דגל הפעלת שיקוף גלובלי |
-| MIRROR_SQLCODE | 181 | 249 | קוד שגיאה מה-mirror |
-| MIRROR_ROWS_AFFECTED | 182 | 250 | שורות שהושפעו ב-mirror |
-
-### תצורת חיבור
-| משתנה | שורה MAIN | שורה extern | מטרה |
-|--------|-----------|------------|------|
-| LOCK_TIMEOUT | 183 | 251 | timeout נעילה (MS-SQL) |
-| DEADLOCK_PRIORITY | 184 | 252 | עדיפות deadlock |
-| ODBC_PRESERVE_CURSORS | 175 | 254 | שימור סמנים (MS-SQL) |
-
-### מצב pointer validation
-| משתנה | שורה MAIN | שורה extern | מטרה |
-|--------|-----------|------------|------|
-| ODBC_ValidatingPointers | 190 | 267 | דגל: נמצאים במצב validation |
-| ODBC_PointerIsValid | 193 | 268 | תוצאת בדיקה אחרונה |
-| sig_act_ODBC_SegFault | 198 | 270 | מבנה sigaction |
-| BeforePointerTest | 199 | 271 | sigjmp_buf לפני בדיקה |
-| AfterPointerTest | 200 | 272 | sigjmp_buf אחרי בדיקה |
-
-### משתנים פנימיים (ללא extern)
-| משתנה | שורה | מטרה |
-|--------|------|------|
-| ODBC_henv | 170 | handle סביבת ODBC |
-| ODBC_henv_allocated | 177 | דגל: env הוקצה |
-| NUM_ODBC_DBS_CONNECTED | 178 | מונה DBs מחוברים |
-| ALTERNATE_DB_USED | 179 | דגל: DB חלופי שימש |
-| ODBC_Exec_FirstTimeCalled | 225 | דגל: קריאה ראשונה |
-| NumStickyHandlesUsed | 226 | מונה handles דביקים בשימוש |
-| StatementPrepared[] | 234 | מערך מצב prepared |
-| StatementOpened[] | 235 | מערך מצב opened |
-| StatementIsSticky[] | 236 | מערך דגלי דביקות |
-| BoolType | 240 | טיפוס bool (נבדק בזמן ריצה) |
+| Constant | Value | Line | Purpose |
+|----------|-------|------|---------|
+| SQL_COPT_SS_PRESERVE_CURSORS | 1204 | 48 | MS-SQL cursor preservation attribute |
+| SQL_PC_ON | 1L | 49 | Enable cursor preservation |
+| SQL_PC_OFF | 0L | 50 | Disable cursor preservation |
+| SQL_INFX_ATTR_AUTO_FREE | 2263 | 53 | Informix auto-free attribute |
+| ENABLE_POINTER_VALIDATION | 1 | 62 | Enable SIGSEGV pointer validation mechanism |
+| CHECK_VALIDITY_ONLY | 0 | 63 | Read-only check |
+| CHECK_POINTER_IS_WRITABLE | 1 | 64 | Read and write check |
+| ENABLE_PREPARED_STATE_VALIDATION | 1 | 76 | Enable SQLNumParams validity check for prepared state |
+| ODBC_MAX_STICKY_STATEMENTS | 120 | 90 | Maximum sticky statement limit |
+| ODBC_MAX_PARAMETERS | 300 | 101 | Maximum bind/output parameter limit |
 
 ---
 
-## תלויות (#include)
+## Global Variables
 
-על פי שורות 31-41 ב-`MacODBC.h`:
+According to lines 168-273 in `MacODBC.h`, variables are defined under `#ifdef MAIN` (line 168) with `extern` declarations under `#else` (line 242):
 
-| קובץ כותרת | שורה | מטרה |
-|------------|------|------|
-| `/usr/local/include/sql.h` | 31 | כותרת מערכת ODBC |
-| `/usr/local/include/sqlext.h` | 32 | הרחבות ODBC |
-| `<errno.h>` | 33 | קודי שגיאה |
-| `<locale.h>` | 34 | הגדרות locale (עברית) |
-| `<string.h>` | 35 | פונקציות מחרוזת |
-| `<setjmp.h>` | 36 | sigsetjmp/siglongjmp עבור pointer validation |
-| `"GenSql.h"` | 37 | תשתית SQL של הפרויקט |
-| `<MacODBC_MyOperatorIDs.h>` | 41 | מזהי operators ספציפיים לכל רכיב |
+### Database Headers
+| Variable | MAIN Line | extern Line | Type | Purpose |
+|----------|-----------|-------------|------|---------|
+| MS_DB | 171 | 243 | ODBC_DB_HEADER | MS-SQL header |
+| INF_DB | 172 | 244 | ODBC_DB_HEADER | Informix header |
+| MAIN_DB | 173 | 245 | ODBC_DB_HEADER* | Pointer to primary DB |
+| ALT_DB | 174 | 246 | ODBC_DB_HEADER* | Pointer to alternate DB |
 
-### Injection includes (בתוך פונקציות)
-| קובץ | שורה | הקשר |
-|------|------|------|
-| `"MacODBC_MyOperators.c"` | 2747 | switch cases של SQL_GetMainOperationParameters |
-| `"MacODBC_MyCustomWhereClauses.c"` | 2866 | switch cases של SQL_GetWhereClauseParameters |
+### Mirroring State
+| Variable | MAIN Line | extern Line | Purpose |
+|----------|-----------|-------------|---------|
+| ODBC_MIRRORING_ENABLED | 180 | 248 | Global mirroring enable flag |
+| MIRROR_SQLCODE | 181 | 249 | Error code from mirror |
+| MIRROR_ROWS_AFFECTED | 182 | 250 | Rows affected in mirror |
 
----
+### Connection Configuration
+| Variable | MAIN Line | extern Line | Purpose |
+|----------|-----------|-------------|---------|
+| LOCK_TIMEOUT | 183 | 251 | Lock timeout (MS-SQL) |
+| DEADLOCK_PRIORITY | 184 | 252 | Deadlock priority |
+| ODBC_PRESERVE_CURSORS | 175 | 254 | Cursor preservation (MS-SQL) |
 
-## רכיבים צורכים (8 רכיבים)
+### Pointer Validation State
+| Variable | MAIN Line | extern Line | Purpose |
+|----------|-----------|-------------|---------|
+| ODBC_ValidatingPointers | 190 | 267 | Flag: currently in validation mode |
+| ODBC_PointerIsValid | 193 | 268 | Result of last validation check |
+| sig_act_ODBC_SegFault | 198 | 270 | sigaction structure |
+| BeforePointerTest | 199 | 271 | sigjmp_buf before test |
+| AfterPointerTest | 200 | 272 | sigjmp_buf after test |
 
-על פי סריקת include chain ב-`RESEARCH/MacODBC_deepdive.md`:
-
-| רכיב | MacODBC_MyOperators.c | MacODBC_MyCustomWhereClauses.c |
-|-------|----------------------|-------------------------------|
-| FatherProcess | כן | כן |
-| SqlServer | כן | כן |
-| As400UnixServer | כן | כן |
-| As400UnixClient | כן | כן |
-| As400UnixDocServer | כן | כן |
-| As400UnixDoc2Server | כן | כן |
-| ShrinkPharm | כן | כן |
-| GenSql | כן | לא רלוונטי |
-
----
-
-## מגבלות תיעוד
-
-### מה שלא ניתן לקבוע מהקוד:
-- התנהגות DB2 ו-Oracle — קיימים ב-enum בלבד, ללא ענפי חיבור/התאמה ייעודיים
-- תוכן הטבלאות שה-SQL queries פונים אליהן — ה-SQL עצמו מוגדר בקבצי MyOperators.c לכל רכיב
-- ערכי אישורי DB בפועל — מועברים כפרמטרים ל-ODBC_CONNECT מ-GenSql.c
-- התנהגות חיצונית של `SQLMD_connect` ו-`SQLMD_disconnect` (מוגדרים ב-GenSql.c)
-
-### מה שכן ידוע מהקוד:
-- מבנה מלא של הקובץ (4121 שורות, 11 פונקציות)
-- 25 מאקרואים ציבוריים ומיפוי CommandType שלהם
-- 4 הגדרות enum (DatabaseProvider, CommandType, tag_bool, ErrorCategory)
-- 2 מבני נתונים (ODBC_DB_HEADER, ODBC_ColumnParams)
-- כל המשתנים הגלובליים עם דואליות MAIN/extern
-- מנגנון שיקוף DB, cache statements דביקים, pointer validation
-- 8 רכיבים הצורכים את MacODBC.h
+### Internal Variables (no extern)
+| Variable | Line | Purpose |
+|----------|------|---------|
+| ODBC_henv | 170 | ODBC environment handle |
+| ODBC_henv_allocated | 177 | Flag: env allocated |
+| NUM_ODBC_DBS_CONNECTED | 178 | Connected DB counter |
+| ALTERNATE_DB_USED | 179 | Flag: alternate DB was used |
+| ODBC_Exec_FirstTimeCalled | 225 | Flag: first call |
+| NumStickyHandlesUsed | 226 | Active sticky handle counter |
+| StatementPrepared[] | 234 | Prepared state array |
+| StatementOpened[] | 235 | Opened state array |
+| StatementIsSticky[] | 236 | Stickiness flag array |
+| BoolType | 240 | Bool type (determined at runtime) |
 
 ---
 
-*נוצר על ידי סוכן המתעד של CIDRA — DOC-MACODBC-001*
+## Dependencies (#include)
+
+According to lines 31-41 in `MacODBC.h`:
+
+| Header File | Line | Purpose |
+|-------------|------|---------|
+| `/usr/local/include/sql.h` | 31 | ODBC system header |
+| `/usr/local/include/sqlext.h` | 32 | ODBC extensions |
+| `<errno.h>` | 33 | Error codes |
+| `<locale.h>` | 34 | Locale settings (Hebrew) |
+| `<string.h>` | 35 | String functions |
+| `<setjmp.h>` | 36 | sigsetjmp/siglongjmp for pointer validation |
+| `"GenSql.h"` | 37 | Project SQL infrastructure |
+| `<MacODBC_MyOperatorIDs.h>` | 41 | Per-component operator identifiers |
+
+### Injection Includes (inside functions)
+| File | Line | Context |
+|------|------|---------|
+| `"MacODBC_MyOperators.c"` | 2747 | Switch cases in SQL_GetMainOperationParameters |
+| `"MacODBC_MyCustomWhereClauses.c"` | 2866 | Switch cases in SQL_GetWhereClauseParameters |
+
+---
+
+## Consuming Components (8 components)
+
+According to the include chain scan in `RESEARCH/MacODBC_deepdive.md`:
+
+| Component | MacODBC_MyOperators.c | MacODBC_MyCustomWhereClauses.c |
+|-----------|----------------------|-------------------------------|
+| FatherProcess | Yes | Yes |
+| SqlServer | Yes | Yes |
+| As400UnixServer | Yes | Yes |
+| As400UnixClient | Yes | Yes |
+| As400UnixDocServer | Yes | Yes |
+| As400UnixDoc2Server | Yes | Yes |
+| ShrinkPharm | Yes | Yes |
+| GenSql | Yes | N/A |
+
+---
+
+## Documentation Limitations
+
+### What CANNOT be determined from code:
+- DB2 and Oracle behavior — present in enum only, no dedicated connection/adaptation branches
+- SQL table contents — SQL itself is defined in per-component MacODBC_MyOperators.c files
+- Actual DB credential values — passed as parameters to ODBC_CONNECT from GenSql.c
+- External behavior of `SQLMD_connect` and `SQLMD_disconnect` (defined in GenSql.c)
+
+### What IS known from code:
+- Complete file structure (4121 lines, 11 functions)
+- 25 public API macros and their CommandType mappings
+- 4 enum definitions (DatabaseProvider, CommandType, tag_bool, ErrorCategory)
+- 2 data structures (ODBC_DB_HEADER, ODBC_ColumnParams)
+- All global variables with MAIN/extern duality
+- DB mirroring mechanism, sticky statement cache, pointer validation
+- 8 components consuming MacODBC.h
+
+---
+
+*Generated by the CIDRA Documenter Agent — DOC-MACODBC-002*

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-11
 **Updated By:** Orc
-**Status:** 🔵 READY (CH-MACODBC-001 ✅ — Documenter can start)
+**Status:** ✅ COMPLETE (DOC-MACODBC-002 — English re-documentation)
 
 ---
 
@@ -37,29 +37,63 @@
 
 ---
 
-## CURRENT STATUS: ✅ ALL CURRENT TASKS COMPLETE
+## LANGUAGE RULE (MANDATORY)
+
+**Default documentation language: ENGLISH.**
+Hebrew documentation is produced ONLY when the user explicitly requests it.
+DOC-MACODBC-001 was incorrectly produced in Hebrew. DOC-MACODBC-002 corrects this.
+
+---
+
+## CURRENT STATUS: ✅ COMPLETE
 
 **Previously completed:**
 - DOC-FATHER-001 ✅ (100/100) — Documentation/FatherProcess/
 - DOC-SHRINK-001 ✅ (100/100) — Documentation/ShrinkPharm/
-- DOC-MACODBC-001 ✅ (100/100) — Documentation/MacODBC/
+- DOC-MACODBC-001 ✅ (100/100) — Documentation/MacODBC/ (Hebrew — superseded by DOC-MACODBC-002)
+- DOC-MACODBC-002 ✅ (100/100) — Documentation/MacODBC/ (English — corrects DOC-MACODBC-001)
 
 **DO NOT:**
-- Start documenting until chunks exist in `CHUNKS/MacODBC/`
+- Write documentation in Hebrew unless the user explicitly requests it
 - Guess at code structure without reading actual code
 - Copy content between components
 
-**WHEN UNBLOCKED (CH-MACODBC-001 complete):**
-1. Read `CHUNKS/MacODBC/repository.json`
-2. Read `CHUNKS/MacODBC/DOCUMENTER_INSTRUCTIONS.md`
-3. Read `RESEARCH/MacODBC_deepdive.md`
-4. Begin DOC-MACODBC-001
+---
+
+## 🚨 CURRENT TASK: DOC-MACODBC-002
+
+**Status:** ✅ COMPLETE — 100/100, English
+
+**Purpose:** Re-create MacODBC.h documentation in **ENGLISH** (the default language).
+DOC-MACODBC-001 was produced in Hebrew by mistake. This task produces the correct English version.
+
+**Target:** MacODBC.h — ODBC infrastructure (hybrid header/implementation, 4,121 lines)
+
+**Input:**
+- `CHUNKS/MacODBC/` (from Chunker — ✅ 25 chunks)
+- `source_code/Include/MacODBC.h` (original source for verification)
+- `RESEARCH/MacODBC_deepdive.md` (Researcher output)
+- `Documentation/MacODBC/` (existing Hebrew docs — use as structural reference, but rewrite ALL content in English)
+
+**Output:** `Documentation/MacODBC/` (OVERWRITE the existing Hebrew files with English versions)
+
+**Instructions:**
+1. Read the existing 7 Hebrew files in `Documentation/MacODBC/`
+2. Read `CHUNKS/MacODBC/DOCUMENTER_INSTRUCTIONS.md` and `RESEARCH/MacODBC_deepdive.md`
+3. Rewrite ALL 7 files in **English**, preserving the same structure, accuracy, and file:line citations
+4. The validation report must also be in English
+5. All anti-hallucination rules, forbidden words, and careful language requirements apply — in English
+6. Required phrases: "according to code at line [N]", "as seen in [file]:[line]", "appears to", "based on [specific code reference]"
+7. Achieve 100/100 validation score
+
+**Quality requirement:** 100/100 validation score mandatory. All claims must cite exact file:line references. ALL content in English.
 
 ---
 
-## COMPLETED TASK: DOC-MACODBC-001
+## COMPLETED TASK: DOC-MACODBC-001 (Hebrew — superseded by DOC-MACODBC-002)
 
 **Status:** ✅ COMPLETE — 100/100, 7 files, 76 file:line references, 0 forbidden words
+**Note:** Produced in Hebrew by mistake. Being replaced by DOC-MACODBC-002 (English).
 
 **Target:** MacODBC.h — ODBC infrastructure (hybrid header/implementation, 4,121 lines)
 
@@ -366,6 +400,26 @@ Files: 7
 Output: Documentation/ShrinkPharm/
 Verification: 574 source lines verified, 0 forbidden words, 55 careful language occurrences
 Code quality notes: Copy-paste artifact documented, unused globals documented
+```
+
+### 2026-02-11 Documenter:
+```
+Status: DOC-MACODBC-002 COMPLETE (English — replaces Hebrew DOC-MACODBC-001)
+Score: 100/100
+Files: 7
+- 01_PROGRAM_SPECIFICATION.md
+- 02_SYSTEM_ARCHITECTURE.md
+- 03_TECHNICAL_ANALYSIS.md
+- 04_BUSINESS_LOGIC.md
+- 05_CODE_ARTIFACTS.md
+- README.md
+- VALIDATION_REPORT.md
+Output: Documentation/MacODBC/ (English, overwrote Hebrew)
+Verification: 4121 source lines verified (25 chunks), 0 forbidden words, 80 careful language occurrences, 76+ file:line references
+Functions documented: 11
+API macros documented: 25
+Consuming components documented: 8
+Language: English (corrects DOC-MACODBC-001 Hebrew error)
 ```
 
 ---

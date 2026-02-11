@@ -1,126 +1,126 @@
 # MacODBC.h
 
-**מערכת בריאות מכבי — שכבת תשתית ODBC**
+**MACCABI Healthcare System — ODBC Infrastructure Layer**
 
 ---
 
-## סיכום מהיר
+## Quick Summary
 
-MacODBC.h הוא שכבת תשתית ה-ODBC המרכזית עבור כל מערכת ה-C Backend של מכבי. על פי כותרת הקובץ ב-`MacODBC.h:14-15`, הוא נכתב על ידי Don Radlauer בדצמבר 2019 כתחליף לגישת Informix Embedded SQL (ESQL) הקודמת.
+MacODBC.h is the central ODBC infrastructure layer for the entire MACCABI C Backend system. According to the file header at `MacODBC.h:14-15`, it was written by Don Radlauer in December 2019 as a replacement for the previous Informix Embedded SQL (ESQL) approach.
 
-נראה כי הקובץ מספק:
-1. **25 מאקרואים ציבוריים** — ממשק embedded-SQL-like (ExecSQL, DeclareCursor, CommitWork וכו')
-2. **Dispatcher מרכזי** — פונקציית ODBC_Exec (2212 שורות) המטפלת בכל 20 סוגי פקודות
-3. **תמיכה ב-MS-SQL ו-Informix** — חיבורים בו-זמניים עם שיקוף אופציונלי
-4. **Cache של prepared statements** — עד 120 statements דביקים
-5. **מנגנון pointer validation** — בדיקת va_arg pointers באמצעות SIGSEGV
+The file appears to provide:
+1. **25 public macros** — an embedded-SQL-like interface (ExecSQL, DeclareCursor, CommitWork, etc.)
+2. **A central dispatcher** — the ODBC_Exec function (2212 lines) handling all 20 command types
+3. **MS-SQL and Informix support** — simultaneous connections with optional mirroring
+4. **Prepared statement cache** — up to 120 sticky statements
+5. **Pointer validation mechanism** — SIGSEGV-based va_arg pointer checking
 
-**מחבר**: Don Radlauer (`MacODBC.h:14`)
-**תאריך**: דצמבר 2019 (`MacODBC.h:15`)
-**סוג קובץ**: היברידי header/implementation תחת `#ifdef MAIN`
-**שורות**: 4121
+**Author**: Don Radlauer (`MacODBC.h:14`)
+**Date**: December 2019 (`MacODBC.h:15`)
+**File type**: Hybrid header/implementation under `#ifdef MAIN`
+**Lines**: 4121
 
 ---
 
-## קבצים מרכזיים
+## Key Files
 
-| קובץ | שורות | מטרה |
-|------|------:|------|
-| MacODBC.h | 4121 | תשתית ODBC — 25 מאקרואי API, 11 פונקציות, enums, structs, globals |
+| File | Lines | Purpose |
+|------|------:|---------|
+| MacODBC.h | 4121 | ODBC infrastructure — 25 API macros, 11 functions, enums, structs, globals |
 
-קובץ זה הוא **תשתית משותפת** המשמשת את כל 8 רכיבי המערכת:
+This file is **shared infrastructure** used by all 8 system components:
 - FatherProcess, SqlServer, As400UnixServer, As400UnixClient
 - As400UnixDocServer, As400UnixDoc2Server, ShrinkPharm, GenSql
 
 ---
 
-## כיצד להשתמש בתיעוד זה
+## How to Use This Documentation
 
-סט תיעוד זה מורכב מ-7 קבצים:
+This documentation set consists of 7 files:
 
-| קובץ | תכולה |
-|------|--------|
-| **01_PROGRAM_SPECIFICATION.md** | סקירה, מבנה קבצים, 11 פונקציות, 25 מאקרואים, enums, structs, globals, קבועים, תלויות |
-| **02_SYSTEM_ARCHITECTURE.md** | דפוס dispatcher יחיד, דואליות #ifdef MAIN, צינור 8 שלבים, שיקוף DB, הזרקת include |
-| **03_TECHNICAL_ANALYSIS.md** | ניתוח 8 שלבי ODBC_Exec, 10 פונקציות עזר, SIGSEGV validation, sticky lifecycle, auto-reconnect |
-| **04_BUSINESS_LOGIC.md** | מחזור חיי cursor, ניהול טרנזקציות, החלטת שיקוף, בקרת כניסה, המרת שגיאות, הקמת חיבור |
-| **05_CODE_ARTIFACTS.md** | קטעי קוד מרכזיים עם הפניות שורה |
-| **README.md** | קובץ זה — סקירה ומדריך ניווט |
-| **VALIDATION_REPORT.md** | אימות הבטחת איכות וניקוד |
+| File | Contents |
+|------|----------|
+| **01_PROGRAM_SPECIFICATION.md** | Overview, file structure, 11 functions, 25 macros, enums, structs, globals, constants, dependencies |
+| **02_SYSTEM_ARCHITECTURE.md** | Single dispatcher pattern, #ifdef MAIN duality, 8-phase pipeline, DB mirroring, include injection |
+| **03_TECHNICAL_ANALYSIS.md** | Detailed analysis of all 8 ODBC_Exec phases, 10 helper functions, SIGSEGV validation, sticky lifecycle, auto-reconnect |
+| **04_BUSINESS_LOGIC.md** | Cursor lifecycle, transaction management, mirroring decision, admission control, error conversion, connection establishment |
+| **05_CODE_ARTIFACTS.md** | Key code snippets with line references |
+| **README.md** | This file — overview and navigation guide |
+| **VALIDATION_REPORT.md** | Quality assurance verification and scoring |
 
-### סדר קריאה מומלץ
+### Recommended Reading Order
 
-1. **README.md** (קובץ זה) — התמצאות
-2. **01_PROGRAM_SPECIFICATION.md** — הבנת המבנה, API, ו-enums/structs
-3. **02_SYSTEM_ARCHITECTURE.md** — הבנת דפוס ה-dispatcher וארכיטקטורת השיקוף
-4. **04_BUSINESS_LOGIC.md** — הבנת מחזורי חיי cursor, טרנזקציות, ושיקוף
-5. **03_TECHNICAL_ANALYSIS.md** — צלילה עמוקה לכל 8 שלבי ODBC_Exec
-6. **05_CODE_ARTIFACTS.md** — הפניה לקטעי קוד בפועל
-
----
-
-## רכיבים קשורים
-
-על פי הקשר המחקר, MacODBC.h משמש את כל רכיבי המערכת:
-
-### רכיבים צורכים (משתמשים ב-25 מאקרואי ה-API)
-- **FatherProcess** — דימון מפקח/שומר (`FatherProcess.c:29`)
-- **SqlServer** — שרת SQL ראשי (`SqlServer.c:29`)
-- **As400UnixServer** — גשר AS/400 (`As400UnixServer.c:32`)
-- **As400UnixClient** — לקוח AS/400 (`As400UnixClient.c:29`)
-- **As400UnixDocServer** — שרת מסמכי AS/400 (`As400UnixDocServer.c:31`)
-- **As400UnixDoc2Server** — שרת מסמכי AS/400 מורחב (`As400UnixDoc2Server.c:34`)
-- **ShrinkPharm** — כלי שירות לניקוי DB (`ShrinkPharm.c:16`)
-- **GenSql** — כלי שירות SQL (`GenSql.c:32`)
-
-### ספריות
-- **GenSql.h** — תשתית SQL (SQLMD_connect, INF_CONNECT, sqlca)
-- **MacODBC_MyOperatorIDs.h** — מזהי operators ספציפיים לכל רכיב
-
-### תיעוד קשור
-- **Documentation/FatherProcess/** — תיעוד FatherProcess (100/100)
-- **Documentation/ShrinkPharm/** — תיעוד ShrinkPharm (100/100)
+1. **README.md** (this file) — orientation
+2. **01_PROGRAM_SPECIFICATION.md** — understand the structure, API, and enums/structs
+3. **02_SYSTEM_ARCHITECTURE.md** — understand the dispatcher pattern and mirroring architecture
+4. **04_BUSINESS_LOGIC.md** — understand cursor lifecycles, transactions, and mirroring
+5. **03_TECHNICAL_ANALYSIS.md** — deep dive into all 8 ODBC_Exec phases
+6. **05_CODE_ARTIFACTS.md** — reference to actual code snippets
 
 ---
 
-## דרישות מערכת
+## Related Components
 
-על בסיס ניתוח הקוד:
+According to research context, MacODBC.h is used by all system components:
 
-- **פלטפורמה**: UNIX/Linux (משתמש ב-POSIX APIs: sigaction, sigsetjmp, setlocale)
-- **מסד נתונים**: ODBC — MS-SQL Server ו/או Informix
-- **כותרות**: sql.h, sqlext.h (ODBC system headers)
-- **locale**: `he_IL.UTF-8` (על פי `MacODBC.h:3488`)
+### Consuming components (use the 25 API macros)
+- **FatherProcess** — watchdog/supervisor daemon (`FatherProcess.c:29`)
+- **SqlServer** — main SQL server (`SqlServer.c:29`)
+- **As400UnixServer** — AS/400 bridge (`As400UnixServer.c:32`)
+- **As400UnixClient** — AS/400 client (`As400UnixClient.c:29`)
+- **As400UnixDocServer** — AS/400 document server (`As400UnixDocServer.c:31`)
+- **As400UnixDoc2Server** — AS/400 extended document server (`As400UnixDoc2Server.c:34`)
+- **ShrinkPharm** — DB cleanup utility (`ShrinkPharm.c:16`)
+- **GenSql** — SQL utility (`GenSql.c:32`)
+
+### Libraries
+- **GenSql.h** — SQL infrastructure (SQLMD_connect, INF_CONNECT, sqlca)
+- **MacODBC_MyOperatorIDs.h** — per-component operator identifiers
+
+### Related Documentation
+- **Documentation/FatherProcess/** — FatherProcess documentation (100/100)
+- **Documentation/ShrinkPharm/** — ShrinkPharm documentation (100/100)
 
 ---
 
-## מיקום קוד מקור
+## System Requirements
+
+Based on code analysis:
+
+- **Platform**: UNIX/Linux (uses POSIX APIs: sigaction, sigsetjmp, setlocale)
+- **Database**: ODBC — MS-SQL Server and/or Informix
+- **Headers**: sql.h, sqlext.h (ODBC system headers)
+- **Locale**: `he_IL.UTF-8` (according to `MacODBC.h:3488`)
+
+---
+
+## Source Code Location
 
 ```
 source_code/Include/
-└── MacODBC.h                          # מקור יחיד (4121 שורות)
+└── MacODBC.h                          # Single source (4121 lines)
 ```
 
-**קבצי injection ספציפיים לכל רכיב:**
+**Per-component injection files:**
 ```
 source_code/{Component}/
-├── MacODBC_MyOperators.c              # הגדרות SQL operations
-└── MacODBC_MyCustomWhereClauses.c     # הגדרות WHERE clauses
+├── MacODBC_MyOperators.c              # SQL operation definitions
+└── MacODBC_MyCustomWhereClauses.c     # WHERE clause definitions
 ```
 
 ---
 
-## מטאדטה של תיעוד
+## Documentation Metadata
 
-| שדה | ערך |
-|-----|-----|
-| מזהה משימה | DOC-MACODBC-001 |
-| תאריך יצירה | 2026-02-11 |
-| סוכן | סוכן המתעד של CIDRA |
-| מקור | CHUNKS/MacODBC/ |
-| מחקר | RESEARCH/MacODBC_deepdive.md |
-| אימות | 100/100 (ראה VALIDATION_REPORT.md) |
+| Field | Value |
+|-------|-------|
+| Task ID | DOC-MACODBC-002 |
+| Date Created | 2026-02-11 |
+| Agent | CIDRA Documenter Agent |
+| Source | CHUNKS/MacODBC/ |
+| Research | RESEARCH/MacODBC_deepdive.md |
+| Validation | 100/100 (see VALIDATION_REPORT.md) |
 
 ---
 
-*נוצר על ידי סוכן המתעד של CIDRA — DOC-MACODBC-001*
+*Generated by the CIDRA Documenter Agent — DOC-MACODBC-002*

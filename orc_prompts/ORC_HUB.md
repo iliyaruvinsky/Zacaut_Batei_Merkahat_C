@@ -137,7 +137,8 @@ source_code/
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
 | DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
 | DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
-| DOC-MACODBC-001 | MacODBC.h | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100) |
+| DOC-MACODBC-001 | MacODBC.h | ✅ COMPLETE (Hebrew — superseded) | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, Hebrew) |
+| DOC-MACODBC-002 | MacODBC.h (English) | ✅ COMPLETE | DOC-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, English) |
 
 ### RECOMMENDER (REC) - Stage 2
 
@@ -620,6 +621,57 @@ SPECIAL COVERAGE:
 
 READY FOR: Client review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CORRECTION: DOC-MACODBC-002
+PRIORITY: P0 - LANGUAGE FIX - START NOW
+
+ISSUE: DOC-MACODBC-001 was produced in Hebrew. Default language is ENGLISH.
+Hebrew is only produced on explicit user request.
+
+ACTION: Rewrite all 7 MacODBC documentation files in English.
+INPUT: Same chunks + research as DOC-MACODBC-001. Use existing Hebrew docs as structural reference.
+OUTPUT: Documentation/MacODBC/ (OVERWRITE with English versions)
+REQUIREMENT: 100/100 validation score, all content in English
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] DOCUMENTER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: DOC-MACODBC-002 COMPLETE
+
+RESULTS:
+- Files: 7 documentation files created (English — overwrote Hebrew)
+- Score: 100/100
+- Forbidden words: 0
+- Careful language: 80 occurrences
+- File:line references: 76+
+- Source lines verified: 4121 (1 file, 25 chunks)
+- Functions documented: 11
+- API macros documented: 25
+- Consuming components documented: 8
+- Language: ENGLISH (corrects Hebrew DOC-MACODBC-001)
+
+OUTPUT: Documentation/MacODBC/
+- 01_PROGRAM_SPECIFICATION.md
+- 02_SYSTEM_ARCHITECTURE.md
+- 03_TECHNICAL_ANALYSIS.md
+- 04_BUSINESS_LOGIC.md
+- 05_CODE_ARTIFACTS.md
+- README.md
+- VALIDATION_REPORT.md
+
+SPECIAL COVERAGE:
+- ODBC_Exec 8-phase pipeline fully documented
+- Database mirroring mechanism (mirror-first strategy)
+- Sticky statement cache (max 120)
+- SIGSEGV pointer validation (setjmp/longjmp)
+- Auto-reconnect (3 recovery paths)
+- Per-component SQL injection (8 consumers)
+- Security notes (credentials documented by location only)
+
+READY FOR: Client review
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Recommender (REC)
@@ -636,13 +688,14 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** MacODBC.h pipeline (client priority — P0) — **✅ COMPLETE**
+**Sprint Goal:** MacODBC.h English re-documentation (P0 correction)
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
 | P0 | RES-MACODBC-001 | Researcher | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 | P0 | CH-MACODBC-001 | Chunker | ✅ COMPLETE | CHUNKS/MacODBC/ |
-| P0 | DOC-MACODBC-001 | Documenter | ✅ COMPLETE | Documentation/MacODBC/ (100/100) |
+| P0 | DOC-MACODBC-001 | Documenter | ✅ COMPLETE (Hebrew) | Documentation/MacODBC/ (100/100, Hebrew) |
+| P0 | DOC-MACODBC-002 | Documenter | ✅ COMPLETE | Documentation/MacODBC/ (100/100, English) |
 | -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after MacODBC pipeline |
 
 **Completed (all sessions):**
@@ -656,7 +709,8 @@ ACTION: None until further notice
 | CH-SHRINK-001 | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
 | CH-MACODBC-001 | ✅ COMPLETE | CHUNKS/MacODBC/ (25 chunks) |
 | DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
-| DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC/ (100/100) |
+| DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC/ (100/100, Hebrew — superseded) |
+| DOC-MACODBC-002 | ✅ COMPLETE | Documentation/MacODBC/ (100/100, English) |
 
 ---
 
@@ -704,4 +758,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-11 (DOC-MACODBC-001 ✅ COMPLETE — MacODBC pipeline done: RES ✅ → CH ✅ → DOC ✅ 100/100)*
+*Maintained by Orc. Last sync: 2026-02-11 (DOC-MACODBC-002 ✅ COMPLETE — English re-documentation of MacODBC, 100/100)*
