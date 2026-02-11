@@ -1,0 +1,51 @@
+# As400UnixDocServer.mak
+
+#
+include ../Util/Defines.mak
+#
+
+#
+# Directories
+# -----------
+#Y BUILD_DIR=$(ROOT)/As400UnixDocServer
+
+#
+# Files
+# -----
+
+SRCS	=	As400UnixDocServer.ec	macsql.ec	\
+			as400docin.ec
+#y1INCS	=	$(INC_DIR)/As400UnixServer.h	\
+#y1			$(INC_DIR)/As400UnixGlob.h	
+						
+OBJS	=	As400UnixDocServer.o	macsql.o	\
+			as400docin.o
+		
+INTERMS	=	As400UnixDocServer.c	macsql.c	\
+			as400docin.c
+					
+TARGET = as400unixdocserver.exe
+
+#
+include  ../Util/Rules.mak
+#
+
+#
+# Dependencies
+# ------------
+.TARGET: all
+
+all: $(TARGET)
+
+$(TARGET):  $(OBJS)
+	$(CC) -o $(TARGET) $(OBJS) $(LIB_OPTS) $(ESQL_LIB_OPTS) $(INFORM_LIB_OPTS)
+
+As400UnixDocServer.o			:	As400UnixDocServer.ec	
+	$(ESQL)	$(INC_OPTS)	$(COMP_OPTS)	As400UnixDocServer.o	As400UnixDocServer.ec
+macsql.o				: 	 macsql.ec
+	$(ESQL)	$(INC_OPTS)	$(COMP_OPTS)	macsql.o	macsql.ec
+as400docin.o					: 	 as400docin.ec
+	$(ESQL)	$(INC_OPTS)	$(COMP_OPTS)	as400docin.o	as400docin.ec
+
+clean:
+	rm $(TARGET)	$(INTERMS)	$(OBJS)

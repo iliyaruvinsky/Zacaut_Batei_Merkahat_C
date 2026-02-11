@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "component": "MacODBC",
+    "file": "source_code/Include/MacODBC.h",
+    "generated_at": "2026-02-11T00:00:00Z",
+    "description": "Dependency graph between all 25 chunks — edges represent calls, data flow, or cross-reference relationships."
+  },
+  "nodes": [
+    { "id": "ch_macodbc_001_header", "label": "Header & Includes", "group": "header" },
+    { "id": "ch_macodbc_002_constants", "label": "Constants & Defines", "group": "header" },
+    { "id": "ch_macodbc_003_enums", "label": "Enums", "group": "header" },
+    { "id": "ch_macodbc_004_structs_globals", "label": "Structs & Globals", "group": "header" },
+    { "id": "ch_macodbc_005_macros", "label": "25 Wrapper Macros", "group": "header" },
+    { "id": "ch_macodbc_007_error_enum", "label": "Error Enum & Macros", "group": "header" },
+    { "id": "ch_macodbc_006_declarations", "label": "Function Declarations", "group": "header" },
+    { "id": "ch_macodbc_010a_cmd_decode", "label": "ODBC_Exec: Cmd Decode & Init", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010b_first_call", "label": "ODBC_Exec: First Call Init", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010c_op_metadata", "label": "ODBC_Exec: Op Metadata Loading", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010d_sticky", "label": "ODBC_Exec: Sticky Stmt Lifecycle", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010e_sql_construct", "label": "ODBC_Exec: SQL Construct & Prepare", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010f_bind", "label": "ODBC_Exec: Ptr Validation & Binding", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010g_execute", "label": "ODBC_Exec: Execute/Mirror/Fetch", "group": "odbc_exec" },
+    { "id": "ch_macodbc_010h_txn_close", "label": "ODBC_Exec: Txn/Close/Return", "group": "odbc_exec" },
+    { "id": "ch_macodbc_020_getmainop", "label": "SQL_GetMainOperationParameters", "group": "helpers" },
+    { "id": "ch_macodbc_021_getwhere", "label": "SQL_GetWhereClauseParameters", "group": "helpers" },
+    { "id": "ch_macodbc_022_customizedb", "label": "SQL_CustomizePerDB", "group": "helpers" },
+    { "id": "ch_macodbc_023_parsecols", "label": "ParseColumnList", "group": "helpers" },
+    { "id": "ch_macodbc_024_findforupdate", "label": "find_FOR_UPDATE_or_GEN_VALUES", "group": "helpers" },
+    { "id": "ch_macodbc_025_connect", "label": "ODBC_CONNECT", "group": "helpers" },
+    { "id": "ch_macodbc_026_cleanup", "label": "CleanupODBC", "group": "helpers" },
+    { "id": "ch_macodbc_027_errorhandler", "label": "ODBC_ErrorHandler", "group": "helpers" },
+    { "id": "ch_macodbc_028_isvalidptr", "label": "ODBC_IsValidPointer", "group": "helpers" },
+    { "id": "ch_macodbc_029_segfaultcatcher", "label": "macODBC_SegmentationFaultCatcher", "group": "helpers" }
+  ],
+  "edges": [
+    { "from": "ch_macodbc_005_macros", "to": "ch_macodbc_010a_cmd_decode", "type": "calls", "label": "25 macros → ODBC_Exec" },
+    { "from": "ch_macodbc_007_error_enum", "to": "ch_macodbc_027_errorhandler", "type": "calls", "label": "error macros → ODBC_ErrorHandler" },
+    { "from": "ch_macodbc_010a_cmd_decode", "to": "ch_macodbc_003_enums", "type": "data_flow", "label": "uses ODBC_CommandType enum" },
+    { "from": "ch_macodbc_010a_cmd_decode", "to": "ch_macodbc_004_structs_globals", "type": "data_flow", "label": "uses global statement cache arrays" },
+    { "from": "ch_macodbc_010b_first_call", "to": "ch_macodbc_029_segfaultcatcher", "type": "calls", "label": "installs SIGSEGV handler via sigaction" },
+    { "from": "ch_macodbc_010b_first_call", "to": "ch_macodbc_002_constants", "type": "data_flow", "label": "reads ODBC_MAX_STICKY_STATEMENTS" },
+    { "from": "ch_macodbc_010c_op_metadata", "to": "ch_macodbc_020_getmainop", "type": "calls", "label": "SQL_GetMainOperationParameters()" },
+    { "from": "ch_macodbc_010c_op_metadata", "to": "ch_macodbc_021_getwhere", "type": "calls", "label": "SQL_GetWhereClauseParameters()" },
+    { "from": "ch_macodbc_010c_op_metadata", "to": "ch_macodbc_024_findforupdate", "type": "calls", "label": "find_FOR_UPDATE_or_GEN_VALUES()" },
+    { "from": "ch_macodbc_010d_sticky", "to": "ch_macodbc_002_constants", "type": "data_flow", "label": "reads ODBC_MAX_STICKY_STATEMENTS limit" },
+    { "from": "ch_macodbc_010d_sticky", "to": "ch_macodbc_004_structs_globals", "type": "data_flow", "label": "uses StatementPrepared[], StatementIsSticky[]" },
+    { "from": "ch_macodbc_010e_sql_construct", "to": "ch_macodbc_022_customizedb", "type": "calls", "label": "SQL_CustomizePerDB()" },
+    { "from": "ch_macodbc_010f_bind", "to": "ch_macodbc_028_isvalidptr", "type": "calls", "label": "ODBC_IsValidPointer() for each va_arg pointer" },
+    { "from": "ch_macodbc_010f_bind", "to": "ch_macodbc_002_constants", "type": "data_flow", "label": "reads ODBC_MAX_PARAMETERS" },
+    { "from": "ch_macodbc_010g_execute", "to": "ch_macodbc_027_errorhandler", "type": "calls", "label": "ODBC_StatementError on failure" },
+    { "from": "ch_macodbc_010h_txn_close", "to": "ch_macodbc_007_error_enum", "type": "calls", "label": "ODBC_EnvironmentError, ODBC_DB_ConnectionError" },
+    { "from": "ch_macodbc_020_getmainop", "to": "ch_macodbc_023_parsecols", "type": "calls", "label": "ParseColumnList() for output & input cols" },
+    { "from": "ch_macodbc_021_getwhere", "to": "ch_macodbc_023_parsecols", "type": "calls", "label": "ParseColumnList() for WHERE input cols" },
+    { "from": "ch_macodbc_025_connect", "to": "ch_macodbc_026_cleanup", "type": "calls", "label": "CleanupODBC on connection failure" },
+    { "from": "ch_macodbc_025_connect", "to": "ch_macodbc_004_structs_globals", "type": "data_flow", "label": "initializes MS_DB, INF_DB, MAIN_DB, ALT_DB" },
+    { "from": "ch_macodbc_025_connect", "to": "ch_macodbc_003_enums", "type": "data_flow", "label": "sets Provider enum values" },
+    { "from": "ch_macodbc_027_errorhandler", "to": "ch_macodbc_020_getmainop", "type": "calls", "label": "retrieves SQL text for error reporting" },
+    { "from": "ch_macodbc_028_isvalidptr", "to": "ch_macodbc_029_segfaultcatcher", "type": "data_flow", "label": "SIGSEGV triggers siglongjmp back" },
+    { "from": "ch_macodbc_029_segfaultcatcher", "to": "ch_macodbc_028_isvalidptr", "type": "data_flow", "label": "sets ODBC_PointerIsValid=0, siglongjmp" }
+  ],
+  "groups": {
+    "header": {
+      "label": "Header Sections (lines 1-420)",
+      "description": "Includes, constants, enums, structs, globals, macro API, error macros, and function declarations"
+    },
+    "odbc_exec": {
+      "label": "ODBC_Exec Dispatcher (lines 422-2657)",
+      "description": "The 2,212-line central dispatcher broken into 8 semantic phases"
+    },
+    "helpers": {
+      "label": "Helper Functions (lines 2661-4121)",
+      "description": "10 supporting functions: metadata resolution, SQL customization, column parsing, connection, error handling, pointer validation"
+    }
+  },
+  "external_dependencies": [
+    { "chunk": "ch_macodbc_020_getmainop", "file": "MacODBC_MyOperators.c", "type": "include_injection", "line": 2747, "description": "Per-component operator switch cases injected via #include" },
+    { "chunk": "ch_macodbc_021_getwhere", "file": "MacODBC_MyCustomWhereClauses.c", "type": "include_injection", "line": 2866, "description": "Per-component WHERE clause switch cases injected via #include" },
+    { "chunk": "ch_macodbc_001_header", "file": "GenSql.h", "type": "header_include", "line": 39, "description": "Project SQL infrastructure header" },
+    { "chunk": "ch_macodbc_001_header", "file": "MacODBC_MyOperatorIDs.h", "type": "header_include", "line": 40, "description": "Per-component operator ID definitions" },
+    { "chunk": "ch_macodbc_025_connect", "file": "GenSql.c", "type": "called_from", "description": "ODBC_CONNECT is called from INF_CONNECT in GenSql.c" }
+  ]
+}

@@ -1,0 +1,3944 @@
+
+
+//because it use in 4 files :DBFields.h;global_1.h;
+//As400UnixClient.ec;macsql.ec Yulia 06.2000
+//EXEC SQL include "GenSql.h";
+
+
+#define MMdxTpmConnectPassword		"MacZacTpm"
+#define MMacFeConnectPassword		"MacZacFe"
+#define MMacAuthConnectPassword		"MacAuth"
+//yulia niu#define MMacDbmConnectPassword		"MacDbm"
+//yulia niu#define MMacLogDConnectPassword		"MacLogD"
+//yulia niu#define MMacStatDConnectPassword	"MacStatD"
+//yulia niu#define MAS400FeConneauthctPassword		"MacAS400"
+#define MMacDiverKishonMemberCardCode 	3  //Yulia 20050825
+#define DiverKishonGnrlDefine 			600  //Yulia 20050825
+#define SapatGnrlDefine		 			700  //Yulia 20050928
+#define Psich9Define		 			800  //Yulia 20130503
+#define MMacTemporaryMemberCardCode 	7
+#define MMacElegbilityExpired		-99
+#define MMacElegbilityOutOfTheCountry			60   //Yulia 20010712
+//yulia niu#define MMacQuarterlyEmployee		2
+#define ContractTypeSPEC_9	9 //Yulia 20060726
+
+
+#define isenglish( c )											\
+(																\
+( (unsigned char)(c) >= 65 && (unsigned char)(c) <= 90 ) ||	 \
+( (unsigned char)(c) >= 97 && (unsigned char)(c) <= 122 ) )
+
+#define isend( c )											\
+( !c || strchr( "\n\r", (unsigned char)(c) ) != NULL )
+
+#define isnumber( c )											\
+( (unsigned char)(c) >= 48 && (unsigned char)(c) <= 57 )
+
+#define isnumberextra( c )											\
+( strchr( ". \t", (unsigned char)(c) ) != NULL )
+
+#define isnumberstopper( c )											\
+( strchr( ";()[]{}_\\?-", (unsigned char)(c) ) != NULL )
+
+#define isnumbersemistopper( c )											\
+( strchr( ",./*", (unsigned char)(c) ) != NULL )
+
+#pragma pack(1)
+
+/*
+ * This paragraph is for disabling
+ * SQL commands for non-SQL files
+ */
+
+//#define EXEC
+//#define SQL
+//#define begin	long int ____e_l_y______
+//#define end	long int ____l_e_v_y____
+//#define declare
+//#define section
+//#endif
+
+enum	
+{
+	MacAuthNotCancled,					/*0*/
+	MacAuthCancelByAs400,				/*1*/
+	MacAuthCancelKbdEntry,				/*2*/
+	MacAuthCancelNoAuth,				/*3*/
+	MacAuthCancelOld,					/*4*/
+	MacAuthCancelByTerm,				/*5*/
+	MacAuthCancelIssueDate,				/*6*/
+	MacAuthCancelError,					/*7*/
+	MacAuthCancelSecond,				/*8*/
+	MacAuthCancelOperator,				/*9*/
+	MacAuthCancelThird,					/*10*/
+	MacAuthCancelConMemb,				/*11*/
+	MacAuthCancelCode2Advisor,			/*12*/
+	MacAuthCancelUrgent					/*13*/
+};
+typedef short TAuthCancelCode;
+
+
+enum	
+{
+	MacErrTerminalNotFound		=	1000,
+	MacErrInvalidInstitute		=	1001,
+	MacErrNoConterm				=	1002,
+	ER_CONTRACT_TYPE_NOT_ALLOWED    =   	1003,
+	MacErrShiftIsClosed			=	1004,
+	MacErrCardExpired			=	1005,
+	MacErrInvalidMemberId		=	1006,
+	MacErrInvalidContractorId	=	1007,
+	MacErrProfSexMismatch		=	1008,
+	MacErrAgeOutOfRange			=	1009,
+	MacErrUrgentNotAllowed		=	1010,
+	MacErrContractorIsActive	=	1011,
+	MacErrSubstitute			=	1012,
+	MacErrInvalidServiceReq		=	1013,
+	MacErrSubstituteGroup		=	1014,
+	MacErrInvalidTermType		=	1015,
+	MacErrInvalidSubstitute		=	1016,
+	MacErrInvalidSpecLocation	=	1017, /* Y20060726 for contracttype =9*/
+	MacErrAuthIfUrgent			=	1019,
+	MacErrThirdVisit			=	1021,
+	MacErrOutOfTheCountry		=	1026,				//20010717
+	MacErrExistAddData			=	1030,				//Yulia 20060514
+	MacErrAbsentGroup			=	1031,				//Yulia 20091228
+	MacErrMembContr 			=	1061,				//Yulia 20130901
+	MacErrWrongFormat			=	1100,				// GAL 20040324
+	MacIndOfflineAuthFirst		=	2000,
+	MacIndOfflineAuthLast		=	2099,
+	ER_INVALID_SESSION_ID		=	3000,
+	MacErrInvalidProfessionCode =	3010,
+	MacErrSecondVisit			=	4000,
+	MacErrAuthIfUrgentNoTax 	=	4100,
+	MacErrSecondVisitSameLoc	=	5100,
+	MacErrSecondVisitOtherLoc	=	5200,
+	MacErrAuthHandMade			=	5300,
+	MacErrSecondVisitSameBranch	=	5400,
+	MacErrSecondVisitSameLocHMade	=	5500,
+	MacErrSecondVisitOtherLocHMade	=	5600,
+	MacErrMahozDistanceValid		=	1050,
+	MacErrSubstituteTax				=	6012,	 //20120514 next lines
+	MacErrSubstituteGroupTax        =   6014,
+	MacErrAbsentGroupTax			=	6031,	//Yulia 20140107
+	MacErrSecondVisitSameLocTax		=	6100,
+	MacErrSecondVisitOtherLocTax	=	6200,
+	MacErrSecondVisitSameBranchTax	=	6400,
+	MacErrSecondVisitSameLocHMadeTax	=	6500,
+	MacErrSecondVisitOtherLocHMadeTax	=	6600,
+	MacErrMahozDistanceValidTax			=	6050,
+	MacErrMembContrTax 					=	6061				//Yulia 20130901
+};
+typedef short TMacError;
+
+enum	
+{
+	SubstTypeAdHok	=	1,
+	SubstTypeAgreement,
+	SubstTypeGroup
+};
+typedef short TSubstType;
+
+enum 
+{
+	MacTermTypeElegebility	=	1,
+	MacTermTypeDentist	=	2,
+	MacTermTypePresence	=	4
+} ;
+typedef short TMacTermTypeBits;
+
+enum	
+{
+	SexMale 	=	1,
+	SexFemale	=	2,
+	BothSexes	=	3
+};
+typedef short TSex;
+
+
+enum	
+{
+	RequestLevelLabNote ,
+	ItemLevelLabNote,
+	MaxLevelLabNote		= 9
+};
+typedef short TLabNoteType;
+
+enum	
+{
+	ConMembLinkSpecial	=	1,
+	ConMembLinkGroup	=	2,
+	ConMembLinkPermanent=	3,
+	ConMembLinkDiet		=	4,
+	ConMembLinkGlobal	=	5
+};
+typedef short TConMembLinkType;
+
+enum	
+{
+	ContermHasNoPharmacy,
+	ContermHasPharmacy,
+	ContermHasNoPharmacyNoBatchUpd,
+	ContermHasPharmacyNoBatchUpd
+};
+typedef short TPharmacyStatus;
+
+
+enum
+{
+	MacSessionInitReqCode	=	-30000,
+	MacSessionInitRspCode	=	-29999,
+
+	MacReqCodeFirst				=	1,
+
+	MacTermStartupReqCode		=	  1,
+	MacTermParamsReqCode		=	  2,
+	MacShiftOpenReqCode 		=	  3,
+	MacClicks_10_DrugExtension	=	  4,
+	MacRecoverVisitsReqCode 	=	  5,
+	MacVisitsUpLoadReqCode		=	  6,
+	MacAbsenceReportReqCode 	=	  7,
+	MacPresenceReportReqCode	=	  8,
+	MacClockUpdateReqCode		=	  9,
+	MacDisconnectReqCode		=	 10,
+	MacMemberDetailsReqCode 	=	 11,
+	MacDetailedAuthReqCode		=	 12,
+	MacShiftsReportReqCode		=	 13,
+	MacAuthReqNewReqCode		=	 14,
+	MacPcStatReqCode			=	 15,
+	MacVisitsUpLoadNewReqCode	=	 16,
+	MacLabResultsReqCode		=	 17,
+	MacShiftOpenNewReqCode		=	 18,
+	MacMedDataToReqCode			=	 19,
+	MacLabResultsConfReqCode	=	 20,
+	MacClicksTblUpdCode			=	 21, //Yulia 20060514
+	MacRentgenResReqCode		=	 22,
+	MacInformReqCode			=	 23,
+	MacPatientDrugsReqCode		=	 24,
+	MacPcStat25ReqCode			=	 25,//Yulia 20060529
+	MacVisitsUpLoadLipReqCode	=	 26,
+	MacMedDataReqCode			=	 27,
+	MacVisNewUpLoadReqCode		=	 28,
+	MacActionUpLoadReqCode		=	 29,
+	MacMedDataConfReqCode		=	 31,
+	MacRentgenResConfReqCode	=	 32,
+	MacInformReqCodeYahalomOld	=	 33,	// DonR 05Nov2012 / 04Apr2013 - delete when everyone has moved to Trn. 53!
+	MacAuthReqReqNewCode		=	 34,
+	MacLabResOtherListReqCode	=	 37,
+	MacLabResOtherSendReqCode	=	 38,
+	MacMemberDrugCode			=	 41,
+	MacDetailedAuthReqNewCode	=	 42,
+	MacMemDrugNotPrioryReqCode	=	 43,
+	MacAuthReqNewReqNewCode		=	 44,
+	MacMedParamUpLoadReqCode	=	 48,
+	MacDrugReqCode				=	 49,
+	MacLabRefCode				=	 50,
+	MacNewTermParamsReqCode		=	 52,
+	MacInformReqCodeYahalom		=	 53,	// DonR 04Apr2013 - replacement for Trn. 33.
+	MacAuthReqNewCreditCode		=	 54,
+	MacShiftOpenNew58ReqCode	=	 58, //Yulia 20050112
+	MacRentgenResNewReqCode		=	 62,
+	MacShiftOpenNew68ReqCode	=	 68, //Yulia 20060529
+	MacConsSendReqCode			=	 70,
+	MacConsAskReqCode			=	 72,
+	MacConsConfReqCode			=	 74,
+
+	// DonR 29Mar2004 New for Clicks 8.5 begin.
+	MacClicks8_5_Drugs				=	 75,
+	MacClicks8_5_GenComp			=	 76,
+	MacClicks8_5_DrugGenComp		=	 77,
+	MacClicks8_5_GenInter			=	 78,
+	MacClicks8_5_GenInterNotes		=	 79,
+	MacClicks8_5_GnrlDrugNotes		=	 80,
+	MacClicks8_5_DrugNotes			=	 81,
+	MacClicks8_5_DrugDocProf		=	 82,
+	MacClicks8_5_Economypri			=	 83,
+	MacClicks8_5_Pharmacology		=	 84,
+	MacClicks8_5_ClicksDiscnt		=	 85,
+	MacClicks8_5_UsageInstruct		=	 86,
+	MacClicks8_5_Forms				=	 87,	// Not in use - at least for now.
+	MacClicks8_5_DrugForms			=	 88,
+	MacClicks8_5_TreatmentGrp		=	 89,
+	MacClicks8_5_SpecialistPrReq	=	 90,
+	MacClicks8_5_SpecialistLtrSeen	=	 91,
+	MacClicks8_5_SpecialPrescReq	=	 92,
+	MacClicks8_5_PrescPeriod		=	 93,
+	MacClicks8_5_DrugExtension		=	 94,
+	MacClicks8_5_InteractionAuth	=	 95,
+	// DonR 29Mar2004 New for Clicks 8.5 end.
+
+	DrugDocProf_Yahalom			=	 96,	// DonR 05Nov2012.
+
+	MacNurseEntranceCode		=	100,
+	MacNurseDailyCode			=	101,
+	MacNurseReleaseCode			=	102,
+	MacAuthReq104Code			=	104,
+	MacMemberDetReq111CodeNew	=	111, /*20050511*/
+	MacNewDetailedAuthReqCode	=	112,
+	MacAuthReq114Code			=	114,
+	MacNewLabResultsReqCode		=	117,
+	MacNewLabResultsConfReqCode	=	120,
+	MacNewClicksTblUpdCode      =	121,//Yulia 20060515
+	MacAuthReq124Code			=	124,
+	MacAuthReq130Code			=	130,
+	MacAuthReq134Code			=	134,
+	MacNewMemberDrugCode		=	141,
+	MacNewMemDrugNotPrioryReqCode=  143,
+	MacNewMedParamUpLoadReqCode	=	148,
+	MacNewDrugReqCode			=   149,
+	MacNewConsSendReqCode		=	170,
+	MacNewConsAskReqCode		=	172,
+	MacNewConsConfReqCode		=	174,
+	MacRentgenResUploadReqCode	=	182,
+
+	MacReqCodeLast				=	182,
+
+
+	MacAuthLogDataMsgCode		=	200,
+	MacGetLastLogEvents 		=	201,
+	MacMembersUpdateMsgCode 	=	202,
+	MacUnixToAs400FtpMsgCode	=	203,
+	MacLabResultsUpdMsgCode 	=	204,
+	MacLabNotesUpdMsgCode		=	205,
+	MacCloseShiftMsgCode		=	206,
+	MacContermUpdMsgCode		=	207,
+	MacAs400ContermUpdMsgCode	=	208,
+	MacAs400ContractUpdMsgCode	=	209
+};
+
+typedef short TMacMsgCode;
+
+enum
+{
+	MacAuthServiceGnrl,
+	MacAuthServiceDental
+};
+typedef short	TMacAuthService;
+
+enum	
+{
+	MacShiftOpened,
+	MacShiftClosed
+};
+typedef 	short TMacShiftStatus;
+
+enum	
+{
+	MacFeZacNetIntrServerType	=	100,
+	MacFeZacHostIntrServerType,
+	MacAuthServerType,
+	MacDbmServerType,
+	MacLogDServerType,
+	MacStatDServerType,
+	MacAs400FeServerType
+};
+typedef	short  TMacServerType;
+
+enum	
+{
+	AuthOptionAuthAnyway,
+	AuthOptionAuthUrgent,
+	AuthOptionAuthSubst
+
+};
+typedef short TMacAuthOption;
+
+  typedef enum      // GAL 30/03/04
+  {
+	stEnglish = 0,
+	stHebrew,
+	stNumber
+  }	LangState;
+
+
+	typedef		int	TTermId;
+	typedef		int	TLocationId;
+	typedef		short	TTaxAmount;
+	typedef		short	TAuthError;
+	typedef		short	TAuthQuarter;
+	typedef		int	TIdNumber;
+	typedef		int	TDateYYYYMMDD;
+	typedef		int	TTimeHHMMSS;
+	typedef		short	TTimeHHMM;
+	typedef		short	TDateYYMM;
+	typedef		int	TTimeSec;
+	typedef		int	TNZipCode;
+	typedef		short	TRAge;
+	typedef		short	TInstitute;
+	typedef		short	TIdCode;
+	typedef		short	TVisitActionOld;
+	typedef		int	TVisitAction;
+	typedef		short	TObservationCodeOld;
+	typedef		short	TObservationCode;
+	typedef		short	TMacTermType;
+	typedef		short	TElegebility;
+	typedef		short	TContractType;
+	typedef		short	TFamilyStatus;
+	typedef		short	TSubstReason;
+	typedef		short	TShiftError;
+	typedef		short	TProfession;
+	typedef		short	TUserId;
+	typedef		short	TAreaCode;
+	typedef		int	TLabReqId;
+	typedef		short	TLabReqPortion;
+	typedef		int	TRecRelNumber;
+	typedef 	int     TTreatmentContr;
+	typedef 	int     TMedicineCode;
+	typedef 	short   TQuantity;
+	typedef 	short   TDouse;
+	typedef 	short   TDays;
+	typedef 	short   TNumberOfPacages;
+	typedef 	short   TPayingInst;
+	typedef 	short	TEmployee;
+	typedef 	short	TAction;
+	typedef 	short	TAuthType;
+	typedef 	int     TPrescriptions;
+	
+	typedef		int	TRentgenId; /* rentgen 03.05.2000*/
+	typedef		int THospitalId;/*20010101*/
+	typedef		int TObligationNumber;/*20010101*/
+	typedef		char TCHospitalizationNumber[10];/*20010101*/
+	typedef		char TCRight_YN[1];
+	typedef		int  TDepartment;
+	typedef		int TReasonNotRight;
+	typedef		char TCNurseComment[66];
+	typedef		int	 TDoctorNumber; 
+	typedef		int	 TNurseError; 
+	typedef		int  TDiffGroup;
+	typedef		char  TCOperation[5];
+	typedef		int		TSeqNumber;
+	typedef		char	TCCharacterization[2];
+	typedef		char	TCObservationDescr[66];
+	typedef		char	TCNotDiffComment[60];
+
+/*20010218*/
+	typedef		int   	TGenCompCode;
+	typedef		int		TDrugCodeA;
+	typedef		char	TCGenCompDesc[40+1];
+	typedef		char	TCDelFlag[1+1];
+	typedef		int		TInteractType;
+	typedef		int 	TInteractCode;
+	typedef		char	TCInteractDesc[40+1];
+	typedef		int		TPharmGroupCode;
+	typedef		char	TCShortName[17+1];
+	typedef		char	TCFormName[25+1];
+	typedef		char	TCPackage[10+1];
+	typedef		int		TPackageSizeA;
+	typedef		int		TPricePrcnt;
+	typedef		char	TCDrugType[1+1];
+	typedef		int 	TPrivSaleOK;
+	typedef		int		TPrice;
+	typedef		int     TCronicDays;
+	typedef		char    TCGnrlDrugNoteType[1+1];
+	typedef		int		TGnrlDrugNoteCode;
+	typedef		char    TCGnrlDrugNote[50+1];
+	typedef		char	TCProfGr[2+1];
+	typedef		int		TPricePrcntA;
+	typedef		char 	TCDrugGroup[1+1];
+	typedef		int 	TGroupCode;
+	typedef		int 	TGroupNbr;
+	typedef		int		TPharmGroupCodeA;
+	typedef		char	TCPharmGroupName[25+1];
+
+/*20010218*/
+
+
+#ifdef NON_SQL
+	typedef 	char	TCAnsText[70];
+	typedef 	char	TCPhonePrefix[4];
+	typedef 	char	TCProfDescr[20];
+	typedef 	char	TCStreet[18];
+	typedef 	char	TCObservationCode[10];
+	typedef		char	TCTermDescr[40];
+	typedef 	char	TCCity[22];
+	typedef 	char	TCFirstName[10];
+	typedef 	char	TCLastName[16];
+	typedef 	char	TCLastName15[15];
+	typedef 	char	TCPhone12[12];
+	typedef 	char	TCModemPrefix[4];
+	typedef 	char	TCLabNote[31];
+	typedef 	char	TCLabUnits[15];
+	typedef 	char	TCCharNew[2];
+	typedef 	char	TCCharNew1[1];
+	typedef 	char	TCCharNew7[7];
+	typedef 	char	TCCharNew6[6];
+	typedef 	char	TCCharNew5[5];
+	typedef 	char	TCTablName[20];
+	typedef 	char	TCConMembNote[66];
+	typedef 	char	TCLineMessg[66];
+	typedef 	char	TCUserName[11];
+	typedef 	char	TCMedTitle[60];
+	typedef 	char	TCMedText[70];
+//	typedef 	char	TCCharRowid20[20];  /*oracle future*///macauth
+//	typedef 	long	TCCharRowid20;  /*oracle INFORMIX now*///macauth
+	typedef		char    TCRentgName30[30];/*     03.05.2000*/
+	typedef		char    TCRentgType25[25];/*rentgen 03.05.2000*/
+	typedef		char    TCRentgName31[31];/*hosp 20040512*/
+	typedef		char    TCRentgType26[26];/*hosp 20040512*/
+//	typedef		char    TCRentgResult[2028];/*rentgen 03.05.2000*/
+	typedef		char    TCRentgResult[6144];/*rentgen 16.01.2005*/
+/* next 4 lines for transaction 37,38 */
+#endif
+
+#ifndef NON_SQL
+	typedef 	char	TCLNameO[14];
+	typedef 	char	TCProfO[18];
+	typedef 	char	TCGrListO[20];
+
+/* oracle add new define if because string for INFORMIX(varchar)
+								and char   for ORACLE  */
+
+	#ifndef ORACLE_SYSTEM
+		typedef 	string	TCFNameO[8];
+		typedef 	string	TCAnsText[70];
+		typedef 	string	TCPhonePrefix[4];
+		typedef 	string	TCProfDescr[20];
+		typedef 	string	TCStreet[18];
+		typedef 	string	TCObservationCode[10];
+		typedef		string	TCTermDescr[40];
+		typedef 	string	TCCity[22];
+		typedef 	string	TCFirstName[10];
+		typedef 	string	TCLastName[16];
+		typedef		string	TCLastName15[15];
+		typedef 	string	TCPhone12[12];
+		typedef 	string	TCModemPrefix[4];
+		typedef 	string	TCLabNote[31];
+		typedef 	string	TCLabUnits[15];
+		typedef 	string	TCCharNew[2];
+		typedef 	string	TCCharNew1[1];
+		typedef 	string	TCCharNew7[7];
+		typedef 	string	TCCharNew6[6];
+		typedef 	string	TCCharNew5[5];
+		typedef 	string	TCTablName[20];
+		typedef 	string	TCConMembNote[66];
+		typedef 	string	TCLineMessg[66];
+		typedef 	string	TCUserName[11];
+		typedef 	string	TCMedTitle[60];
+		typedef 	string	TCMedText[70];
+//GenSql.h	<=	typedef 	long	TCCharRowid20;  /*oracle INFORMIX now*/
+
+		typedef		string  TCRentgName30[30];/*rentgen 03.05.2000*/
+		typedef		string  TCRentgType25[25];/*rentgen 03.05.2000*/
+		typedef		char    TCRentgName31[31];/*hosp 20040512*/
+		typedef		char    TCRentgType26[26];/*hosp 20040512*/
+//		typedef		string  TCRentgResult[2028];/*rentgen 03.05.2000*/
+		typedef		string  TCRentgResult[6144];/*rentgen 16.01.2005*/
+	#endif
+	/*
+	#ifdef ORACLE_SYSTEM
+		typedef 	char	TCFNameO[8];
+		typedef 	char	TCAnsText[70];
+		typedef 	char	TCPhonePrefix[4];
+		typedef 	char	TCProfDescr[20];
+		typedef 	char	TCStreet[18];
+		typedef 	char	TCObservationCode[10];
+		typedef		char	TCTermDescr[40];
+		typedef 	char	TCCity[22];
+		typedef 	char	TCFirstName[10];
+		typedef 	char	TCLastName[16];
+		typedef 	char	TCPhone12[12];
+		typedef 	char	TCModemPrefix[4];
+		typedef 	char	TCLabNote[31];
+		typedef 	char	TCLabUnits[15];
+		typedef 	char	TCCharNew[2];
+		typedef 	char	TCCharNew1[1];
+		typedef 	char	TCCharNew7[7];
+		typedef 	char	TCCharNew6[6];
+		typedef 	char	TCCharNew5[5];
+		typedef 	char	TCTablName[20];
+		typedef 	char	TCConMembNote[66];
+		typedef 	char	TCLineMessg[66];
+		typedef 	char	TCUserName[11];
+		typedef 	char	TCMedTitle[60];
+		typedef 	char	TCMedText[70];
+#ifndef TCCharRowid20
+		typedef 	char	TCCharRowid20[20];
+#endif		
+		  *rentgen 03.05.2000*
+		typedef		char    TCRentgName30[30];
+		typedef		char    TCRentgType25[25];
+		typedef		char    TCRentgResult[2028];
+
+	#endif
+*/
+#endif
+
+/*
+typedef 	char	TCAnsText[70]; */
+typedef  struct
+{
+	TCPhonePrefix    Prefix;
+	int           Number;
+} TTermPhone;
+
+typedef struct
+{
+	short		Prefix;
+	int		Number;
+} TPhoneNumber;
+
+typedef struct
+{
+	TDateYYYYMMDD	DbDate;
+	TTimeHHMMSS	DbTime;
+} TDbDateTime;
+
+typedef struct
+{
+	TDateYYYYMMDD	DbDate;
+	TTimeHHMM	DbTime;
+} TDbDateTm;
+
+TDbDateTime	CurrDateTime;
+
+typedef struct
+{
+	TIdCode 	Code;
+	TIdNumber	Number;
+} TMemberId;
+
+typedef struct
+{
+   TIdNumber		Contractor;
+   TContractType	ContractType;
+   int			DClicks;
+   int			DMaccabi;
+   int			DMacCom;
+   int			DMacRep;
+   int			DUpdate;
+   int			DLastVer;
+   int			DBackup;
+   int			DiskSpace;
+   int			DataSize;
+   int			HdrSize;
+   int			LabSize;
+   int			LogSize;
+   int			MacabSize;
+   int			DosVer;
+   int			Res1;
+   int			Res2;
+   int			Res3;
+   int			Res4;
+}	TMacPcStatData;
+
+typedef struct
+{
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	int 			Vers;
+	int 			AddVers;
+	int 			Profession;
+	int 			AddProfession;
+	/*char			VersCopy[2];*/
+	short			VersCopy;
+	int				ClicksUpdateDate;
+	TDbDateTime		DateDrugs;
+	TDbDateTime		Date76;
+	TDbDateTime		Date77;
+	TDbDateTime		Date78;
+	TDbDateTime		Date79;
+	TDbDateTime		Date80;
+	TDbDateTime		Date81;
+	TDbDateTime		Date82;
+	TDbDateTime		Date83;
+	TDbDateTime		Date84;
+	TDbDateTime		Date85;
+	TDbDateTime		Date86;
+	TDbDateTime		Date88;
+	TDbDateTime		Date89;
+	TDbDateTime		Date91;
+	TDbDateTime		Date93;
+	TDbDateTime		Date94;
+	TDbDateTime		DateTablesUpd;
+	int				SoftVer;
+	int				DiskSpace;
+    int				DataSize;
+    int				HdrSize;
+    int				LabSize;
+    int				LogSize;
+	int				Add1;
+	int				Add2;
+}	TMacPcStat25Data;
+
+
+typedef	struct
+{
+	TTermId				TermId;
+    short				InstId;
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TMemberId			MemberId;
+	TDbDateTime 		AuthTime;
+	TElegebility		GnrlElegebility;
+	TCObservationCode	Observation;
+	int					ActionCode;
+	short				ActionNumber;
+    int					TreatmentContr;
+    short				PayingInst;
+	int					TreatmentDate;
+	int					TreatmentTime;
+	short				TreatmentPlace;
+	TProfession			Profession;
+	TLocationId 		Location;
+    TCCharNew			Position;
+   	TCCharNew			PaymentType;
+	TLocationId 		Locationprv;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TActionRecord;
+
+/*20100609*/
+typedef struct
+
+
+{
+	int 		Contractor;
+	short 		ContractType;
+	int 		IdNumber;
+	int         IdCode;
+	int 		CardId;	
+	short 		CardIssueDate;
+	short 		MCardIssueDate;
+	short 		msgcode;
+	short 		error;
+	int		insertdate;
+	int		inserttime;
+}TMembTempCAuthRecord;
+typedef	struct
+{
+	TTermId				TermId;
+    short				InstId;
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TMemberId			MemberId;
+	TDbDateTime 		AuthTime;
+	TElegebility		GnrlElegebility;
+	int					ActionCode;
+	int					TreatmentContr;
+	char			FirstName[8];
+	char			LastName[14];
+	int					MacabiPrice;
+	int					MemberPrice;
+	short				KodStorno;
+    short				PayingInst;
+	TProfession			Profession;
+	TLocationId 		Location;
+    TCCharNew			Position;
+   	TCCharNew			PaymentType;
+	TLocationId 		Locationprv;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TActionAddRecord;
+
+/*end 20051204*/
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TMemberId			MemberId;
+	TDbDateTime 		AuthTime;
+	TTermId				TermId;
+	short				TaxAmount;
+	short				TaxCalc;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TTaxSendRecord;
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TTermId				TermId;
+	TMemberId           MemberId;
+	TDateYYMM			CardIssueDate;
+	TDbDateTime 		AuthTime;
+	TElegebility		GnrlElegebility;
+	char				Observation[4][10];
+    TTreatmentContr		TreatmentContr;
+    TMedicineCode		MedicineCode[6];
+    TPrescriptions		Prescription[6];
+    TQuantity			Quantity[6];
+    TDouse				Douse[6];
+    TDays				Days[6];
+    TNumberOfPacages	NumberOfPacages[6];
+    //TCCharNew			PrescriptionType[6];
+    char				PrescriptionType[6][2];
+    TDateYYYYMMDD		PrescriptionDate[6];
+    char				Reference[3][7];
+    char				Confirmation[3][7];
+    TPayingInst			PayingInst;
+	TProfession			Profession;
+	TLocationId 		Location;
+	TLocationId			Locationprv;
+    TCCharNew     	  	Position;
+   	TCCharNew 	        PaymentType;
+ 	TInstitute  		Institute;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TVisitNewRecord;
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TTermId				TermId;
+	TMemberId           MemberId;
+	int					ParamNumber;
+	TDbDateTime			WriteDT;
+	TDateYYYYMMDD		MeasureDate ;
+//	int					ParamValue;
+//	int					ParamValue1;
+	char				ParamValueChar1[15+1];
+	char				ParamValueChar2[15+1];
+	char				ParamValueChar3[15+1];
+	TProfession			Profession;
+	TLocationId 		Location;
+	TLocationId			Locationprv;
+    TCCharNew     	  	Position;
+   	TCCharNew 	        PaymentType;
+	TDbDateTime			InsertDT;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TMedParamRecord;
+/*20010227*/
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TTermId				TermId;
+	TMemberId           MemberId;
+	TAuthError			LabError;
+	TDoctorNumber		DoctorNumber;
+	TDateYYYYMMDD		LabDate;
+	TTimeHHMMSS			LabTime;
+	char				UrgentYN[1+1];
+	TDateYYYYMMDD		MensDate;
+	int					PregnantWeek;
+	char				PregnantYN[1+1];
+	int					PayingInst;
+	char				Phone[12+1];
+	TSCounter			CountCode;
+	TSCounter			CountObserv;
+	TSCounter			CountObservAct;
+	TRecRelNumber		Rrn;
+	TDateYYYYMMDD		InsDate;
+	TTimeHHMMSS			InsTime;
+	int					ReqCode;
+	TCObservationCode	Observation;
+	int					SeqNum; //Yulia 20030305
+	TCCharRowid20		Crowid; /*oracle */
+} TLabRefRecord;
+/*20010227*/
+typedef	struct
+{
+	TTermId 		TermId;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	short		 	ShiftStatus;
+	TDbDateTime		StatusTime;
+	short			Error;  
+	TLocationId 	Location;
+    TCCharNew       Position;
+   	TCCharNew      	PaymentType;
+	TLocationId		Locationprv;
+	TCCharRowid20	Crowid; /*oracle */
+} TShiftRecord;
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TIdNumber		Contractor;
+	TAuthQuarter		AuthQuarter;
+	short			Cancled; 
+} TAuthCancRecord;
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TDbDateTime		SesTime;	
+	TElegebility	GnrlElegebility;
+	TElegebility	DentalElegebility;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TProfession 	ProfessionGroup;
+	TAuthQuarter	AuthQuarter; 
+	TDbDateTime 	AuthTime;
+	TAuthError		AuthError;
+	TDateYYYYMMDD	ValidUntil;
+	TTermId 		TermId;
+	TLocationId 	Location;
+	TAuthType		AuthType;
+	int				VisitCounter;
+	short			Cancled;
+    TCCharNew       Position;
+    TCCharNew       PaymentType;
+	TLocationId		Locationprv;
+	short			CreditTypeSend;
+	short			CreditType;
+	TRecRelNumber	Rrn;
+	TCCharRowid20	Crowid; /*oracle */
+} TAuthRecord;
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TElegebility	GnrlElegebility;
+	TElegebility	DentalElegebility;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TProfession 	ProfessionGroup;
+	int 		 	AuthDate;
+	int 		 	AuthTime;
+	TAuthError		AuthError;
+	TDateYYYYMMDD	ValidUntil;
+	TTermId 		TermId;
+	TLocationId 	Location;
+	short			CreditTypeSend;
+	short			CreditType;
+	int				TaxCalc;
+	int 			TaxAmount;
+} TAuthTaxRecord;
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TMemberId			MemberId;
+	TDateYYMM			CardIssueDate;
+	TDbDateTime 		AuthTime;
+	TElegebility		GnrlElegebility;
+	TCObservationCode	Observation;
+	TVisitAction		Action[4];
+	TInstitute			PayingInst;
+	TTermId				TermId;
+	TProfession			Profession;
+	TLocationId 		Location;
+	int					VisitCounter;
+    TCCharNew  			Position;
+    TCCharNew			PaymentType;
+	TLocationId 		Locationprv;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; /*oracle */
+} TVisitRecord;
+
+/*20010101*/
+typedef	struct
+{
+	TIdNumber					Contractor;
+	TContractType				ContractType;
+	TTermId 					TermId;
+	TMemberId					MemberId;
+	TNurseError					NurseError;
+	THospitalId					HospitalId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber		HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDateYYYYMMDD				SendDate;
+	TLocationId 				Location;
+	TLocationId					Locationprv;
+    TCCharNew					Position;
+   	TCCharNew					PaymentType;
+	TRecRelNumber				Rrn;
+	TCCharRowid20				Crowid; /*oracle */
+} TNurseEntranceRecord;
+
+
+typedef	struct
+{
+	TIdNumber					Contractor;
+	TContractType				ContractType;
+	TTermId 					TermId;
+	TMemberId					MemberId;
+	TNurseError					NurseError;
+	THospitalId					HospitalId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber 	HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDepartment					Department;
+	TCRight_YN					Right_YN;
+	TReasonNotRight				ReasonNotRight;
+	TCNurseComment				Comment1;
+	TCNurseComment				Comment2;
+	TDateYYYYMMDD				SendDate;
+	TLocationId 				Location;
+	TLocationId					Locationprv;
+    TCCharNew					Position;
+   	TCCharNew					PaymentType;
+	TRecRelNumber				Rrn;
+	TCCharRowid20				Crowid; /*oracle */
+} TNurseDailyRecord;
+
+typedef	struct	
+{
+	TIdNumber					Contractor;
+	TContractType				ContractType;
+	TTermId 					TermId;
+	TMemberId					MemberId;
+	TNurseError					NurseError;
+	THospitalId					HospitalId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber 	HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDateYYYYMMDD				ReleaseDate ;
+	TDateYYYYMMDD				HolidayDate1 ;
+	int							HolidayDays1;
+	TDateYYYYMMDD				HolidayDate2 ;
+	int							HolidayDays2;
+	int							TotalHospitalDays;
+	int							RightDays;
+	int							NotRightDays;
+	TDoctorNumber               DoctorNumber;
+	char						SourceReception[1];
+	int							DescReception;
+	int							CodeRelease;
+	int							InstituteCont;
+	TDiffGroup					DiffGroup1;
+	TDiffGroup					DiffGroup2;
+	TCOperation					Operation1;
+	TSeqNumber					SeqNumber1;
+	TCCharacterization			Characterization1;
+	TCOperation					Operation2;
+	TSeqNumber					SeqNumber2;
+	TCCharacterization			Characterization2;
+	TCLastName					FirstName;
+	TCLastName					LastName;
+	TCLastName					DoctorName;
+	TCObservationDescr			ObservationDescr1;
+	TCObservationDescr			ObservationDescr2;
+	TCNotDiffComment			NotDiffComment;
+	TDateYYYYMMDD				SendDate;
+	TLocationId 				Location;
+	TLocationId					Locationprv;
+    TCCharNew					Position;
+   	TCCharNew					PaymentType;
+	TRecRelNumber				Rrn;
+	TCCharRowid20				Crowid; /*oracle */
+} TNurseReleaseRecord;
+
+/* end 20010101*/
+
+
+typedef	struct
+{
+	TEmployee		Employee;
+	TAction			Action;
+	TDbDateTm 		ActionTime;     
+	TTermId 		TermId;
+	TCCharRowid20	Crowid; /*oracle */
+} TPresenceRecord;
+  
+
+
+typedef struct
+{
+	TIdNumber		Contractor;
+	TTermId 		TermId;			
+	TMemberId		MemberId;
+	TLabReqId		ReqId;
+	short			LabId;
+	int			Route;
+	int			ReqCode;
+	int			Result;
+	int			LowerLimit;
+	int			UpperLimit;
+	TCLabUnits		Units;
+	TDateYYYYMMDD		ApprovalDate;
+	TDateYYYYMMDD		ForwardDate;
+	TDateYYYYMMDD		ReqDate;
+	short			PregnantWoman;
+	short			Completed;
+} TLabRecord;
+  
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TMemberId		MemberId;
+	TLabReqId		ReqId;
+	short			NoteType;
+	int			ReqCode;
+	short			LineIndex;
+	TCLabNote		Note;
+	short                   LabNotesFetchSucceed;
+} TLabNoteRecord;
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TCCharRowid20	Crowid; /*oracle */
+} TCardRecord;
+
+/* next 2 records for transaction 37,38 */
+
+
+// Yulia comment 28.12.99 because split labreother table to labresother and labreslist
+
+/*20010218*/
+typedef struct		//1
+{
+	TDrugCodeA		largo_code     ;
+	TPharmGroupCode	pharm_group_code;
+	TCShortName		short_name;
+	TCFormName		form_name;
+	TCPackage		package;
+	TPackageSizeA	package_size;
+	TPricePrcntA	price_prcnt;
+	TPricePrcntA	price_prcnt_magen;
+	TPricePrcntA	price_prcnt_keren;
+	TCDrugType		drug_type;
+	TPrivSaleOK		pharm_sale_new;
+	char 			sale_price[5+1];
+	int				drug_book_flg;
+	TCronicDays		cronic_months;
+	char			interact_flg[1+1];
+	TCDelFlag		DelFlag;
+	int				magen_wait_months;
+	int				keren_wait_months;
+}TDrugRecord;
+
+typedef struct		//2
+{
+	TGenCompCode		GenCompCode;
+	TCGenCompDesc		GenCompDesc;
+	TCDelFlag			DelFlag;
+} TGenCompRecord;
+
+typedef struct		//3
+{
+	TDrugCodeA			DrugCode;
+	TGenCompCode		GenCompCode;
+	TCDelFlag			DelFlag;
+} TDrugGenCompRecord;
+
+typedef struct		//4
+{
+	TGenCompCode		GenCompCode1;
+	TGenCompCode		GenCompCode2;
+	TInteractType		InteractType;
+	TInteractCode		InteractCode;
+	TCDelFlag			DelFlag;
+} TGenInterRecord;
+
+typedef struct		//5 20011125
+{
+	TInteractCode		InteractCode;
+	TCInteractDesc		InteractDesc;
+	TCDelFlag			DelFlag;
+} TGenInterTextRecord;
+
+typedef struct		//6
+{
+	TCGnrlDrugNoteType	GnrlDrugNoteType;
+	TGnrlDrugNoteCode	GnrlDrugNoteCode;
+	TCGnrlDrugNote		GnrlDrugNote;
+	TCDelFlag			DelFlag;
+}TGnrlDrugNotesRecord;
+
+typedef struct		//7
+{
+	TDrugCodeA			DrugCode;
+	TCGnrlDrugNoteType	GnrlDrugNoteType;
+	TGnrlDrugNoteCode   GnrlDrugNoteCode;
+	TCDelFlag			DelFlag;
+}TDrugNotesRecord;
+
+typedef struct		//8
+{
+	TDrugCodeA			DrugCode;
+	TCProfGr			ProfGroup;
+	TPricePrcnt			PricePrcntGnrl;
+	TPricePrcnt			PricePrcntKeren;
+	TPricePrcnt			PricePrcntMagen;
+	TCDelFlag			DelFlag;
+}TDrugDoctorProfRecord;
+
+typedef struct		//8 - New "Yahalom" version.
+{
+	TDrugCodeA			DrugCode;
+	TCProfGr			ProfGroup;
+	TPricePrcnt			PricePrcntGnrl;
+	TPricePrcnt			PricePrcntKeren;
+	TPricePrcnt			PricePrcntMagen;
+	TCDelFlag			DelFlag;
+	//long to int 20150503 Yulia
+	int					price_pct_yahalom;	// DonR 05Sep2012 Yahalom.
+	int					wait_months;		// DonR 05Sep2012 Yahalom.
+	int					reserved1;			// DonR 05Sep2012 Yahalom.
+	int					reserved2;			// DonR 05Sep2012 Yahalom.
+}TDrugDoctorProfRecord_Yahalom;
+
+typedef struct		//9
+{
+	TCDrugGroup			DrugGroup;
+	TGroupCode			GroupCode;
+	TGroupNbr			GroupNbr;
+	TDrugCodeA			DrugCode;
+	TCDelFlag			DelFlag;
+}TEconomyPriRecord;
+
+typedef struct		//10
+{
+	TPharmGroupCodeA	PharmGroupCode;
+	TCPharmGroupName	PharmGroupName;
+	TCDelFlag			DelFlag;
+}TPharmacologyRecord;
+
+
+// DonR 29Mar2004 New for Clicks 8.5 begin.
+typedef struct		//1 - new version.
+{
+	TDrugCodeA		largo_code;
+	TPharmGroupCode	pharm_group_code;
+	TCShortName		short_name;
+	TCFormName		form_name;
+	TCPackage		package;
+	TPackageSizeA	package_size;
+	double			package_volume;
+	short			ingr_1_code;
+	short			ingr_2_code;
+	short			ingr_3_code;
+	double			ingr_1_quant;
+	double			ingr_2_quant;
+	double			ingr_3_quant;
+	char			ingr_1_units[3+1];
+	char			ingr_2_units[3+1];
+	char			ingr_3_units[3+1];
+	double			per_1_quant;
+	double			per_2_quant;
+	double			per_3_quant;
+	char			per_1_units[3+1];
+	char			per_2_units[3+1];
+	char			per_3_units[3+1];
+	TPricePrcntA	price_prcnt;
+	TPricePrcntA	price_prcnt_magen;
+	TPricePrcntA	price_prcnt_keren;
+	TCDrugType		drug_type;
+	TPrivSaleOK		pharm_sale_new;
+	char			pharm_sale_test[1+1];
+	char 			sale_price[5+1];
+	int				drug_book_flg;
+	TCronicDays		cronic_months;
+	short			rule_status;
+	short			sensitivity_flag;
+	int				sensitivity_code;	//Yulia long to int 20150503 Yulia
+	short			sensitivity_severe;
+	char			interact_flg[1+1];
+	short			openable_pkg;
+	short			needs_29_g;
+	short			chronic_flag;
+	short			shape_code;
+	short			split_pill_flag;
+	short			treatment_typ_cod;
+	short			print_generic_flg;
+	TCDelFlag		DelFlag;
+	int				magen_wait_months;
+	int				keren_wait_months;	// DonR 05Sep2012 Yahalom: Using this variable to read price_pct_yahalom.
+	int				substitute_drug;
+	short			copies_to_print;
+}TDrugRecord85;
+
+typedef struct		//5 - new version.
+{
+	TInteractCode		InteractCode;
+	char				InteractLongDesc[100+1];
+	TCDelFlag			DelFlag;
+} TGenInterTextRecord85;
+
+typedef struct		//6 - new version.
+{
+	TCGnrlDrugNoteType	GnrlDrugNoteType;
+	TGnrlDrugNoteCode	GnrlDrugNoteCode;
+	char				gdn_long_note[200+1];
+	short				gdn_category;
+	short				gdn_sex;
+	short				gdn_from_age;
+	short				gdn_to_age;
+	short				gdn_seq_num;
+	short				gdn_connect_type;
+	char				gdn_connect_desc[25+1];
+	short				gdn_severity;
+	int					gdn_sensitv_type;
+	char				gdn_sensitv_desc[25+1];
+	TCDelFlag			DelFlag;
+}TGnrlDrugNotesRecord85;
+
+typedef struct		//7 - new version.
+{
+	TDrugCodeA			DrugCode;
+	TGnrlDrugNoteCode   GnrlDrugNoteCode;
+	TCDelFlag			DelFlag;
+}TDrugNotesRecord85;
+
+typedef struct		//9 - new version.
+{
+	TCDrugGroup			DrugGroup;
+	TGroupCode			GroupCode;
+	TGroupNbr			GroupNbr;
+	short				ItemSeq;
+	TDrugCodeA			DrugCode;
+	TCDelFlag			DelFlag;
+}TEconomyPriRecord85;
+
+typedef struct		//11
+{
+	char				discount_code		[1+1];
+	char				show2spec			[3+1];
+	char				show2nonspec		[3+1];
+	short				show_needs_ishur;
+	char				ptn_spec_basic		[3+1];
+	char				ptn_nonspec_basic	[3+1];
+	char				ptn_spec_keren		[3+1];
+	char				ptn_nonspec_keren	[3+1];
+	char				spec_msg			[75+1];
+	char				nonspec_msg			[75+1];
+	TCDelFlag			del_flg;
+}TClicksDiscountRecord;
+
+typedef struct		//12
+{
+	short				shape_num;
+	char				shape_code		[ 4 + 1];
+	char				shape_desc		[25 + 1];
+	short				concentration_flag;
+	short				inst_code;
+	char				inst_msg		[40 + 1];
+	short				inst_seq;
+	short				calc_op_flag;
+	char				unit_code		[ 3 + 1];
+	short				unit_seq;
+	char				unit_name		[ 8 + 1];
+	char				unit_desc		[25 + 1];
+	short				open_od_window;
+	char				total_unit_name	[10 + 1];
+	short				round_units_flag;
+	TCDelFlag			DelFlag;
+}TUseInstructRecord;
+
+typedef struct		//13
+{
+	int					largo_code;	// Yulia long to int 20150503 Yulia
+	short				form_number;
+	TCDelFlag			DelFlag;
+}TDrugFormsRecord;
+
+typedef struct		//14
+{
+	short				pharmacology_code;
+	short				treatment_group;
+	char				treat_grp_desc[40+1];
+	short				presc_valid_days;
+	TCDelFlag			DelFlag;
+}TTreatmentGrpRecord;
+
+typedef struct		//15
+{
+	short				presc_type;
+	short				month;
+	short				from_day;
+	short				to_day;
+	TCDelFlag			DelFlag;
+}TPrescPeriodRecord;
+
+typedef struct		//16
+{
+	//Yulia long to int 20150503 Yulia (10 places)
+	int					largo_code;
+	char				extension_largo_co[2+1];
+	short				confirm_authority;
+	char				conf_auth_desc[25+1];
+	short				from_age;
+	short				to_age;
+	short				member_price_prcnt;
+	short				keren_price_prcnt;
+	short				magen_price_prcnt;
+	int					max_op;
+	int					max_units;
+	short				max_amount_duratio;
+	short				permission_type;
+	short				no_presc_sale_flag;
+	int					fixed_price;		// DonR 05Sep2012 Yahalom: now used to send yahalom_price_pct.
+	int					fixed_price_keren;	// DonR 05Sep2012 Yahalom: now used to send yahalom_price_code.
+	int					fixed_price_magen;	// DonR 05Sep2012 Yahalom: now used to send wait_months.
+	char				ivf_flag[1+1];
+	short				refill_period;
+	char				rule_name[75+1];
+	int					rule_number;
+	short				in_health_basket;
+	int					treatment_category;
+	short				sex;
+	short				needs_29_g;
+	TCDelFlag			DelFlag;
+	short				member_price_code;
+	short				keren_price_code;
+	short				magen_price_code;
+	char				reserved_char[15 + 1];
+	int					reserved_long;
+}TDrugExtensionRecord;
+
+typedef struct		//16
+{
+	//Yulia long to int 20150503 Yulia
+	int					largo_code;
+	char				extension_largo_co[2+1];
+	short				confirm_authority;
+	char				conf_auth_desc[25+1];
+	short				from_age;
+	short				to_age;
+	short				member_price_prcnt;
+	short				keren_price_prcnt;
+	short				magen_price_prcnt;
+	int					max_op;
+	int					max_units;
+	short				max_amount_duratio;
+	short				permission_type;
+	short				no_presc_sale_flag;
+	int					fixed_price;
+	int					fixed_price_keren;
+	int					fixed_price_magen;
+	char				ivf_flag[1+1];
+	short				refill_period;
+	char				rule_name[75+1];
+	int					rule_number;
+	short				in_health_basket;
+	int					treatment_category;
+	short				sex;
+	short				needs_29_g;
+	TCDelFlag			DelFlag;
+}TDrugExtensionRecord85;
+
+//typedef struct		// Transaction 24 - part 1.
+//{
+//	long	LargoCode;
+//	long	IshurStatus;
+//	long	IshurOP;
+//	long	IshurUnits;
+//	long	IshurRenewFreq;
+//	long	PharmacyCode;
+//	long	PrivPharmSale;
+//	long	StopUseDate;
+//	long	PtnPercent;
+//	long	FixedPrice;
+//	long	MessageCode;
+//	char	Message		[60];
+//	long	RejectionDate;
+//	long	AsOfDate;
+//	char	ReservedChar[15];
+//	long	ReservedLong;
+//} TSpecialPrescList;
+// DonR 29Mar2004 New for Clicks 8.5 end.
+/*20060514*/
+typedef struct		//16
+{
+	//Yulia long to int 20150503 Yulia
+	int  update_date;
+	int  update_time;
+	short key ;
+	short action_type;
+	int  kod_tbl ;
+	char descr [160+1];
+	char small_descr[3+1];
+	char algoritm [9+1];
+	char add_fld1 [9+1];
+	char add_fld2 [4+1];
+	char add_fld3 [4+1];
+	char add_fld4 [4+1];
+	char add_fld5 [4+1];
+	char add_fld6 [160+1];
+	short times;
+}TClicksTblUpdRecord;
+/*end20060514*/
+/**/
+typedef struct		//16
+{
+	TIdNumber		Contractor;
+	TIdNumber		TreatmentContr;
+	TLocationId 	Location;
+	TDateYYYYMMDD	ValidFrom;
+	TDateYYYYMMDD	ValidUntil;
+	TContractType	ContractType;
+	TTermId 		TermId;
+	int 			AuthType;
+	int 			StatusRec;
+}TGastroRecord;
+typedef struct		//16
+{
+	TIdNumber		Contractor;
+	TMemberId		MemberId;	
+	TContractType	ContractType;
+	int 			Grade;
+	TTermId 		TermId;
+}TMemberContrRecord;
+//Yulia 20080804 for 3024
+typedef struct 
+{
+	TIdNumber		Contractor;
+	TMemberId		MemberId;
+	TLabReqId		ReqIdMain;
+	TDateYYYYMMDD	ReqDate;
+}TLabAdminRecord; 
+
+typedef struct
+{
+	int city0;
+	int city1;
+	int distance;
+	int status;
+}TCityDistance; //3025
+typedef struct
+{
+	TMemberId		MemberId;	
+	TDateYYYYMMDD	ValidFrom;
+	TDateYYYYMMDD	ValidUntil;
+	int DietCnt;
+}TMembDietCnt; //3027
+
+typedef struct
+{
+	TMemberId		MemberId;	
+	TIdNumber		Contractor;
+	short PsicStatus;
+}TPsicStat; //3027
+
+typedef struct
+{
+	TIdNumber		Contractor;
+	TTermId 		TermId;			
+	TMemberId		MemberId;
+	TLabReqId		ReqId;
+	int			LabId;  /*short */
+	int			Route;
+	int			ReqCode;
+	int			Result;
+	int			LowerLimit;
+	int			UpperLimit;
+	TCLabUnits		Units;
+	TDateYYYYMMDD		ApprovalDate;
+	TDateYYYYMMDD		ForwardDate;
+	TDateYYYYMMDD		ReqDate;
+	int			PregnantWoman;/*short */
+	int			Completed;  /*short */
+	TLabReqId		ReqIdMain;      /* 37-38 tr */
+} TLabOtherRecord;
+	
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TMemberId		MemberId;
+	TLabReqId		ReqId;
+	int			NoteType;/*short */
+	int			ReqCode;
+	int			LineIndex;/*short */
+	TCLabNote		Note;
+	short                   LabNotesFetchSucceed;
+	TLabReqId		ReqIdMain;	/* 37-38 tr */
+} TLabNoteOtherRecord;
+
+typedef struct	    /*  -37      send */
+{
+	TIdNumber		Contractor;
+	char			ContrName[10];  /* 37-38 tr */
+	TDateYYYYMMDD		ReqDate;
+	char			ContrProfDescr[10];  /* 37-38 tr */
+	char			GroupList[45];    /* 37-38 tr */
+	TLabReqId		ReqIdMain;      /* 37-38 tr */
+} TLabContrOtherListReq;
+/*new other record */
+
+/*rentgen record 03.05.2000*/
+typedef struct
+{
+	TIdNumber		Contractor;
+	TTermId 		TermId;				//2000.10.25
+	TContractType	ContractType;
+	TMemberId		MemberId;
+	TDateYYYYMMDD	AnswerDate;
+	TTimeHHMMSS 	AnswerTime;	
+	TCRentgName30   AnswerContr;
+	TDateYYYYMMDD	RentgenDate;
+	TTimeHHMMSS 	RentgenTime;	
+	TCRentgType25	TypeResult;
+	TCounter		ResCount;
+	TCRentgName30	ResName1;
+	TCRentgName30	ResName2;
+	TCRentgName30	ResName3;
+	TCRentgName30	ResName4;
+	int				AnswerFlg;
+	int				PatalogyFlg;
+	TRentgenId		RentgenId;
+	int				ResultSize;
+	TCRentgResult	Result;
+	/*20040615 next 5 fields for put to as400*/
+	TIdNumber		HdrCntr;
+	TDateYYYYMMDD	InsDate;
+	TTimeHHMMSS 	InsTime;	
+	TRecRelNumber	Rrn;
+	TCCharRowid20	Crowid; /*oracle */
+} TRentgenRecord;
+/*end  rentgen record 03.05.2000*/
+/*20020618*/
+typedef struct
+{
+	TIdNumber		Contractor;
+	TTermId 		TermId;	
+	TMemberId		MemberId;
+	TDateYYYYMMDD	HospDate;
+	TDateYYYYMMDD	NurseDate;
+	TRentgenId		HospitalNumb;
+	TCRentgName31   ContrName;
+	TCRentgType26	TypeResult;
+	TCounter		ResCount;
+	TCRentgName31	ResName1;
+	int				ResultSize;
+	char			Result[2048];//20040623 change to pataology results
+	TCRentgType26   HospName;
+	TCRentgName31	DepartName;
+	int				FlgSystem;
+	int				PatFlg;
+} THospitalRecord;
+/*end 20020618*/
+/*Yulia 20040623*/
+typedef struct
+{
+	TMemberId		MemberId;
+	TContractType	ContractType;
+	TIdNumber		Contractor;
+	TLocationId 	Location;
+	TDateYYYYMMDD	FromDate;
+	TDateYYYYMMDD	ToDate;
+} TSpeechClientRecord;
+/*end   20040623*/
+/*Yulia20040811*/
+typedef struct
+{
+	TMemberId		MemberId;
+	TContractType	ContractType;
+	TIdNumber		Contractor;
+	short int		KodRasham;
+	char			Rasham[30];
+	TTermId			TermId;
+	TDateYYYYMMDD	UpdateDate;
+} TRashamRecord;
+/*end  20040811*/
+/*20050131*/
+typedef struct
+{
+	TMemberId		MemberId;
+	short int		MessageNo;
+	short int		LineNo;
+	char			Message[30];
+} TMemberMessageRecord;
+
+/*20050131*/
+
+typedef	struct
+{
+	TIdNumber		CardId;
+	TMemberId		MemberId;
+	TDateYYYYMMDD		ValidUntil;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+}	TTempMembRecord;
+
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCStreet 		Street;
+	TCCity			City;
+	short			Mahoz;
+	TCPhone12		Phone;
+	TProfession 	Profession;
+	short			AcceptUrgent;
+	short			SexesAllowed;
+	short			AcceptAnyAge;
+	short			AllowKbdEntry;
+	short			NoShifts;
+	short			IgnorePrevAuth;
+	short			AuthorizeAlways;
+	short			NoAuthRecord;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+	TProfession		prof2;
+	TProfession		prof3;
+	TProfession		prof4;
+	int 			TaxValue;
+	int 			TaxFlagContract;
+} TContractRecord;
+
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TTermId 		TermId;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCStreet 		Street;
+	TCCity			City;
+	short			Mahoz;
+	TCPhone12		Phone;
+	TProfession 	Profession;
+	short			AcceptUrgent;
+	short			SexesAllowed;
+	short			AcceptAnyAge;
+	short			AllowKbdEntry;
+	short			NoShifts;
+	short			IgnorePrevAuth;
+	short			AuthorizeAlways;
+	short			NoAuthRecord;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+	TProfession		prof2;
+	TProfession		prof3;
+	TProfession		prof4;
+	int 			TaxValue;
+	int 			TaxFlagContract;
+} TContractNewRecord; /* Yulia 20130915 */
+
+typedef struct
+{
+	TTermId				TermId;
+	TCTermDescr			Descr;
+	TCStreet 			Street;
+	TCCity				City;
+	TCPhone12			LocPhone;
+	TAreaCode			AreaCode;
+	TMacTermType			TermType;
+	TCModemPrefix			ModemPrefix;
+	TPhoneNumber			Phone[3];
+	TDbDateTime			StartupTime;
+	short				SoftwareVer;
+	short				HardwareVer;
+	TIdNumber			Contractor;
+	TContractType			ContractType;
+	TDbDateTime			LastUpdate;
+	TUserId				UpdatedBy;
+} TTerminalRecord;
+
+typedef	struct
+{
+	short				SysParamsKey;
+	TTaxAmount			TaxAmount;
+	short				InactivityTimeout;
+	short				HostRspTimeout;
+	TDbDateTime			LastUpdate;
+	TUserId				UpdatedBy;
+	TTaxAmount			Tax10_12_1019;/*next 4 fields for tax using*/
+	TTaxAmount			Tax_machon_mac;/*in AuthSendAuthReply*/
+	TTaxAmount			Tax_machon_pr;/*2000.07.01*/
+	TTaxAmount			Tax_all;		/* Yulia*/	
+	TTaxAmount			Tax_Urgent;/*20010122*/
+	TTaxAmount			Tax_speak;/*20010501*/
+	TTaxAmount			Tax_machon_mac_12;/*20080918*/
+	int					validhandtime;
+	int 				flgmembcontr53;/*20131005*/
+	int					flgmembcontr54;
+} TSysParamsRecord;
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TTermId 			TermId;
+	short				AuthType;
+	TDateYYYYMMDD		ValidFrom;
+	TDateYYYYMMDD		ValidUntil;
+	TLocationId 		Location;
+	TLocationId 		Locationprv;
+	short				HasPharmacy;
+	TDbDateTime			LastUpdate;
+	TUserId				UpdatedBy;
+    TCCharNew		    Position;
+   	TCCharNew      	  	Paymenttype;
+	short				Mahoz;
+	short				ServiceType;
+	int					Snif;
+	int					MsgID;
+	short				StatusUrgent; //20010122
+	TDateYYYYMMDD		DrugDateI; //20020410
+	TTimeHHMMSS			DrugTimeI;
+	TDateYYYYMMDD		DrugDateO; //20020410
+	TTimeHHMMSS			DrugTimeO;
+	int					City;
+	int 				Add1;
+	int 				Add2;
+	short  				interface;		 	
+	char				owner[1];
+	int					group8;
+	char				group_c[1];
+	int					group_join;
+	int					group_act;
+	float				tax;
+	short				assign;
+	short				act;
+	short				gnrl_days;
+	short				from_months;
+	short 				to_months;
+	short 				flg_cont;
+} TContermRecord;
+
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	short	 		LastReqCode;
+/*	int			LastTransTime; */
+     	TDbDateTime		LastDate;   /*changed */
+	TTermId			ShiftTermId;
+	short			ShiftOpened;
+	TLocationId 		Location;
+     	TDbDateTime		LabDate;   /*changed */
+	TLocationId 		LabReqTerm;
+     	TDbDateTime		LabCnfDate;   /*changed */
+	TLocationId 		LabConfTerm;
+} TConStatRecord;
+
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TCFirstName		FatherName;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCStreet 		Street;
+	TCCity			City;
+	TNZipCode		Zip;
+	TCPhone12		Phone;
+	short			Sex;
+	TDateYYYYMMDD	BirthDate;
+	TFamilyStatus	FamilyStatus;
+	TElegebility	GnrlElegebility;
+	TElegebility	DentalElegebility;
+	TDateYYYYMMDD	GnrlValidUntil;
+	TDateYYYYMMDD	DentalValidFrom;
+	TDateYYYYMMDD	DentalValidUntil;
+	TElegebility	yahalom_code;		// DonR 05Sep2012 Yahalom.
+	TDateYYYYMMDD	yahalom_from;		// DonR 05Sep2012 Yahalom.
+	TDateYYYYMMDD	yahalom_until;		// DonR 05Sep2012 Yahalom.
+	TDateYYYYMMDD	carry_over_vetek;	// DonR 05Sep2012 Yahalom.
+	short			AuthorizeAlways;
+	TProfession 	UrgentOnlyGroup;
+	short			Asaf;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+	TElegebility	KrnElegebility;
+	TDateYYYYMMDD	KerenValidFrom;
+	TDateYYYYMMDD	KerenValidUntil;
+	int 			KerenWaitFlag;  /* 20070411 Y*/
+	short			Insurance;
+	short			CreditType;
+	TDateYYYYMMDD	UpdateAdr;
+	int             Mess;
+	int             Snif;
+} TMemberRecord;
+
+
+
+typedef	struct
+{
+	TProfession 		Profession;
+	TProfession 		Group;
+	TCProfDescr		Descr;
+	short			AcceptUrgent;
+	short			SexesAllowed;
+	short			MinAgeAllowed;
+	short			MaxAgeAllowed;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+	int				LabOtherAllow;
+	int				Tax;
+	int 			Tax1019;
+} TProfessionRecord;
+
+typedef	struct
+{
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TIdNumber		AltContractor;
+	short			SubstType;
+	TDateYYYYMMDD		DateFrom;
+	TDateYYYYMMDD		DateUntil;
+	TSubstReason		SubstReason;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+} TSubstRecord;
+
+typedef struct
+{
+	TTermId 		TermId;
+	TDbDateTime 		LastUpdate;
+	TMacPcStatData		Data;
+} TPcStatRecord;
+
+typedef struct
+{
+	TTermId 		TermId;
+	TDbDateTime 		LastUpdate;
+	TMacPcStat25Data		Data;
+} TPcStat25Record;
+
+
+typedef	struct
+{
+	TMemberId		MemberId;
+	TProfession 		Profession;
+	short		ConSeq;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	short			LinkType;
+	TDateYYYYMMDD		ValidFrom;
+	TDateYYYYMMDD		ValidUntil;
+	TDbDateTime		LastUpdate;
+	TUserId			UpdatedBy;
+	TCConMembNote		ConMembNote;
+} TConMembRecord;
+
+typedef	struct
+{
+	short		InsCode;
+	short		Elegebility;
+	short		InsType;
+	TDateYYYYMMDD	ValidFrom;
+	TDateYYYYMMDD	ValidUntil;
+} TAddInsData;
+
+typedef	struct
+{
+	TMemberId	MemberId;
+	TAddInsData Data[4];
+} TAddInsRecord;
+
+typedef struct
+{
+	struct
+	{
+		int			ProcId;
+		int			SessionId;	/* Yulia 22.12.98 */
+		TDbDateTime 		SesTime;
+		TDbDateTime 		LogTime;
+		TDbDateTime 		MdxTime;
+		int			RspTime;
+		short	 		MsgCode;
+		short			Error;
+	} Hdr;
+	struct
+	{
+		TTermId 		TermId;
+		TIdNumber		Contractor;
+		TContractType		ContractType;
+		TMemberId		MemberId;
+		TLocationId 		Location;
+		TLocationId 		Locationprv;
+    		TCCharNew        	Position;
+   		TCCharNew        	PaymentType;
+		TRecRelNumber		Rrn;
+	} Data;
+} TLogRecord;
+
+typedef	struct
+{
+	TCTablName		Tablname;
+	int			Recnumb;
+	TDbDateTime		LastUpdate;
+} TSendrecRecord;
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType			ContractType;
+	TTermId				TermId;
+	TMemberId			MemberId;
+	int				RefContractor;
+	int				RefTermId;
+	int				ReqDate;
+	int				TreatContractor;
+	TCFirstName			TreatCFirstName;
+	TCLastName			TreatCLastName;
+	TObservationCode		CauseObserv;
+	TDbDateTime 			TreatTime;
+   	short				PayingInst;
+   	short				ReferInst;
+   	short				ActionType;
+	TCObservationCode 		Observation[4];
+        TCCharNew6			Action[4];
+	TCObservationCode 		Param[4];
+	TCMedTitle			AnswerTitle;
+	int				IdFile;
+   	short				AnswerCount;
+   	short				StatusAs400;
+   	short				StatusTerm;
+	TLocationId 			Location;
+   	TCCharNew        		Position;
+   	TCCharNew        		Paymenttype;
+	TRecRelNumber			Rrn;
+} TMedicalDataRecord;
+
+
+
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TContractType			ContractType;
+	TTermId				TermId;
+	TMemberId			MemberId;
+	int				TreatContractor;
+	TDbDateTime 			TreatTime;
+    	short				ActionType;
+    	short				LineNbr;
+    	short				LineType;
+	TCAnsText			AnswerText;
+	int				IdFile;
+    	short				StatusAs400;
+    	short				StatusTerm;
+	TLocationId 			Location;
+    	TCCharNew      	 		Position;
+   	TCCharNew        		Paymenttype;
+	TRecRelNumber			Rrn;
+} TMedAnswerRecord;
+/*Yulia 20030523*/
+typedef	struct	
+{
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TTermId			TermId;
+   	TIdNumber		TreatmentContr;
+	TMemberId		MemberId;
+	TDateYYYYMMDD	AuthDate;
+	TTimeHHMMSS		AuthTime;
+	TDrugCodeA		LargoPriory;
+	TDrugCodeA		Largo;	
+    char			QuantityText[40];
+	TQuantity		Quantity;
+    TDouse			Douse;
+    TDays			Days;
+	char			Reason[10];
+	char			ReasonText[50];
+	short			Argument;
+	char			ArgumentText[50];
+	TLocationId 	Location;
+	TLocationId 	Locationprv;
+} TDrugNotPrioryRecord;
+/*end 20030523*/
+
+typedef	struct
+{
+	TIdNumber			Contractor;
+	TMemberId           MemberId;
+	int					ReqId;
+	TDbDateTime			InsertDT;
+	TTermId				TermId;
+	TRecRelNumber		Rrn;
+	TCCharRowid20		Crowid; 
+} TConfLabResRecord;
+
+ 
+/*
+ * This paragraph is for disabling
+ * SQL commands for non-SQL files
+ */
+//oracle#ifdef NON_SQL
+
+//oracle#undef EXEC
+//oracle#undef SQL
+//oracle#undef begin
+//oracle#undef end
+//oracle#undef declare
+//oracle#undef section
+
+//oracle#endif
+
+
+
+//yulia 291198err_chk(char*,int);
+
+/* typedef	MByteArray(10)	TMacInitId ;  Yulia 26.11.98 */
+/*Yulia301198typedef	char	TMacInitId[10]*/
+typedef		struct TMacInitId
+{
+	char Byte[10];
+} TMacInitId ;	
+
+typedef	struct	TMacThmHdr
+{
+	int	MsgSize;
+	int	TermId;
+	short	Institute;   
+} TMacThmHdr;
+
+typedef struct	TMacHtmHdr
+{
+	TMacThmHdr	Thm;
+	Int16		Error;
+} TMacHtmHdr;
+
+/*20010121*/
+typedef	struct	TMacThmHdrNew
+{
+	int	MsgSize;
+	int ProgramVersion;
+	int MsgCode;
+	int ErrorNew;
+} TMacThmHdrNew;
+
+typedef	struct	TMacHdrNewAdd
+{
+	TTermId				TermId;
+	short				Institute;   //const 2
+	TIdNumber			Contractor;
+	TContractType		ContractType;//const 1
+}TMacHdrNewAdd;
+
+typedef	struct	TMacHdrNurse
+{
+	TTermId				TermId;
+	short				Institute;   //const 2
+	TIdNumber			Contractor;
+	TContractType		ContractType;//const 1
+	short				RecordsCount;
+}TMacHdrNurse;
+
+/*20010101*/
+
+typedef struct	TMacResetFrame
+{
+	UInt8	InWinSize;
+	UInt8	OutWinSize;
+	UInt8	T1Timer;
+	UInt8	WaitReset;
+} TMacResetFrame;
+
+
+typedef struct	TMacTermStartupReqMsg
+{
+	TMacThmHdr	Hdr;
+	UInt16		SoftwareVer;
+	UInt16		HardwareVer;
+} TMacTermStartupReqMsg;
+
+typedef struct	TMacTermStartupRspMsg
+{
+	TMacHtmHdr		Hdr;
+} TMacTermStartupRspMsg;
+
+typedef struct	TMacTerminalParamsReqMsg
+{
+	TMacThmHdr	Hdr;
+} TMacTerminalParamsReqMsg;
+
+typedef struct	TMacNewTermParamsReqMsg  //Yulia 07.2000 new 52 trans
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+}TMacNewTermParamsReqMsg;
+
+typedef struct	TMacShiftOpenReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	UInt16			SoftwareVer;
+	UInt16			HardwareVer;
+} TMacShiftOpenReqMsg;
+
+typedef struct	TMacShiftOpen68ReqMsg//Yulia 20060529
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TIdNumber		TreatmentContr;
+	TContractType	TreatmentType;
+	int 			Vers;
+	int 			AddVers;
+	int 			Profession;
+	int 			AddProfession;
+/*	char			VersCopy[2];*/
+	short			VersCopy;
+} TMacShiftOpen68ReqMsg;
+typedef struct	TMacShiftOpenRspMsg
+{
+	TMacHtmHdr		Hdr;
+	Int8			LabResults;
+	Int8			Email;
+	Int8			Info[1];
+} TMacShiftOpenRspMsg;
+
+typedef struct	TMacShiftOpenRsp58Msg
+{
+	TMacHtmHdr		Hdr;
+	Int8			LabResults;
+	Int8			Email;
+	Int8			Drugs;
+	Int8			Paps;
+	Int8			Cito;
+	Int8			Histo;
+	Int8			Helbon;
+	Int8			Filler1; //ClicksUpd
+	Int8			Filler2;
+	Int8			Info[1];
+} TMacShiftOpenRsp58Msg;
+
+
+typedef struct	TMacAuthReq04Msg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMacAuthService 	AuthService;
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+} TMacAuthReq04Msg;
+
+typedef struct	TMacAuthReq14Msg
+{
+	TMacThmHdr			Hdr;
+	TIdNumber			Contractor;
+	TContractType		ContractType;
+	TMacAuthService		AuthService;
+	TMemberId			MemberId;
+	TDateYYMM			CardIssueDate;
+	TCounter			VisitCounter;
+} TMacAuthReq14Msg;
+
+/*20010904*/
+typedef struct	TMacAuthReq114TcpMsg
+{
+	TMacThmHdrNew		Hdr;
+	TMacHdrNewAdd		HdrAdd;
+	TMacAuthService		AuthService;
+	TMemberId			MemberId;
+	TDateYYMM			CardIssueDate;
+} TMacAuthReq114TcpMsg;
+
+/*20010904*/
+typedef struct	TMacMemberDetailsReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMemberId		MemberId;
+} TMacMemberDetailsReqMsg;
+
+
+typedef struct TMacRecoverVisitsReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+} TMacRecoverVisitsReqMsg;
+
+typedef struct	TVisitsUploadOldData
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+	TObservationCodeOld 	Observation;
+	TVisitActionOld		Action[4];
+	TInstitute		PayingInst;
+} TVisitsUploadOldData;
+
+typedef	struct	TVisitsUploadNewData
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+	TCObservationCode	Observation;
+	TVisitAction		Action[4];
+	TInstitute		PayingInst;
+} TVisitsUploadNewData;
+
+typedef	struct	TVisitsUploadLipData
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+	Int32			Observation;
+	TVisitAction		Action[4];
+	TInstitute		PayingInst;
+	Int16			VisitCounter;
+} TVisitsUploadLipData;
+
+typedef struct TMacVisitsUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TVisitsUploadOldData	Rec[1];
+} TMacVisitsUploadReqMsg;
+
+typedef struct TMacVisitsUploadNewReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TVisitsUploadNewData	Rec[1];
+} TMacVisitsUploadNewReqMsg;
+
+typedef struct TMacVisitsUploadLipReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TVisitsUploadLipData	Rec[1];
+} TMacVisitsUploadLipReqMsg;
+
+typedef struct TMacAbsenceReportReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TIdNumber		Subst[3];
+	TSubstReason		SubstReason;
+	TDateYYYYMMDD		DateFrom;
+	TDateYYYYMMDD		DateUntil;
+} TMacAbsenceReportReqMsg;
+
+typedef struct TMacPresenceReportReqMsg
+{
+	TMacThmHdr		Hdr;
+	TSCounter		RecordsCount;
+    struct
+    {
+		Int16			Employee;
+		Int16			Action;
+		TDateYYYYMMDD		ActionDate;
+		TTimeHHMM		ActionTime;
+	} Rec[1];
+} TMacPresenceReportReqMsg;
+
+
+typedef struct TMacShiftsReportReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+    struct
+    {
+		TMacShiftStatus ShiftStatus;
+		TDateYYYYMMDD	StatusDate;
+		TTimeHHMM	StatusTime;
+		TShiftError 	Error;
+	} Rec[1];
+} TMacShiftsReportReqMsg;
+
+
+typedef struct	TMacPcStatReqMsg
+{
+	TMacThmHdr	Hdr;
+	TMacPcStatData	Data;
+} TMacPcStatReqMsg;
+
+typedef struct	TMacPcStat25ReqMsg
+{
+	TMacThmHdr	Hdr;
+	TMacPcStat25Data	Data;
+} TMacPcStat25ReqMsg;
+
+
+typedef struct	TMacInitReqMsg
+{
+	TMacInitId	Id;
+} TMacInitReqMsg;
+
+typedef struct	TMacInitRspMsg
+{
+	TMacInitId	Id;
+} TMacInitRspMsg;
+
+typedef struct	TMacTermParams
+{
+	TMacTermType		TermType;
+	TTermPhone		Phone[3];
+	TTaxAmount		TaxAmount;
+	Int16			InactivityTimeout;
+	Int16			HostRspTimeout;
+} TMacTermParams;
+
+
+typedef struct TMacTerminalParamsRspMsg
+{
+	TMacHtmHdr		Hdr;
+	TMacTermParams		Params;
+} TMacTerminalParamsRspMsg;
+
+typedef struct	TMacRecoverVisitsData
+{
+	TMemberId		MemberId;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+	TDateYYYYMMDD		ValidUntil;
+} TMacRecoverVisitsData;
+
+
+typedef struct	TMacRecoverVisitsRspMsg
+{
+	TMacHtmHdr		Hdr;
+	TSCounter		RecordsCount;
+	TMacRecoverVisitsData	Rec[1];
+} TMacRecoverVisitsRspMsg;
+
+typedef struct	TMacAuthRsp12Data
+{
+	TMemberId		MemberId;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCFirstName		FatherName;
+	TDateYYYYMMDD		BirthDate;
+	TSex			Sex;
+	TFamilyStatus		FamilyStatus;
+	TCStreet 		Street;
+	TCCity			City;
+	int		Zip;
+	TCPhone12		Phone;
+	TElegebility		GnrlElegebility;
+	TDateYYYYMMDD		GnrlValidUntil;
+	TElegebility		DentalElegebility;
+	TDateYYYYMMDD		DentalValidFrom;
+	TDateYYYYMMDD		DentalValidUntil;
+} TMacAuthRsp12Data;
+
+typedef struct	TMacAuthRsp12Msg
+{
+	TMacHtmHdr		Hdr;
+	TMacAuthRsp12Data	Data;
+}	TMacAuthRsp12Msg;
+
+typedef struct	TMacMemberDetailsData
+{
+	TMemberId		MemberId;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCFirstName		FatherName;
+	TCStreet 		Street;
+	TCCity			City;
+	int				Zip;
+	TDateYYYYMMDD	BirthDate;
+	TFamilyStatus	FamilyStatus;
+	TSex			Sex;
+	TCPhone12		Phone;
+} TMacMemberDetailsData;
+/*
+typedef struct	TMacMemberDetails111Data
+{
+	TMemberId		MemberId;
+	TCFirstName		FirstName;
+	TCLastName		LastName;
+	TCFirstName		FatherName;
+	TDateYYYYMMDD	BirthDate;
+	TSex			Sex;
+	TFamilyStatus	FamilyStatus;
+	TCStreet 		Street;
+	TCCity			City;
+	int				Zip;
+	TCPhone12		Phone;
+} TMacMemberDetails111Data;
+*/
+/*Y20030610 begin*/
+typedef struct	TMacAuthRsp112Data
+{
+	TMemberId			MemberId;
+	TCFirstName			FirstName;
+	TCLastName			LastName;
+	TCFirstName			FatherName;
+	TDateYYYYMMDD		BirthDate;
+	TSex				Sex;
+	TFamilyStatus		FamilyStatus;
+	TCStreet 			Street;
+	TCCity				City;
+	int					Zip;
+	TCPhone12			Phone;
+	TElegebility		GnrlElegebility;
+	TDateYYYYMMDD		GnrlValidUntil;
+	TElegebility		DentalElegebility;
+	TDateYYYYMMDD		DentalValidFrom;
+	TDateYYYYMMDD		DentalValidUntil;
+	TElegebility		KrnElegebility;
+	TDateYYYYMMDD		KerenValidFrom;
+	TDateYYYYMMDD		KerenValidUntil;
+	TTaxAmount			TaxAmount;
+	TTaxAmount			TaxAmountCalc;
+} TMacAuthRsp112Data;
+
+typedef struct	TMacAuthRsp112Msg
+{
+	TMacThmHdrNew		Hdr;
+	TMacAuthRsp112Data	Data;
+}	TMacAuthRsp112Msg;
+/*Y20030610 begin*/
+typedef struct	TMacMemberDetailsRspMsg
+{
+	TMacHtmHdr		Hdr;
+	TMacMemberDetailsData	Data;
+} TMacMemberDetailsRspMsg;
+
+typedef struct TMacClockUpdateReqMsg
+{
+	TMacThmHdr		Hdr;
+} TMacClockUpdateReqMsg;
+
+typedef struct	TMacClockUpdateRspMsg
+{
+	TMacHtmHdr		Hdr;
+	TDateYYYYMMDD		CurrDate;
+	TTimeHHMM		CurrTime;
+} TMacClockUpdateRspMsg;
+
+typedef struct TMacDisconnectReqMsg
+{
+	TMacThmHdr		Hdr;
+} TMacDisconnectReqMsg;
+
+typedef struct	TMacDisconnectRspMsg
+{
+	TMacHtmHdr		Hdr;
+} TMacDisconnectRspMsg;
+
+typedef struct	TMacAuthRsp14Data
+{
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMemberId		MemberId;
+	TCLastName		LastName;
+	TCFirstName		FirstName;
+	TElegebility		GnrlElegebility;
+	TDateYYYYMMDD		GnrlValidUntil;
+	TElegebility		DentalElegebility;
+	TDateYYYYMMDD		DentalValidFrom;
+	TDateYYYYMMDD		DentalValidUntil;
+	short			LabExists;
+	TTaxAmount		TaxAmount;
+	TSCounter		LinesCount;
+} TMacAuthRsp14Data;
+
+typedef struct	TMacAuthRsp54Data
+{
+	//Yulia long to int 20150503 Yulia
+	short CreditType;
+	int			 Reserved1;
+	int			 Reserved2;
+	int			 Reserved3;
+} TMacAuthRsp54Data;
+
+typedef struct	TMacAuthRsp14Msg
+{
+	TMacHtmHdr		Hdr;
+	TMacAuthRsp14Data	Data;
+}	TMacAuthRsp14Msg;
+
+
+/*20010905*/
+typedef struct	TMacAuthRsp114TcpData
+{
+	TMemberId			MemberId;
+	TCLastName			LastName;
+	TCFirstName			FirstName;
+	TElegebility		GnrlElegebility;
+	TDateYYYYMMDD		BirthDate;
+	TCPhone12			Phone;
+	TCStreet 			Street;
+	TCCity				City;
+	//Yulia long to int 20150503 Yulia
+	int					Reserved1;
+	int					Reserved2;
+	int					Reserved3;
+} TMacAuthRsp114TcpData;
+
+typedef struct	TMacAuthRsp114TcpMsg
+{
+	TMacThmHdrNew		Hdr;
+	TMacHdrNewAdd		HdrAdd;
+	TMacAuthRsp114TcpData	Data;
+}TMacAuthRsp114TcpMsg;
+
+/*20010905*/
+/*20050511*/
+typedef struct	TMacAuthRsp111TcpMsg
+{
+	TMacThmHdrNew		Hdr;
+	TMacAuthRsp112Data  Data;
+//	TMacMemberDetailsData	Data;
+//	int	Add1;
+//	int Add2;
+}TMacAuthRsp111TcpMsg;
+
+/*20020502*/
+typedef struct	TMacAuthRsp104TcpData    //dental clinicks  use only instead 4
+{
+	TMemberId		MemberId;
+	TCLastName		LastName;
+	TCFirstName		FirstName;
+	TDateYYYYMMDD	BirthDate;
+	TElegebility	GnrlElegebility;
+	TDateYYYYMMDD	GnrlValidUntil;
+	TElegebility	DentalElegebility;    //gold
+	TDateYYYYMMDD	DentalValidFrom;
+	TDateYYYYMMDD	DentalValidUntil;
+	TElegebility	KerenElegebility;    //silver
+	TDateYYYYMMDD	KerenValidFrom;
+	TDateYYYYMMDD	KerenValidUntil;
+} TMacAuthRsp104TcpData;
+typedef struct	TMacAuthRsp104TcpMsg
+{
+	TMacThmHdrNew			Hdr;
+	TMacHdrNewAdd			HdrAdd;
+	TMacAuthRsp104TcpData	Data;
+}TMacAuthRsp104TcpMsg;
+/* end 20020502*/
+/*20020610*/
+typedef struct	TMacAuthRsp134TcpData    //dental clinicks instead 104 + message
+{
+	TMemberId		MemberId;
+	TCLastName		LastName;
+	TCFirstName		FirstName;
+	TDateYYYYMMDD	BirthDate;
+	TElegebility	GnrlElegebility;
+	TDateYYYYMMDD	GnrlValidUntil;
+	TElegebility	DentalElegebility;    //gold
+	TDateYYYYMMDD	DentalValidFrom;
+	TDateYYYYMMDD	DentalValidUntil;
+	TElegebility	KerenElegebility;    //silver
+	TDateYYYYMMDD	KerenValidFrom;
+	TDateYYYYMMDD	KerenValidUntil;
+	TSCounter		LinesCount;
+} TMacAuthRsp134TcpData;
+typedef struct	TMacAuthRsp134TcpMsg
+{
+	TMacThmHdrNew			Hdr;
+	TMacHdrNewAdd			HdrAdd;
+	TMacAuthRsp134TcpData	Data;
+}TMacAuthRsp134TcpMsg;
+
+/*end 20020610*/
+
+typedef struct	TMacLogGetDataMsg
+{
+	TListKey	Key;
+} TMacLogGetDataMsg;
+
+typedef struct	TMacApprLabResultsData
+{
+	TMemberId		MemberId;
+	TLabReqId		ReqId;
+} TMacApprLabResultsData;
+
+typedef struct	TMacLabResultsReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TSCounter		ApprovedCount;
+	TMacApprLabResultsData	Data;
+} TMacLabResultsReqMsg;
+
+/* rentgen 04.05.2000 */
+
+typedef struct	TMacApprRentgenData
+{
+	TMemberId		MemberId;
+	TRentgenId		ReqId;
+} TMacApprRentgenData;
+
+typedef struct	TMacRentgenReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+//	TMemberId		MemberId;
+//	TDateYYMM		CardIssueDate;    Alon agree and change him program's
+	TSCounter		ApprovedCount;
+//	TMacApprRentgenData	Data;
+} TMacRentgenReqMsg;
+
+/*end 04.05.2000 */
+
+
+/*20010218*/
+typedef struct	TMacDrugsReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TDateYYYYMMDD	LastDrugsDate;
+	TTimeHHMMSS		LastDrugsTime;
+} TMacDrugsReqMsg;
+
+
+// DonR 10Jun2004 New for Clicks 8.5 begin.
+typedef struct	TMacClicksDataReqHdr
+{
+	TMacThmHdr		Thm;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TIdNumber		MemberID;
+	TDrugCodeA		Largo;
+} TMacClicks85DataReqHdr;
+
+typedef struct	TMacClicks85_IshurHdr
+{
+	TMacThmHdr		Thm;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TSCounter		RecordsCount;
+} TMacClicks85_IshurHdr;
+
+typedef struct	TMacClicks85_Trn91Req
+{
+	TIdCode					MemberIDCode;
+	TIdNumber				MemberID;
+	TDrugCodeA				Largo;
+	TIdNumber				SpecialistID;
+	char					SpecName	[22 + 1];
+	short					SpecialtyGroupCode;
+	TDateYYYYMMDD			DateOfLetter;
+} TMacClicks85_Trn91Req;
+
+typedef struct	TMacClicks85_Trn95Req
+{
+	TIdCode					MemberIDCode;
+	TIdNumber				MemberID;
+	TDrugCodeA				Largo_1;
+	TDrugCodeA				Largo_2;
+	TDateYYYYMMDD			DoctorPrDate;
+	int						DoctorPrNumber;	// Yulia long to int 20150503 Yulia
+} TMacClicks85_Trn95Req;
+// DonR 10Jun2004 New for Clicks 8.5 end.
+
+
+
+/*20010218*/
+
+#ifndef DOCTORS_SRC
+typedef	struct	TMacLabResultData
+{
+	Int32		ReqCode;
+	TCLabUnits	Units;
+	Int32		Result;
+	Int32		LowerLimit;
+	Int32		UpperLimit;
+} TMacLabResultData;
+
+
+typedef struct	TMacLabResultReqHdr
+{
+	TMemberId		MemberId;
+	TDateYYYYMMDD		ReqDate;
+	TLabReqId		ReqId;
+	Int16			LabId;
+	Int8			PregnantWoman;
+	Int8			Completed;
+} TMacLabResultReqHdr;
+
+typedef struct TPrescription
+{
+	Int32			MedicinStore;
+	Int32			PrescripStore;
+	Int16			QuantStore;
+	Int16			DouseStore;
+	Int16			DaysStore;
+	Int16			NumberofpacStore;
+	TCCharNew		PrescrtypeStore;
+	TDateYYYYMMDD		PrescrdateStore;
+} TPrescription;
+
+typedef struct TConfirm
+{
+    TCCharNew7			ConfStore;
+} TConfirm;
+
+typedef struct TReference
+{
+   	TCCharNew7		ReferStore;
+} TReference;
+
+typedef struct TObservation
+{
+	TCObservationCode	ObservStore;
+} TObservation;
+
+typedef	struct	TVisNewUploadData
+{
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+    	Int32			Treatmentcontr;
+  	Int16			PayingInst;
+	TSCounter		CountObserv;
+} TVisNewUploadData;
+
+typedef struct TMacVisNewUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TVisNewUploadData	Rec[1];
+} TMacVisNewUploadReqMsg;
+
+/*20010227*/
+
+typedef	struct	TLabRefData
+{
+	TAuthError		LabError;
+	TMemberId		MemberId;
+	TDoctorNumber	DoctorNumber;
+	TDateYYYYMMDD	LabDate;
+	TTimeHHMMSS		LabTime;
+	char			UrgentYN[1];
+	TDateYYYYMMDD	MensDate;
+	int				PregnantWeek;
+	char			PregnantYN[1];
+	int				PayingInst;
+	TCPhone12		Phone;
+	int				Reserve1;
+	int				Reserve2;
+	TSCounter		CountCode;
+} TLabRefUploadData;
+
+typedef struct TMacLabRefUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TSCounter		RecordsCount;
+	TLabRefUploadData		Rec[1];
+} TMacLabRefUploadReqMsg;
+/*20010227*/
+typedef	struct	TActionUploadData
+{
+	TMemberId		MemberId;
+	TDateYYYYMMDD		AuthDate;
+	TTimeHHMM		AuthTime;
+	TElegebility		GnrlElegebility;
+	TCObservationCode	Observation;
+	Int32			ActionCode;
+	Int16			ActionNumber;
+    	Int32			Treatmentcontr;
+    	Int16			PayingInst;
+	TDateYYYYMMDD		TreatmentDate;
+	TTimeHHMM		TreatmentTime;
+	Int16			TreatmentPlace;
+} TActionUploadData;
+
+typedef struct TMacActionUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TActionUploadData	Rec[1];
+} TMacActionUploadReqMsg;
+
+
+/*20051204*/
+typedef	struct	TActionAddUploadData
+{
+	TMemberId		MemberId;
+	TDateYYYYMMDD	AuthDate;
+	TTimeHHMMSS		AuthTime;
+	TElegebility	GnrlElegebility;
+	Int32			ActionCode;
+   	Int32			Treatmentcontr;
+	char			FirstName[8];
+	char			LastName[14];
+	int				MacabiPrice;
+	int				MemberPrice;
+	short			KodStorno;
+	int				Filler1;
+	int				Filler2;
+	short			Filler3;
+} TActionAddUploadData;
+
+typedef struct TMacActionAddUploadReqMsg
+{
+	TMacThmHdrNew		Hdr;
+	TMacHdrNewAdd		HdrAdd;
+	TSCounter			RecordsCount;
+	TActionAddUploadData	Rec[1];
+} TMacActionAddUploadReqMsg;
+
+/*end 20051204*/
+/* tranz 37 */
+typedef struct	TMacLabOtherReq37Msg    /*   37     recieve */
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TMemberId		MemberId;
+} TMacLabOtherReq37Msg;
+
+typedef struct	TMacLabResOther37RspMsg    /* send */
+{
+	TMacHtmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		DataCount;
+	TLabContrOtherListReq	Data[1];
+} TMacLabResOther37RspMsg;
+
+/* end 37 */
+
+/* trans 38 */
+typedef struct	TMacLabContrOtherData
+{
+	TIdNumber		ContractorOther; /* 37-38 tr */
+	TLabReqId		ReqIdMain;
+} TMacLabContrOtherData;
+
+typedef struct	TMacLabResOther38ReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMemberId		MemberId;
+	TSCounter		ContrCount;
+	TMacLabContrOtherData	Rec[1];
+} TMacLabResOther38ReqMsg;
+
+typedef struct	TMacLabResOther38ReqHdr
+{
+	Int16			Stam;
+	TIdNumber		ContractorOther;
+	TDateYYYYMMDD		ReqDate;
+	TLabReqId		ReqIdMain; 
+	Int16			LabId;  /* 25.01.2000 */
+	Int8			PregnantWoman;
+	Int8			Completed;
+} TMacLabResOther38ReqHdr;
+
+typedef struct	TMacRentgenReq22Msg    /*   19/22?     recieve */
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TMemberId		MemberId;
+} TMacRentgenReq22Msg;
+
+
+
+/*20010201MedParam*/
+
+typedef	struct	TMedParamUploadData
+{
+	TMemberId		MemberId;
+	int				ParamNumber;
+	TDbDateTime		WriteDT;
+	TDateYYYYMMDD	MeasureDate ;
+//	int				ParamValue;
+//	int				ParamValue1;
+	char			ParamValueChar1[15+1];
+	char			ParamValueChar2[15+1];
+	char			ParamValueChar3[15+1];
+//	int				Reserved1;
+//	int				Reserved2;
+} TMedParamUploadData;
+
+typedef struct TMedParamUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TSCounter		RecordsCount;
+	TMedParamUploadData	Rec[1];
+} TMedParamUploadReqMsg;
+
+/*end 20010201*/
+
+/*Yulia 20010101 NURSE services*/
+
+typedef	struct	TNurseEntranceUploadData
+{
+	THospitalId					HospitalId;
+	TMemberId					MemberId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber		HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDateYYYYMMDD				SendDate;
+} TNurseEntranceUploadData;
+
+typedef struct TMacNurseEntranceUploadReqMsg
+{
+	TMacThmHdrNew	Hdr;
+	TMacHdrNurse	HdrNurse;
+	TNurseEntranceUploadData	Rec[1];
+} TMacNurseEntranceUploadReqMsg;
+
+typedef	struct	TNurseDailyUploadData
+{
+	THospitalId					HospitalId;
+	TMemberId					MemberId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber 	HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDepartment					Department;
+	TCRight_YN					Right_YN;
+	TReasonNotRight				ReasonNotRight;
+	TCNurseComment				Comment1;
+	TCNurseComment				Comment2;
+	TDateYYYYMMDD				SendDate;
+} TNurseDailyUploadData;
+
+typedef struct TMacNurseDailyUploadReqMsg
+{
+	TMacThmHdrNew	Hdr;
+	TMacHdrNurse	HdrNurse;
+	TNurseDailyUploadData	Rec[1];
+} TMacNurseDailyUploadReqMsg;
+
+
+
+typedef	struct	TNurseReleaseUploadData
+{
+	THospitalId					HospitalId;
+	TMemberId					MemberId;
+	TObligationNumber			ObligationNumber;
+	TCHospitalizationNumber 	HospitalizationNumber;
+	TDateYYYYMMDD				HospitalDate ;
+	TDateYYYYMMDD				ReleaseDate ;
+	TDateYYYYMMDD				HolidayDate1 ;
+	int							HolidayDays1;
+	TDateYYYYMMDD				HolidayDate2 ;
+	int							HolidayDays2;
+	int							TotalHospitalDays;
+	int							RightDays;
+	int							NotRightDays;
+	TDoctorNumber               DoctorNumber;
+	char						SourceReception[1];
+	int							DescReception;
+	int							CodeRelease;
+	int							InstituteCont;
+	TDiffGroup					DiffGroup1;
+	TDiffGroup					DiffGroup2;
+	TCOperation					Operation1;
+	TSeqNumber					SeqNumber1;
+	TCCharacterization			Characterization1;
+	TCOperation					Operation2;
+	TSeqNumber					SeqNumber2;
+	TCCharacterization			Characterization2;
+	TCLastName15				FirstName;
+	TCLastName15				LastName;
+	TCLastName15				DoctorName;
+	TCObservationDescr			ObservationDescr1;
+	TCObservationDescr			ObservationDescr2;
+	TCNotDiffComment			NotDiffComment;
+	TDateYYYYMMDD				SendDate;
+} TNurseReleaseUploadData;
+
+typedef struct TMacNurseReleaseUploadReqMsg
+{
+	TMacThmHdrNew	Hdr;
+	TMacHdrNurse	HdrNurse;
+	TNurseReleaseUploadData	Rec[1];
+} TMacNurseReleaseUploadReqMsg;
+
+/*end Yulia 20010101 NURSE services*/
+
+typedef struct TMedIdFile
+{
+	TMemberId		MemberId;
+	Int32			IdFile;
+} TMedIdFile;
+
+typedef	struct	TMedDataUploadData
+{
+	TMemberId		MemberId;
+	Int32			RefContractor;
+	Int32			RefTermId;
+	Int32			ReqDate;
+	Int32			TreatContractor;
+	TObservationCode	CauseObserv;
+	TDateYYYYMMDD		TreatDate;
+	TTimeHHMM		TreatTime;
+	TInstitute		PayingInst;
+   	Int16			ReferInst;
+    	Int16			ActionType;
+	TCObservationCode	Observation[4];
+	TCCharNew6		Action[4];
+	TCObservationCode	Param[4];
+	TCMedTitle		AnswerTitle;
+	Int32			IdFile;
+    	Int16			AnswerCount;
+} TMedDataUploadData;
+
+typedef struct TMacMedDataUploadReqMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TMedDataUploadData	Rec[1];
+} TMacMedDataUploadReqMsg;
+
+typedef struct TMacMedDataMsg
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TMemberId		MemberId;
+	TDateYYMM		CardIssueDate;
+} TMacMedDataMsg;
+
+typedef struct TMacMedDataConfFromContr
+{
+	TMacThmHdr		Hdr;
+	TIdNumber		Contractor;
+	TContractType		ContractType;
+	TSCounter		RecordsCount;
+	TMedIdFile		Data;
+} TMacMedDataConfFromContr;
+
+typedef struct TMedAnswer
+{
+	Int16			LineNbr;
+	Int16			LineType;
+	TCAnsText		AnswerText;
+} TMedAnswer;
+
+typedef	struct	TMedDataSendData
+{
+	TMemberId		MemberId;
+	int			ReqDate;
+	TCLastName		TreatCLastName;
+	TCFirstName		TreatCFirstName;
+	TObservationCode	CauseObserv;
+	TDateYYYYMMDD		TreatDate;
+	TTimeHHMM		TreatTime;
+    	short			ActionType;
+	TCObservationCode	Observation[4];
+	TCCharNew6		Action[4];
+	TCObservationCode	Param[4];
+	TCMedTitle		AnswerTitle;
+	int			ContractTerm;
+	int			IdFile;
+    	short			AnswerCount;
+} TMedDataSendData;
+
+
+/*Yulia 20030522*/
+/*
+typedef	struct	
+{
+	TIdNumber		Contractor;
+	TContractType	ContractType;
+	TTermId			TermId;
+   	TIdNumber		TreatmentContr;
+	TMemberId		MemberId;
+	TDateYYYYMMDD	AuthDate;
+	TTimeHHMM		AuthTime;
+	TDrugCodeA		LargoPriory;
+	TDrugCodeA		Largo;	
+    TQuantity		Quantity;
+    TDouse			Douse;
+    TDays			Days;
+	short			Reason;
+	char			ReasonText[50];
+	short			Argument;
+	char			ArgumentText[50];
+	TLocationId 	Location;
+	TLocationId 	Locationprv;
+} TDrugNotPrioryRecord;
+*/
+/* 20030522 end*/
+
+
+
+#endif
+
+#pragma pack()
+
+/*---------------------------------------------------------------------*/
+/*           MACHE.H                                                   */
+/*---------------------------------------------------------------------*/
+
+
+
+#define MMdxTpmConnectPassword	"MacZacTpm"
+#define MMacFeConnectPassword	"MacZacFe"
+#define MMacHostInitString		"MAC"
+#define MMacTermInitString		"ZAC"
+#define MMacPcInitString		"MOS"
+
+#define MMacFeMaxOpenedLinks	200
+#define MMacFeNetRrTimeout		500
+#define MMacFeMaxDlcBlockSize	200
+#define MMacFeMaxLinkInputBufSize	1020
+
+#define MMacDelimChar	0x0d
+#define MMacFrameEscape	0x10
+#define MXonChar		0x11
+#define MMacFlagChar	0x12
+#define MXoffChar		0x13
+#define MMacDlcSpecial(_X)	((((_X)	& 0xfc ) == 0x10 ) || (_X) == 0xd )
+
+#pragma pack(1)
+
+typedef enum	TMacFeTimer
+{
+	MacLinkRrTimer	=	1
+}(TMacFeTimer);
+
+typedef enum	TMacFrameType
+{
+	MacFrameTypeData	=	0,
+	MacFrameTypeRr		=	1,
+	MacFrameTypePoll	=	3,
+	MacFrameTypeReset	=	4,
+	MacFrameTypeNone	=	7
+}(TMacFrameType);
+
+#ifndef DOCTORS_SRC
+typedef union	TFeReqId
+{
+	TReqSeq ReqSeq;
+	struct
+	{
+		UInt16	OpenCount;
+		UInt16	LinkIndex;
+	} S;
+} TFeReqId;
+
+typedef union	TLinkFlags
+{
+	UInt32	I;
+	struct
+	{
+		TBit	OutNs			:	3;
+		TBit	OutNr			:	3;
+		TBit	OutFrameType	:	3;
+		TBit	InNs			:	3;
+		TBit	InNr			:	3;
+		TBit	InFrameType		:	3;
+		TBit	SendReset		:	1;
+		TBit	SendRr			:	1;
+		TBit	WaitRr			:	1;
+		TBit	RrTimerSet		:	1;
+		TBit	WaitDlcFlag 	:	1;
+		TBit	WaitDlcDelim	:	1;
+		TBit	InSession		:	1;
+		TBit	CloseOnRr		:	1;
+		TBit	BigEndian		:	1;
+	} S;
+} TLinkFlags;
+
+typedef struct	TMacPtpHdr
+{
+	TMacMsgCode	MsgCode;
+	UInt16		BlockInd;
+} TMacPtpHdr;
+
+
+typedef struct	TMacQueueEntry
+{
+	TMdxMsgSize	Size;
+	short		Sent;
+	TMdxEvent	*OrgEvent;
+	TMacPtpHdr	PtpHdr;
+} TMacQueueEntry;
+
+typedef struct	TLinkInfo
+{
+	TSIndex 		Index;
+	TTpmId			LinkId;
+	TLinkDescr		Ld;
+	UInt16			OpenCount;
+	TMdxError		OpenError;
+	TLinkFlags		Flags;
+	TSCounter		SendCount;
+	TBufSize		InputCount;
+	TTimer			RrTimer;
+	TMdxTime		SessionTime;
+	TMdxLinkParams	*Params;
+//Yulia 291198	TFifoQueue		*OutQueue;
+	TMacQueueEntry	*InQEntry;
+	UInt8			*InputBuf;
+} TLinkInfo;
+
+
+DEF_TYPE TMdxProcId		MyId;
+DEF_TYPE short			TpmConnected;
+DEF_TYPE TMdxProcId		TpmProcId;
+DEF_TYPE TTraceLevel 		TraceLevel;
+DEF_TYPE TTpmServerType		ServerType;
+DEF_TYPE short			ApplShutdown;
+DEF_TYPE TCounter		LinksCount;
+DEF_TYPE TLinkInfo		Links[MMacFeMaxOpenedLinks+1];
+DEF_TYPE short			StartedByTpm;
+
+#pragma pack()
+
+
+Void		MsDosCdecl	MacFeEventHandler(TMdxEvent	*);
+Void		MacFeInitReceived(Void);
+Void		MacFeProcessCallReq(TMdxEvent	*);
+Void		MacFeProcessChangedStatus(TMdxEvent	*);
+Void		MacFeSendGetConfigReq(Void);
+Void		MacFeProcessDataReply(TMdxEvent	*);
+Void		MacFeProcessConfigDataMsg(TMdxSRMsgInfo	*);
+Void		MacFeProcessLinksDataMsg(TMdxSRMsgInfo	*);
+TLinkInfo	*MacFindLinkById(TTpmId);
+TLinkInfo	*MacFeAddLink(TTpmId,TLinkDescr,TMdxLinkParams*);
+Void		MacFeOpenLink(TLinkInfo	*);
+Void		MacFeProcessTransactionReply(TMdxEvent	*);
+TLinkInfo	*MacFeGetTransReplyLink(TReqSeq);
+Void		MacFeSwapTermParamsReply(Void*,TMdxMsgSize);
+Void		MacFeSwapDetailedAuthReply(Void*,TMdxMsgSize);
+Void		MacFeSwapRecoverVisitsReply(Void*,TMdxMsgSize);
+Void		MacFeSwapMemberDetailsReply(Void*,TMdxMsgSize);
+Void		MacFeSwapGeneralReply(Void	*,TMdxMsgSize,TBit);
+Void		MacFeAddMsgToLinkOutQueue(TLinkInfo*,TMacMsgCode,Void*,TMdxMsgSize,TMdxEvent*);
+Void		MacFeAddLinkOutQueue(TLinkInfo*,TMacPtpHdr*,Void*,TBufSize,TMdxEvent*);
+Void		MacFeSendNextMsg(TLinkInfo	*);
+Void		MacFeSendFrame(TLinkInfo*,Void*,TBufSize);
+UInt8		MacFeLinkFlagsToAscii(TLinkInfo	*);
+TBufSize	MacFeLinkDataToIoBuffer(UInt8,UInt8Ptr,TBufSize,UInt8Ptr);
+Void		MacFeSetLinkRrTimer(TLinkInfo	*);
+Void		MacFeLinkStatusReceived(TMdxEvent	*);
+TLinkInfo	*MacFeFindOpenedLink(TLinkDescr);
+Void		MacFeLinkReady(TLinkInfo*);
+Void		MacFeSendInitReqMsg(TLinkInfo	*);
+Void		MacFeLinkClosed(TLinkInfo	*);
+Void		MacFeRemoveLinkQueues(TLinkInfo	*);
+Void		MacFeLinkDisconnected(TLinkInfo	*);
+Void		MacFeDataMsgReceived(TMdxEvent	*);
+TLinkInfo	*MacFeGetAvailableLink(Void);
+Void		MacFeSwapTermStartupReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapShiftOpenReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapAuthReq(UInt8Ptr);
+Void		MacFeSwapRecoverVisitsReq(UInt8Ptr);
+Void		MacFeSwapVisitsUploadReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapVisitsUploadNewReq(UInt8Ptr,TMdxMsgSize,TBoolean);
+Void		MacFeSwapVisitsUploadLipReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapAbsenceReportReq(UInt8Ptr);
+Void		MacFeSwapPresenceReportReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapMemberDetailsReq(UInt8Ptr);
+Void		MacFeSwapShiftsReportReq(UInt8Ptr,TMdxMsgSize);
+Void		MacFeSwapPcStatReq(UInt8Ptr);
+Void		MacFeSwapThmHdr(Void	*,TBit);
+Void		MacFeProcessNonMultiXData(TMdxEvent	*);
+Void		MacFeProcessInputChar(TLinkInfo*,UInt8);
+Void		MacFeProcessDlcFrame(TLinkInfo	*);
+TResult 	MacFeIoBufferToLinkData(UInt8Ptr,TBufSize*,UInt8Ptr,TBufSize);
+TBoolean	MacFeIsModemEcho(TLinkInfo	*);
+Void		MacFeAsciiToLinkFlag(TLinkInfo	*);
+Void		MacFeProcessLinkRrFrame(TLinkInfo	*);
+Void		MacFeProcessLinkDataFrame(TLinkInfo	*);
+Void		MacFeAddLinkInQueue(TLinkInfo	*);
+Void		MacFeLinkDataMsgReceived(TLinkInfo	*);
+Void		MacFeProcessNetLinkDataMsg(TLinkInfo	*);
+Void		MacFeProcessInitRsp(TLinkInfo*,UInt8Ptr);
+Void		MacFeProcessClockUpdateReq(TLinkInfo*,UInt8Ptr);
+Void		MacFeProcessDisconnectReq(TLinkInfo	*,UInt8Ptr);
+Void		MacFeForwardLinkInputMsg(TLinkInfo	*);
+Void		MacFeProcessHostLinkDataMsg(TLinkInfo	*);
+Void		MacFeProcessInitReq(TLinkInfo*,UInt8Ptr);
+Void		MacFeSendInitRspMsg(TLinkInfo	*);
+Void		MacFeTerminateSentEntry(TLinkInfo	*);
+Void		MacFeForwardLinkInputReply(TLinkInfo*,TMdxEvent*);
+Void		MacFeProcessTimerEvent(TMdxEvent	*);
+Void		MacFeLinkRrTimerExpired(TIndex,TLinkDescr,TTimer);
+
+
+
+/*---------------------------------------------------------------------*/
+/*           MACAUTH.H                                                 */
+/*---------------------------------------------------------------------*/
+
+DEF_TYPE Int8		DbName[100];
+DEF_TYPE TMdxProcId	MyId;
+DEF_TYPE TMdxProcId	TpmProcId;
+DEF_TYPE TMacError	MacErrno;
+DEF_TYPE short		AuthRecordInserted;
+DEF_TYPE short		ApplShutdown;
+DEF_TYPE short		StartedByTpm;
+DEF_TYPE TDbDateTime TransDateTime;
+DEF_TYPE TSCounter	TransQuarter;
+DEF_TYPE short		MacAuthInserted;
+DEF_TYPE short		KishonDiverFlg; /*Yulia 20050825*/
+DEF_TYPE short		SendTaxZero;
+DEF_TYPE short		SendTaxZeroByProf; // 20120709
+DEF_TYPE short		SendTaxSpeak; /*20010501*/
+DEF_TYPE short		Send99CrType;   /*06.2000 send 99 for machon-consult*/
+DEF_TYPE short		DQuarterTaxPay;   //20120514
+DEF_TYPE short		fTaxPaidNow; //20120514 must take tax
+DEF_TYPE short		FlagPsich9;// Yulia 20130503
+DEF_TYPE TCounter	MemberPrevVisitsCount;
+// Ytemp 20010122 DEF_TYPE TContermRecord	AuthConterm; 
+DEF_TYPE int		NewFlag	DEF_INIT (0); 
+DEF_TYPE int		DistanceCode DEF_INIT (0); 
+//DEF_TYPE short		UrgentFlag DEF_INIT(0);//20010122
+DEF_TYPE short		DayOfYear  DEF_INIT(0);//20010122
+DEF_TYPE short		TermInstitute;//20110227
+TBoolean	AuthValidTerminal(TTermId,TInstitute); 
+Void		AuthSendHdrRsp(TMdxSRMsgInfo*,TMacThmHdr*,TMacError);
+/*20010122*/
+void		 AuthSendHdrRspNew(TMdxSRMsgInfo*,TMacThmHdrNew*);
+TBoolean	AuthValidConterm(TTermId,TIdNumber,TContractType);
+TBoolean	AuthValidContractor(TIdNumber,TContractType);
+TBoolean	AuthValidContractorLight( TIdNumber );  // GAL 30/01/2003 
+#endif
+
+/*---------------------------------------------------------------------*/
+/*           MACSQL.H                                                  */
+/*---------------------------------------------------------------------*/
+
+#include	<time.h>
+#ifdef	InformixModule
+#define		line	__LINE__
+
+Void	rgetmsg(Int16,Int8Ptr,Int16);
+Void	_iqdbase(Int8Ptr,int);
+Void	_iqslct(_SQCURSOR*, char**, int, struct sqlvar_struct*, int, struct sqlvar_struct	*, int);
+Void	_iqstmnt(_SQSTMT*,	char**, int, struct sqlvar_struct*, char	*);
+Void	_iqbeginwork(Void);
+Void	_iqcommit(Void);
+Void	_iqcdcl(_SQCURSOR *,char *, char **,struct sqlda	*,struct sqlda *, int);
+Void	_iqdcopen(_SQCURSOR *,struct sqlda *,char *,char *, int);
+Void	_iqcftch(_SQCURSOR *,struct sqlda *,struct sqlda *,char *,_FetchSpec	*);
+Void	_iqclose(_SQCURSOR *);
+Void	_iqcput(_SQCURSOR *,struct sqlda *,char *);
+Void	_iqdescribe(_SQCURSOR *,struct sqlda **,char *);
+Void	_iqfree(_SQCURSOR *);
+
+#endif
+
+int	DbSetExplain(int);
+int	DbOpenDatabase(char *);
+void	DbBeginWork();
+void	DbEndWork(void);
+int	DbInsertConStatRecord(TConStatRecord	*);
+int	DbDeleteConStatRecord(TIdNumber,TContractType);
+int	DbUpdateConStatRecord(TTermId,TIdNumber,TContractType,short,TLocationId,TDbDateTime);
+int	DbGetConStatRecord(TIdNumber,TContractType,TConStatRecord	*);
+int	DbUpdateConStatLabReq(TTermId,TIdNumber,TContractType,TDbDateTime);
+int	DbUpdateConStatLabConf(TTermId,TIdNumber,TContractType,TDbDateTime);
+int	DbOpenMemberVisitsCursor(TMemberId*,TSCounter,TAuthCancelCode);
+int	DbFetchMemberVisitsCursor(TAuthRecord	*);
+int	DbCloseMemberVisitsCursor(Void);
+int	DbInsertAuthRecord(TAuthRecord	*);
+int	DbOpenFirstVisitsCursor(TIdNumber,TContractType,TSCounter);
+int	DbFetchFirstVisitsCursor(TAuthRecord	*);
+int	DbCloseFirstVisitsCursor(Void);
+int	DbDeleteAuthRecord(TIdNumber,TMemberId *,TSCounter);
+int 	DbCancleAuthVisit(TIdNumber	,TMemberId *,TSCounter,TAuthCancelCode);
+int DbCancleTaxRecord(TIdNumber	,int ,TMemberId *,int,int,TAuthCancelCode); //20120514
+int	DbAuthCheckLocation(TIdNumber,TContractType,TMemberId *,TLocationId);
+
+int	DbDeleteSubstRecordsByType(TIdNumber,TContractType,TSubstType);
+int	DbDeletePcStatRecord(TTermId,TIdNumber,TContractType);
+int	DbInsertPcStatRecord(TPcStatRecord	*);
+int	DbDeletePcStat25Record(TTermId,TIdNumber,TContractType);  /*Yulia 20060607*/
+int	DbInsertPcStat25Record(TPcStat25Record	*);  /*YUlia 20060607*/
+
+int DbCloseMemberInsCursor(Void);
+int DbPutMemberInsCursor(Void);
+int DbOpenMemberInsCursor(TMemberRecord  *);
+int DbOpenShiftsInsCursor(TShiftRecord	*);
+int DbPutShiftsInsCursor(Void);
+int DbCloseShiftsInsCursor(Void);
+int DbOpenPresenceInsCursor(TPresenceRecord	*);
+int DbPutPresenceInsCursor(Void);
+int DbClosePresenceInsCursor(Void);
+
+int DbOpenVisitsInsCursor(TVisitRecord	*);
+int DbPutVisitsInsCursor(Void);
+int DbCloseVisitsInsCursor(Void);
+int	DbUpdateTerminalVersion(TTermId ,TTerminalRecord *);
+
+int DbOpenSendrecInsCursor(TSendrecRecord	*);
+int DbPutSendrecInsCursor(Void);
+int DbCloseSendrecInsCursor(Void);
+int DbUpdateSendrecRecord(TCTablName, Int32, TSendrecRecord *, TDbDateTime);
+
+int DbOpenMedAnswerInsCursor(TMedAnswerRecord	*);
+int DbPutMedAnswerInsCursor(Void);
+int DbCloseMedAnswerInsCursor(Void);
+
+int DbOpenMedDataInsCursor(TMedicalDataRecord	*);
+int DbPutMedicalDataInsCursor(Void);
+int DbCloseMedicalDataInsCursor(Void);
+int	DbCheckContractorMedData(Int32,Int32);
+
+int DbOpenVisNewInsCursor(TVisitNewRecord	*);
+int DbPutVisNewInsCursor(Void);
+int DbCloseVisNewInsCursor(Void);
+//20030415 Yulia
+int DbInsertConsultantRecord(TVisitNewRecord	*,int prof);
+/*20010201*/
+//int DbOpenMedParamInsCursor(TMedParamRecord	*,TDbDateTime	RefDate); 20030
+int DbPutMedParamInsCursor(TMedParamRecord	*,TDbDateTime	RefDate);
+//int DbCloseMedParamInsCursor(void);
+/*end 20010201*/
+/*20010227*/
+//int DbOpenLabRefInsCursor(TLabRefRecord	*,TDbDateTime	RefDate);
+int DbPutLabRefInsCursor(TLabRefRecord	*,TDbDateTime	RefDate); //20020527
+//int DbCloseLabRefInsCursor(void);
+
+//int DbOpenLabRefCodeInsCursor(TLabRefRecord	*,int);
+int DbPutLabRefCodeInsCursor(TLabRefRecord	*,int,TDbDateTime	RefDate,int);//20030224 add seqnumber
+//int DbCloseLabRefCodeInsCursor(void);
+
+//int DbOpenLabRefObservInsCursor(TLabRefRecord	*,TCObservationCode *);
+int DbPutLabRefObservInsCursor(TLabRefRecord	*,TCObservationCode *,TDbDateTime	RefDate);
+//int DbCloseLabRefObservInsCursor(void);
+
+//int DbOpenLabRefObservActInsCursor(TLabRefRecord	*,TCObservationCode *);
+int DbPutLabRefObservActInsCursor(TLabRefRecord	*,TCObservationCode *,TDbDateTime	RefDate);
+//int DbCloseLabRefObservActInsCursor(void);
+
+/*20010227*/
+int DbOpenActionInsCursor(TActionRecord	*);
+int DbPutActionInsCursor(Void);
+int DbCloseActionInsCursor(Void);
+
+/*20051205 next 3lines*/
+int DbOpenActionAddInsCursor(TActionAddRecord	*);
+int DbPutActionAddInsCursor(Void);
+int DbCloseActionAddInsCursor(Void);
+
+int DbCloseAuthInsCursor(Void);
+int DbPutAuthInsCursor(Void);
+int DbOpenAuthInsCursor(TAuthRecord	*);
+
+/*20010101*/
+int DbOpenNurseEntranceInsCursor(TNurseEntranceRecord	*);
+int DbPutNurseEntranceInsCursor(void);
+int DbCloseNurseEntranceInsCursor(void);
+
+int DbOpenNurseDailyInsCursor(TNurseDailyRecord	*);
+int DbPutNurseDailyInsCursor(void);
+int DbCloseNurseDailyInsCursor(void);
+
+
+int DbOpenNurseReleaseInsCursor(TNurseReleaseRecord	*);
+int DbPutNurseReleaseInsCursor(void);
+int DbCloseNurseReleaseInsCursor(void);
+/*20010101*/
+/*20010218*/
+int	DbOpenDrugsSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchDrugsSelectCursor( TDrugRecord	*,int *,int *);
+int DbCloseDrugsSelectCursor(void);
+
+int	DbOpenGenCompSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchGenCompSelectCursor( TGenCompRecord	*	,int *,int *);
+int DbCloseGenCompSelectCursor(void);
+
+int	DbOpenDrugGenCompSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchDrugGenCompSelectCursor( TDrugGenCompRecord		*,int *,int *);
+int DbCloseDrugGenCompSelectCursor(void);
+
+int	DbOpenGenInterSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchGenInterSelectCursor( TGenInterRecord		*,int *,int *);
+int DbCloseGenInterSelectCursor(void);
+
+int	DbOpenGenInterTextSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchGenInterTextSelectCursor( TGenInterTextRecord	*,int *,int *);
+int DbCloseGenInterTextSelectCursor(void);
+
+int	DbOpenGnrlDrugNotesSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchGnrlDrugNotesSelectCursor( TGnrlDrugNotesRecord		*,int *,int *);
+int DbCloseGnrlDrugNotesSelectCursor(void);
+
+int	DbOpenDrugNotesSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchDrugNotesSelectCursor( TDrugNotesRecord		*,int *,int *);
+int DbCloseDrugNotesSelectCursor(void);
+
+int	DbOpenDrugDoctorProfSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchDrugDoctorProfSelectCursor( TDrugDoctorProfRecord		*,int *,int *);
+int DbCloseDrugDoctorProfSelectCursor(void);
+
+int	DbOpenEconomyPriSelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchEconomyPriSelectCursor( TEconomyPriRecord		*,int *,int *);
+int DbCloseEconomyPriSelectCursor(void);
+
+int	DbOpenPharmacologySelectCursor(TDateYYYYMMDD	,TTimeHHMMSS);
+int DbFetchPharmacologySelectCursor( TPharmacologyRecord		*,int *,int *);
+int DbClosePharmacologySelectCursor(void);
+
+/*20010218*/
+
+
+int DbCloseAuthInsCursor(Void);
+int DbPutAuthInsCursor(Void);
+int DbOpenAuthInsCursor(TAuthRecord	*);
+int DbInsertAddInsRecord(TAddInsRecord	*);
+int DbGetAddInsRecord(TMemberId		*,TAddInsRecord	*);
+int DbDeleteAddInsRecord(TMemberId		*);
+int DbUpdateAddInsRecord(TMemberId		*,TAddInsRecord	*);
+
+int	DbOpenMedDataSelCursor(Int32,Int32,TMemberId *);
+int	DbFetchMedDataSelCursor(TMedicalDataRecord	*);
+int	DbCloseMedDataSelCursor(Void);
+int	DbUpdateMedData(TMedicalDataRecord *);
+int	DbUpdateMedDataTable(Int32,Int32,TMemberId *,Int32 );
+
+int	DbOpenMedAnsSelCursor(TMedicalDataRecord *);
+int	DbFetchMedAnsSelCursor(TMedAnswerRecord	*);
+int	DbCloseMedAnsSelCursor(Void);
+int	DbUpdateMedAnswer(TMedAnswerRecord *);
+int	DbUpdateMedAnswerTable(TMemberId *,Int32);
+
+#define SET_JUMP_POS	0
+#define SQL_ERR_JUMP	1
+
+#include	<setjmp.h>
+
+#ifdef DOCSQLSERVER
+DEF_TYPE int		JumpMode	DEF_INIT(1);
+#else
+DEF_TYPE int		JumpMode	DEF_INIT(0);
+#endif
+
+DEF_TYPE jmp_buf	RollbackLocation;
+
+#define	JUMP_ON_ERR	if( SQLERR_code_cmp( SQLERR_not_found ) == MAC_TRUE )	\
+					{														\
+						if( JumpMode ) return (0);							\
+					}														\
+					if( SQLERR_error_test() ) 								\
+					{ 														\
+						if( JumpMode ) longjmp( RollbackLocation, SQL_ERR_JUMP ); \
+					}
+
+DEF_TYPE TDbDateTime 	CurrDateTime;
+DEF_TYPE TSCounter	CurrQuarter;
+DEF_TYPE TCounter	TransactionLevel DEF_INIT (0);
+
+DEF_TYPE TTerminalRecord 	TerminalRecord;
+DEF_TYPE TSysParamsRecord	SysParamsRecord;
+DEF_TYPE TContermRecord		ContermRecord;
+DEF_TYPE TConStatRecord		ConStatRecord;
+DEF_TYPE TContractRecord 	ContractRecord;
+DEF_TYPE TTempMembRecord 	TempMembRecord;
+DEF_TYPE TMemberRecord		MemberRecord;
+DEF_TYPE TProfessionRecord	ProfessionRecord;
+DEF_TYPE TAuthRecord 		AuthRecord;
+DEF_TYPE TMembTempCAuthRecord		MembTempCAuthRecord;
+DEF_TYPE TSubstRecord		SubstRecord;
+DEF_TYPE TSubstRecord		SubstRecord1; //20120514
+DEF_TYPE TVisitRecord		VisitRecord;
+DEF_TYPE TVisitNewRecord	VisitNewRecord;
+DEF_TYPE TNurseEntranceRecord	NurseEntranceRecord;/*20010207*/
+DEF_TYPE TNurseDailyRecord		NurseDailyRecord;
+DEF_TYPE TNurseReleaseRecord	NurseReleaseRecord;
+DEF_TYPE TMedParamRecord	MedParamRecord;/*20010201*/
+DEF_TYPE TLabRefRecord		LabRefRecord; /*20010227*/
+DEF_TYPE TMedicalDataRecord	MedicalDataRecord;
+DEF_TYPE TMedAnswerRecord	MedAnswerRecord;
+DEF_TYPE TActionRecord		ActionRecord;
+DEF_TYPE TActionAddRecord		ActionAddRecord; /*20051205*/
+DEF_TYPE TTaxSendRecord		TaxSendRecord;
+DEF_TYPE TShiftRecord		ShiftRecord;
+DEF_TYPE TPresenceRecord 	PresenceRecord;
+DEF_TYPE TPcStatRecord		PcStatRecord;
+DEF_TYPE TPcStat25Record		PcStat25Record;/*20060607 Yulia*/
+DEF_TYPE TLogRecord		LogRecord;
+DEF_TYPE TLabNoteRecord		NoteRecord;
+DEF_TYPE TLabNoteOtherRecord	NoteOtherRecord;
+DEF_TYPE TLabRecord		LabRecord;
+DEF_TYPE TLabOtherRecord	LabOtherRecord;
+DEF_TYPE TConMembRecord		ConMembRecord;
+DEF_TYPE TAddInsRecord		AddInsRecord;
+DEF_TYPE TSendrecRecord		SendRecord;
+DEF_TYPE THospitalRecord	HospitalRecord;
+
+int	DbGetTerminalRecord(TTermId,TTerminalRecord	*);
+int	DbInsertTerminalRecord(TTerminalRecord *);
+int	DbUpdateTerminalRecord(TTermId,TTerminalRecord *);
+int	DbDeleteTerminalRecord(TTermId);
+int DbUpdateTerminalConterms(TTermId,TTermId);
+
+int	DbOpenTerminalLocCursor(TTermId);
+int	DbFetchTerminalLocCursor(TContermRecord	*);
+int	DbCloseTerminalLocCursor(Void);
+
+int	DbOpenTermPhoneCursor(TTermId,Int32);
+int	DbFetchTermPhoneCursor(TTerminalRecord	*);
+int	DbCloseTermPhoneCursor(Void);
+int	DbUpdateTermPhone(TTerminalRecord	*);
+
+
+
+
+int DbGetContermRecord(TTermId,TIdNumber,TContractType,TContermRecord *);
+int DbInsertContermRecord(TContermRecord	*);
+int DbUpdateContermRecord(TTermId,TIdNumber,TContractType,TContermRecord *);
+int DbDeleteContermRecord(TTermId,TIdNumber,TContractType);
+int DbSetContermPharmacyStatus(TLocationId,short	);
+
+
+int	DbGetTempMembRecord(TIdNumber,TTempMembRecord*);
+int	DbInsertTempMembRecord(TTempMembRecord	*);
+int	DbUpdateTempMembRecord(TIdNumber,TTempMembRecord	*);
+int	DbDeleteTempMembRecord(TIdNumber);
+int	DbOpenTempMembCursor(TMemberId	*,TDateYYYYMMDD);
+int	DbFetchTempMembCursor(TTempMembRecord	*);
+int	DbCloseTempMembCursor(Void);
+
+int DbOpenTempMembDInsCursor(TTempMembRecord	*);
+int DbPutTempMembInsCursor(Void);
+int DbCloseTempMembInsCursor(Void);
+
+
+int DbGetMemberRecord(TMemberId *,TMemberRecord	*);
+int DbInsertMemberRecord(TMemberRecord	*);
+int DbUpdateMemberRecord(TMemberId*,TMemberRecord	*);
+int	DbUpdateMemberAuthorizeBit(TMemberId	*,short	);
+int	DbUpdateMemberUrgentOnlyGroup(TMemberId	*,short	); //20010712 out of the country
+int DbDeleteMemberRecord(TMemberId		*);
+
+int	DbGetProfessionRecord(TProfession,TProfessionRecord*);
+int	DbInsertProfessionRecord(TProfessionRecord	*);
+int	DbUpdateProfessionRecord(TProfession,TProfessionRecord	*);
+int	DbDeleteProfessionRecord(TProfession);
+int	DbOpenProfGroupsCursor(Void);
+int DbFetchProfsGroupCursor(TProfessionRecord	*);
+int	DbCloseProfGroupsCursor(Void);
+
+
+
+
+
+int DbGetContractRecord(TIdNumber,TContractType,TContractRecord	*);
+int DbGetNextContractRecord(TIdNumber,TContractType,TContractRecord	*);
+int DbGetContractorDetails(TIdNumber,TContractRecord	*);
+int DbInsertContractRecord(TContractRecord	*);
+int DbUpdateContractRecord(TIdNumber,TContractType,TContractRecord*);
+int DbDeleteContractRecord(TIdNumber,TContractType);
+int	DbContractorExists(TIdNumber);
+TSCounter	DbGetContractVisitsCountByLocation(TIdNumber,TContractType,TLocationId,TSCounter);
+int	DbDecContractKbdEntryCounter(TContractRecord	*);
+int	DbCloseContractorShift(TIdNumber,TContractType);
+
+
+
+int	DbOpenContractLocCursor(TIdNumber);
+int	DbFetchContractLocCursor(TContermRecord	*);
+int	DbCloseContractLocCursor(Void);
+
+int	DbOpenContractSubstCursor(TIdNumber);
+int	DbFetchContractSubstCursor(TSubstRecord	*);
+int	DbCloseContractSubstCursor(Void);
+
+
+
+
+int DbGetSysParamsRecord(TSysParamsRecord	*);
+int DbInsertSysParamsRecord(TSysParamsRecord	*);
+int DbUpdateSysParamsRecord(TSysParamsRecord	*);
+
+int	DbGetSubstRecord(TIdNumber,TContractType,TIdNumber,TSubstRecord*);
+int	DbInsertSubstRecord(TSubstRecord	*);
+int	DbUpdateSubstRecord(TIdNumber,TContractType,TIdNumber,TSubstRecord	*);
+int	DbDeleteSubstRecord(TIdNumber,TContractType,TIdNumber);
+
+int	DbGetPcStatRecord(TTermId,TPcStatRecord	*);
+int	DbGetPcStat25Record(TTermId,TPcStat25Record	*);
+
+
+int	DbGetAuthRecord(TIdNumber,TMemberId *,TSCounter,TAuthRecord	*);
+int	DbGetTaxSendRecord(	TIdNumber,short , TMemberId * ,int ,TTaxSendRecord	*); //20120514
+int DbCancelTaxRecord(	TIdNumber,short  , TMemberId * ,int ,short );//20120514
+int DbOpenLogDInsCursor(TLogRecord	*);
+int DbPutLogDInsCursor(Void);
+int DbCloseLogDInsCursor(Void);
+
+int	DbInsertLabNoteRecord(TLabNoteRecord	*);
+int	DbInsertLabResultRecord(TLabRecord	*);
+
+int	DbInsertLabNoteOtherRecord(TLabNoteRecord	*);
+int	DbInsertLabResultOtherRecord(TLabRecord	*,int);
+
+//Yulia 291198int	DbOpenLabNoteSelCursor(TLabRecord  *,TLabNoteType,TLabNoteType);
+//20010418int	DbOpenLabNoteSelCursor(TIdNumber ); //TLabRecord  *,short,short);
+int	DbOpenLabNoteSelCursor(TLabRecord  *,short,short);
+int	DbFetchLabNoteSelCursor(TLabNoteRecord	  *);
+int	DbCloseLabNoteSelCursor(Void);
+
+/*20010218*/
+//20011227int	DbOpenDrugsSelectCursor(TDateYYYYMMDD,TTimeHHMMSS);
+//20011227int	DbFetchDrugsSelectCursor( TDrugRecord	* );
+//20011227int	DbCloseDrugsSelectCursor(void);
+
+/*20010218*/
+
+// Yulia 12.99
+
+int	DbOpenLabResOtherListCursor(TMemberId *);
+int	DbFetchLabResOtherListCursor(TLabContrOtherListReq  *,int *);
+int	DbCloseLabResOtherListCursor(Void);
+//end 37-38
+
+//  Rentgen 19/22,32 04.05.2000
+int	DbOpenRentgenCursor(TIdNumber,TMemberId	*);
+int	DbFetchRentgenCursor(TRentgenRecord  *);
+int	DbCloseRentgenCursor(Void);
+
+int	DbDeleteRentgen( TIdNumber,TMemberId	*,TRentgenId );
+int	DbInsertConfRentgen(TIdNumber,TMemberId	*,	int	,	int ,TDbDateTime ); //03.09.2000
+int	DbCheckContractorRentgenData( 	TIdNumber);
+//End rentgen 04.05.2000
+
+// DonR 16Feb2005
+int	DbCheckContractorUnseenIshurim (TIdNumber);
+//Yulia 20050222
+int	DbCheckContractorPatData (TIdNumber,int);
+
+
+
+//  HospitalMsg 19/22,32 20020619
+int	DbOpenHospitCursor(TIdNumber,TMemberId	*,short int ,short int );
+int	DbFetchHospitCursor(THospitalRecord  *);
+int	DbCloseHospitCursor(Void);
+
+int	DbDeleteHospit( TIdNumber,TMemberId	*,TRentgenId );
+int	DbInsertConfHospit(TIdNumber,TMemberId	*,	int	,	int ,TDbDateTime ); //03.09.2000
+
+//End HospitalMsg 20020619
+
+
+
+int	DbOpenLabResultSelCursor(TIdNumber,//TTermId);
+							 TMemberId	*);
+int	DbFetchLabResultSelCursor(TLabRecord  *);
+int	DbCloseLabResultSelCursor(Void);
+
+//Yulia 12.99 trans 38
+int	DbOpenLabResOtherSelCursor(TIdNumber,TMemberId	*,TLabReqId ,int );
+int	DbFetchLabResOtherSelCursor(TLabOtherRecord  *,int );
+int	DbCloseLabResOtherSelCursor(int );
+
+int	DbOpenLabNoteOtherSelCursor	( TLabOtherRecord	* ,  short	, short	);
+int	DbFetchLabNoteOtherSelCursor(TLabNoteOtherRecord  *);
+int	DbCloseLabNoteOtherSelCursor(Void);
+
+//end 38
+
+int	DbCheckContractorLabResults(TIdNumber,TMemberId	*);
+int	DbDeleteLabResults(TIdNumber,TMemberId	*,TLabReqId);
+int	DbInsertConfLabRes(TIdNumber,TMemberId	*,TLabReqId,int TermId,	TDbDateTime	LabCnfDate); 
+
+
+int DbDeleteConMembRecord(TMemberId		*,TProfession);
+int DbUpdateConMembRecord(TMemberId		*,TProfession,TConMembRecord	*);
+int DbGetConMembRecord(TMemberId	*,TProfession,TConMembRecord	*,short );
+int DbInsertConMembRecord(TConMembRecord	*);
+int	DbOpenConMembSelCursor(TMemberId	*);
+int	DbFetchConMembSelCursor(TConMembRecord	*);
+int	DbCloseConMembSelCursor(Void);
+int DbGetMahozContractor(TAuthRecord *Auth, Int16 *mahoz);
+int DbGetMahozStatus(Int16 mahoz_0,short mahoz_1,short *status);
+int DbDeleteConMembRecordNotUnique(TMemberId *MemberId);  
+int DbGetLastUpdateDates(char *TableName,TDateYYYYMMDD *LastUpdateDate,TTimeHHMMSS *LastUpdateTime);//20010218
+
+int	DbInsertTaxRecord( 	TIdNumber	Contractor,
+				TContractType	ContractType,
+				TIdNumber	Number,
+				short		Code,
+				TDateYYYYMMDD   AuthDate,
+				Int32		AuthTime,
+				TTermId		TermId,
+				short		TaxAmount,
+				short		TaxCalc);
+
+int	DbUpdateAuthTaxRecord( 	TIdNumber	Contractor,
+				TContractType	ContractType,
+				TIdNumber	Number,
+				short		Code,
+				TDateYYYYMMDD   AuthDate,
+				Int32		AuthTime,
+				TTermId		TermId,
+				short		TaxAmount);
+
+int DbOpenPresenceSelCursor();
+int DbFetchPresenceSelCursor(TPresenceRecord	*);
+int DbUpdatePresenceSelCursor(TPresenceRecord	*); /*oracle */
+int DbClosePresenceSelCursor();
+
+int DbOpenVisitsSelCursor();
+int DbFetchVisitsSelCursor(TVisitRecord	*);
+//int DbUpdateCurrentVisitsSelCursor();
+int DbCloseVisitsSelCursor();
+int DbUpdateVisitSelCursor(TVisitRecord	*);/*oracle */
+
+int DbOpenShiftSelCursor();
+int DbFetchShiftSelCursor(TShiftRecord	*);
+int DbCloseShiftSelCursor();
+int DbUpdateShiftSelCursor(TShiftRecord	*);/*oracle */
+
+//int DbOpenAuthSelCursor();
+//int DbFetchAuthSelCursor(TAuthRecord	*);
+//int DbUpdateCurrentAuthSelCursor();
+//int DbUpdateAuthSelCursor(TAuthRecord	*);/*oracle */
+//int DbCloseAuthSelCursor();
+
+int DbOpenAuthLogSelCursor();
+int DbFetchAuthLogSelCursor(TLogRecord	*);
+int DbUpdateCurrentAuthLogSelCursor();
+int DbCloseAuthLogSelCursor();
+
+int DbOpenVisNewSelCursor();
+int DbFetchVisNewSelCursor(TVisitNewRecord	*);
+int DbCloseVisNewSelCursor();
+int DbUpdateVisNewSelCursor(TVisitNewRecord	*);/*oracle */
+
+int DbOpenActionSelCursor();
+int DbFetchActionSelCursor(TActionRecord	*);
+int DbCloseActionSelCursor();
+int DbUpdateActionSelCursor(TActionRecord	*);/*oracle */
+
+//int DbOpenTaxSendSelCursor();
+//int DbFetchTaxSendSelCursor(TTaxSendRecord	*);
+//int DbCloseTaxSendSelCursor();
+//int DbUpdateTaxSendSelCursor(TTaxSendRecord	*);/*oracle */
+
+int DbOpenMedDataSelRrnCursor();
+int DbFetchMedDataSelRrnCursor(TMedicalDataRecord	*);
+int DbCloseMedDataSelRrnCursor();
+int DbUpdateMedDataSelCursor();
+
+int DbOpenMedAnswerSelRrnCursor();
+int DbFetchMedAnswerSelRrnCursor(TMedAnswerRecord	*);
+int DbCloseMedAnswerSelRrnCursor();
+int DbUpdateMedAnswerSelCursor();
+
+short DbGetCalendarDay(short ,short,short );
+int DbGetConsName (TIdNumber	Consultant,	TContractType ConsType,char *ConsName);
+
+/*int DbOpenMembDrugCursor(	TMemberId	*MemberId);
+int DbFetchMembDrugCursor(	int			*LargoMemb,
+							TIdNumber	*ContractorMemb,
+							char		*FirstNameMemb,
+							char		*LastNameMemb,
+							char		*PhoneMemb,
+							TDateYYYYMMDD	*LargoDlvDateMemb	
+							);
+int	DbCloseMembDrugCursor(); Yulia 20040802*/
+int	DbGetInteractionStatus(	int MinLargo,	int MaxLargo,
+							short *IntCode,	char *IntText);
+
+int	DbInsertDrugNotPrioryRecord (TDrugNotPrioryRecord *DrugNotPrioryRecord);
+
+/*20031028*/
+void DbBeginAuditRecord(short ,int, int);
+void DbEndAuditRecord(int,int);
+/*end20031028*/
+
+void	DbGetGnrlElegTrans(int ElegParm,char *msgtext,int *eleg_tr,int *msg_lines);

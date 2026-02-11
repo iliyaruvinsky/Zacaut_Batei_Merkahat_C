@@ -1,8 +1,8 @@
 # PROMPT FOR DOCUMENTER AGENT (DOC)
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-11
 **Updated By:** Orc
-**Status:** ⏸️ BLOCKED
+**Status:** 🔵 READY (CH-MACODBC-001 ✅ — Documenter can start)
 
 ---
 
@@ -37,37 +37,57 @@
 
 ---
 
-## CURRENT STATUS: ✅ COMPLETE
+## CURRENT STATUS: ✅ ALL CURRENT TASKS COMPLETE
 
-**Task:** DOC-SHRINK-001 COMPLETE
-**Score:** 100/100
-**Output:** Documentation/ShrinkPharm/ (7 files)
-
-**Previous:**
-- DOC-FATHER-001 COMPLETE (100/100) - Documentation/FatherProcess/
+**Previously completed:**
+- DOC-FATHER-001 ✅ (100/100) — Documentation/FatherProcess/
+- DOC-SHRINK-001 ✅ (100/100) — Documentation/ShrinkPharm/
+- DOC-MACODBC-001 ✅ (100/100) — Documentation/MacODBC/
 
 **DO NOT:**
-- Start documenting until chunks exist
+- Start documenting until chunks exist in `CHUNKS/MacODBC/`
 - Guess at code structure without reading actual code
 - Copy content between components
 
-**WHEN UNBLOCKED (CH-FATHER-001 complete):**
-1. Read `CHUNKS/FatherProcess/repository.json`
-2. Read `CHUNKS/FatherProcess/DOCUMENTER_INSTRUCTIONS.md`
-3. Begin DOC-FATHER-001
+**WHEN UNBLOCKED (CH-MACODBC-001 complete):**
+1. Read `CHUNKS/MacODBC/repository.json`
+2. Read `CHUNKS/MacODBC/DOCUMENTER_INSTRUCTIONS.md`
+3. Read `RESEARCH/MacODBC_deepdive.md`
+4. Begin DOC-MACODBC-001
 
 ---
 
-## NEXT TASK: DOC-FATHER-001
+## COMPLETED TASK: DOC-MACODBC-001
 
-**Target:** FatherProcess component
+**Status:** ✅ COMPLETE — 100/100, 7 files, 76 file:line references, 0 forbidden words
+
+**Target:** MacODBC.h — ODBC infrastructure (hybrid header/implementation, 4,121 lines)
 
 **Input:**
-- `CHUNKS/FatherProcess/` (from Chunker)
-- `source_code/FatherProcess/` (original source for verification)
-- `RESEARCH/` (context from Researcher)
+- `CHUNKS/MacODBC/` (from Chunker — ✅ 25 chunks ready)
+- `source_code/Include/MacODBC.h` (original source for verification)
+- `RESEARCH/MacODBC_deepdive.md` (Researcher output)
 
-**Output:** `Documentation/FatherProcess/`
+**Output:** `Documentation/MacODBC/`
+
+**Special documentation requirements:**
+This is NOT a typical component documentation. MacODBC.h is infrastructure — it provides the ODBC API used by every server component. Documentation must cover:
+
+1. **Public API** — The 25 wrapper macros that components use (ExecSql, DeclareAndOpenCursorInto, CommitWork, etc.)
+2. **Enums and structs** — ODBC_DatabaseProvider, ODBC_CommandType, ODBC_DB_HEADER, ODBC_ColumnParams
+3. **Global state** — All exported globals with MAIN/extern duality explained
+4. **ODBC_Exec internals** — The 8 processing phases of the central dispatcher
+5. **Mirroring mechanism** — MAIN_DB/ALT_DB dual-database support
+6. **Sticky statement cache** — Prepared statement lifecycle (max 120)
+7. **Pointer validation** — SIGSEGV/setjmp/longjmp safety mechanism
+8. **Auto-reconnect** — Error conversion to DB_CONNECTION_BROKEN
+9. **Per-component injection** — How MacODBC_MyOperators.c and MacODBC_MyCustomWhereClauses.c are included
+10. **Include chain** — What includes MacODBC.h and what MacODBC.h includes
+
+**Author context (from Don Radlauer):**
+> MacODBC.h is a database-interface infrastructure providing embedded SQL-like functionality via ODBC. It was built to transition from Informix ESQL to ODBC (because MS-SQL doesn't support embedded SQL). The calling pattern maps one-to-one from the old EXEC SQL to the new ExecSql macro. Nobody other than Don has looked at it since he wrote it — and the entire application depends on it.
+
+**Quality requirement:** 100/100 validation score mandatory. All claims must cite exact file:line references.
 
 ---
 

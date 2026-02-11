@@ -1,0 +1,65 @@
+{
+  "task_id": "CH-MACODBC-001",
+  "agent": "CHUNKER",
+  "component": "MacODBC",
+  "target_file": "source_code/Include/MacODBC.h",
+  "status": "COMPLETED",
+  "started_at": "2026-02-11T00:00:00Z",
+  "completed_at": "2026-02-11T00:00:00Z",
+  "depends_on": "RES-MACODBC-001",
+  "unblocks": "DOC-MACODBC-001",
+  "output_directory": "CHUNKS/MacODBC/",
+  "output_files": [
+    {
+      "file": "repository.json",
+      "description": "25 chunk definitions with metadata, summaries, tags, dependencies, and cross-references",
+      "status": "CREATED"
+    },
+    {
+      "file": "graph.json",
+      "description": "Dependency graph with 25 nodes, 24 edges, 3 groups, and 5 external dependencies",
+      "status": "CREATED"
+    },
+    {
+      "file": "analysis.json",
+      "description": "Codebase statistics, token distribution, complexity assessment, key patterns, and cross-file dependencies",
+      "status": "CREATED"
+    },
+    {
+      "file": "run_manifest.json",
+      "description": "This file — execution metadata and quality metrics",
+      "status": "CREATED"
+    },
+    {
+      "file": "DOCUMENTER_INSTRUCTIONS.md",
+      "description": "Handoff document for DOC-MACODBC-001 with recommended order, special documentation needs, and cross-references",
+      "status": "CREATED"
+    }
+  ],
+  "chunking_strategy": {
+    "approach": "mixed_section_and_function_level",
+    "rationale": "Header sections chunked by semantic category (7 chunks). ODBC_Exec (2,212 lines) sub-chunked into 8 phases by execution flow. Helper functions chunked individually (10 chunks).",
+    "total_chunks": 25,
+    "breakdown": {
+      "header_sections": 7,
+      "odbc_exec_sub_chunks": 8,
+      "helper_functions": 10
+    }
+  },
+  "quality_metrics": {
+    "total_lines_covered": 4121,
+    "gap_lines": "Lines 45-46, 102-103, 152, 274-275, 337, 349-350, 421, 773-774, 1073-1074, 1232, 1448, 1977, 2289, 2658-2660, 2818-2820, 2903-2905, 3137-3139, 3331-3333, 3440-3442, 3795-3797, 3820-3822, 4005-4012, 4071-4072, 4119-4121",
+    "gap_description": "Gap lines are blank lines, comment separators, and #endif guards between chunks — no functional code is missed",
+    "token_range": "120-3700 (target: 500-8000)",
+    "chunks_in_target_range": "18 of 25 (72%)",
+    "chunks_below_minimum": "7 (all header sections — justified by semantic distinctness)",
+    "chunks_above_maximum": 0,
+    "all_function_boundaries_verified": true,
+    "line_numbers_verified_against_source": true
+  },
+  "research_inputs_used": [
+    "RESEARCH/MacODBC_deepdive.md — Researcher agent deep dive with file structure, function catalog, mechanism analysis",
+    "enterprise_cidra_framework-main/Plugins/c_plugin.yaml — C language plugin with chunking boundaries and anti-hallucination rules",
+    "enterprise_cidra_framework-main/Agents/THE_CHUNKER_AGENT/agent_specification.md — CIDRA chunker specification"
+  ]
+}

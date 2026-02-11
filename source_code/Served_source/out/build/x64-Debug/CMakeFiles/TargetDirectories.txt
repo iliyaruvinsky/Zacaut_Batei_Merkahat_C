@@ -1,0 +1,12 @@
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/CMakeFiles/install/local.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/CMakeFiles/install.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/CMakeFiles/list_install_components.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/Project-static.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/list_install_components.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/Project.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/install/local.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/install.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/edit_cache.dir
+P:/Source/Repos/Pharmacy/Served_source/out/build/x64-Debug/served/CMakeFiles/rebuild_cache.dir

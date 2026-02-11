@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AddTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="As400UnixClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="As400UnixGlob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="As400UnixServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CCGlobal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DbConsRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DBFields.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugPrint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DocSqlServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GenSql.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="global_1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mac_def.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="macsql.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageFuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MsgHndlr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="multix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PharmacyErrors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TikrotRPC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tpmintr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traceback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TreatmentTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="typedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PharmDBMsgs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DB_TableStructures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

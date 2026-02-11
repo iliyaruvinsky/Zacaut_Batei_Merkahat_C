@@ -1,0 +1,3204 @@
+/*=======================================================================
+||				MsgHndlr.h												||
+||																		||
+||======================================================================||
+||																		||
+||  PURPOSE:															||
+||																		||
+||  Define all data-types and sizes of data comeing from T-SWITCH.		||
+||																		||
+||----------------------------------------------------------------------||
+|| PROJECT:	SqlServer. (for macabi)										||
+||----------------------------------------------------------------------||
+|| PROGRAMMER:	Gilad Haimov.											||
+|| DATE:	Aug 1996.													||
+|| COMPANY:	Reshuma Ltd.												||
+|| WORK DONE:	Reciving message and geting the data (t-switch simulate)||
+||----------------------------------------------------------------------||
+|| PROGRAMMER:	Boaz Shnapp.											||
+|| DATE:	Nov 1996.													||
+|| COMPANY:	Reshuma Ltd.												||
+|| WORK DONE:	S.Q.L transactions.										||
+||----------------------------------------------------------------------||
+||		  Make sure that file dont include 2 times.						||
+ =======================================================================*/
+#ifndef MSG_HANDLER_H
+#define MSG_HANDLER_H
+
+#include "TreatmentTypes.h"
+#include "traceback.h"
+#include "string.h"
+
+/*=======================================================================
+||			   General definitions										||
+ =======================================================================*/
+#ifndef NON_SQL
+	//EXEC SQL BEGIN DECLARE SECTION;		//Marianna
+		typedef struct	// In-memory version of prescr_source table, minus description.
+		{
+			short		pr_src_code;
+			short		pr_src_docid_type;
+			short		id_type_accepted;
+			short		PrSrcDocLocnRequired;
+			short		pr_src_priv_pharm;
+			short		allowed_by_default;
+		} PRESCR_SOURCE;
+	//EXEC SQL END DECLARE SECTION;			//Marianna
+
+
+	typedef enum tag_bool
+	{
+	  false = 0,
+	  true
+	}
+	bool;                  /* simple boolean typedef */
+#endif
+
+typedef struct pharm_trn_permissions
+{
+	short	transaction_num;
+	short	spool;
+	short	permitted[3];
+} PHARM_TRN_PERMISSIONS;
+
+
+
+// If not in main module, define all global variables as "extern".
+#ifdef	MAIN
+	int				PPlusMeisharEnabled		= 0;	// Default to disabled mode.
+	int				IshurCycleOverlap		= 10;
+	short			MaxFuturePresc			= 3;
+	short			UseSaleTableDiscounts	= 0;	// Default to disabled mode.
+	short			CheckCardDate			= 1;	// CR #11541 - if zero, Trn. 6001 will not worry
+													// about expired cards.
+
+//	short			PrSrcNumber				[100];
+//	short			PrSrcDocLocnRequired	[100];
+	PRESCR_SOURCE			PrescrSource	[100];
+	PHARM_TRN_PERMISSIONS	TrnPermissions	[200];
+
+	short			BakaraKamutitHistoryMonths;
+
+	int				MaxDailyBuy				[10];
+	int				MaxFamilyOtcCreditPerMonth;
+
+	char			LastSignOfLife			[512];
+
+	int				NoCardSvc_Max_Validity;
+	int				NoCardSvc_After_Pvt_Purchase;
+	int				NoCardSvc_After_Mac_Purchase;
+	short			SvcWithoutCardValidDays;	// DonR 13Feb2018: For service w/o card set by Haverut.
+
+	short			SendRoundedPackagesToPharm	= 0;
+	short			RoundPackagesToCloseRx		= 0;
+	short			MaxUnsoldOpPercent			= 50;
+	float			MaxRemainderPerOp			= 3.0;
+
+	short			DeletionsValidDays			= 91;
+
+	int				BypassHealthBasketBitmap		= 0;
+	int				ActualDiseaseBitmap				= 0;
+	int				DiseasesWithoutDiagnosesBitmap	= 0;
+	int				DiseasesWithDiagnosesBitmap		= 0;
+
+	short			TestSaleEquality			= 1;
+	short			DDI_Pilot_Enabled			= 0;
+
+	short			OnlineOrderRememberUsageMonths	=  3;
+	short			OnlineOrderWaitDays				= 10;
+	short			OnlineOrderMaxWorkHours			= 48;
+
+#else
+	extern int		PPlusMeisharEnabled;
+	extern int		IshurCycleOverlap;
+	extern short	MaxFuturePresc;
+	extern short	UseSaleTableDiscounts;
+	extern short	CheckCardDate;	// CR #11541 - if zero, Trn. 6001 will not worry
+									// about expired cards.
+
+//	extern short	PrSrcNumber				[];
+//	extern short	PrSrcDocLocnRequired	[];
+
+#ifndef NON_SQL
+	extern PRESCR_SOURCE	PrescrSource	[];
+#endif
+
+	extern			PHARM_TRN_PERMISSIONS	TrnPermissions	[];
+
+	extern short	BakaraKamutitHistoryMonths;
+
+	extern int		MaxDailyBuy				[];
+	extern int		MaxFamilyOtcCreditPerMonth;
+
+	extern char		LastSignOfLife			[];
+
+	extern int		NoCardSvc_Max_Validity;
+	extern int		NoCardSvc_After_Pvt_Purchase;
+	extern int		NoCardSvc_After_Mac_Purchase;
+	extern short	SvcWithoutCardValidDays;	// DonR 13Feb2018: For service w/o card set by Haverut.
+
+	extern short	SendRoundedPackagesToPharm;
+	extern short	RoundPackagesToCloseRx;
+	extern short	MaxUnsoldOpPercent;
+	extern float	MaxRemainderPerOp;
+
+	extern short	DeletionsValidDays;
+
+	extern int		BypassHealthBasketBitmap;
+	extern int		ActualDiseaseBitmap;
+	extern int		DiseasesWithoutDiagnosesBitmap;
+	extern int		DiseasesWithDiagnosesBitmap;
+
+	extern short	TestSaleEquality;
+	extern short	DDI_Pilot_Enabled;
+
+	extern short	OnlineOrderRememberUsageMonths;
+	extern short	OnlineOrderWaitDays;
+	extern short	OnlineOrderMaxWorkHours;
+	extern double	IngrSubstMaxRatio;		// DonR 12Jul2018  "special" ingredient-based substitution outside EconomyPri group.
+#endif
+
+// Return values:
+#define RC_SUCCESS			1
+#define RC_FAILURE			0
+#define	EXTRA_MEMORY		20000
+
+// Action Types for Trn. 5003/5005.
+#define DRUG_SALE				1
+#define SALE_DELETION			2
+#define RETURN_FOR_CREDIT		3
+#define RETURN_DELETION			4
+
+// Array dimensions for "Nihul Tikrot"
+#define MAX_TIKRA_CURR_SALE		50
+#define MAX_TIKRA_PREV_SALES	50
+#define MAX_FAMILY_SIZE			25
+#define MAX_TIKRA_TIKROT_OUT	50
+#define MAX_TIKRA_COUPONS_OUT	10
+
+#define ONE_OR_BLANK(i)		(((i) == 0) ? ' ' : '1')
+#define DIGIT_OR_BLANK(i)	((((i) == 0) || ((i) < 0) || ((i) > 9)) ? ' ' : ((char)(i) + '0'))
+
+// Permission type ( table PHARMACY ) :
+#define PERMISSION_TYPE_PRIVATE		0
+#define PERMISSION_TYPE_MACABI		1
+#define PERMISSION_TYPE_ANY			2
+#define PERMISSION_TYPE_PRATI_PLUS	6
+
+// Hesder Types
+#define MACCABI_PHARMACY_HESDER		0
+#define PRIVATE_WITH_HESDER			1
+#define NON_HESDER_PHARMACY			2
+
+
+// DonR 26Oct2008: New #define's to handle enhancement of in-health-basket logic.
+#define	HEALTH_BASKET_NO		0
+#define	HEALTH_BASKET_YES		1
+#define	HEALTH_BASKET_KE_ILU	4
+#define	HEALTH_BASKET_NEW_YES	5
+
+
+// DonR 09Sep2009: Pharmacy Categories ("shaichut")
+#define PHARMACY_ASSUTA			20
+
+// DonR 09Sep2009: Assuta Drug Status values (and the standard drug-deleted value)
+#define ASSUTA_DRUG_NOT			0
+#define ASSUTA_DRUG_ACTIVE		1
+#define ASSUTA_DRUG_PAST		2
+#define ASSUTA_DRUG_CANCELLED	3
+#define DRUG_DELETED			9
+
+// DonR 06Nov2011: Macros for member-hospitalization status:
+#define NOT_HOSPITALIZED		0
+#define IN_HOSPITAL				1
+#define DISCHARGED				2
+#define ABSENT_NOT_DISCHARGED	3
+
+
+// TRUE value for field no_presc_flg ( table drug_extension ):
+#define NO_PRESC_SRC		1
+#define PRESC_SRC			0
+
+
+// Interaction severity
+#define SEVER_INTERACTION		1
+#define	NOT_SEVER_INTERACTION	2
+
+
+// ALL PHARM PERMISSIONS
+#define ALL_PHARM			2
+
+
+// DonR 07Jul2013: New "Bakara Kamutit" constants.
+#define FUTURE_SALE_FORBIDDEN	0
+#define FUTURE_SALE_MAC_ONLY	2
+#define FUTURE_SALE_ALL_PHARM	3
+#define NO_PURCHASE_LIMIT		0
+#define STD_PURCHASE_LIMIT		1
+#define SP_PR_PURCHASE_LIMIT	2
+#define PURCHASE_LIMIT_ISHUR	3
+#define RX_SOURCE_PURCHASE_LIM	4
+#define FUT_PERMITTED_ALL_PHARM	1
+#define FUT_PERMITTED_MACCABI	2
+#define FUT_PERMITTED_OVRSEAS	3
+#define FUT_PERMITTED_ISHUR		4
+
+// DonR 11Dec2018 CR #15277: Values for prescr_source/id_type_accepted.
+#define	DOC_TZ_ONLY				1
+#define	DOC_LICENSE_ONLY		2
+#define	DOC_LICENSE_OR_TZ		3
+#define	DOC_LICENSE_IRRELEVANT	9
+
+// Pharmacy Ishur defines - for Electronic Prescriptions.
+#define	ISHUR_UNUSED		0
+#define	ISHUR_USED			1
+
+// Action Type defines for Health Alert Rule initializing/loading.
+#define INITIALIZE_ONLY		0
+#define CHECK_MEMBER		1
+
+// DonR 01Mar2017: Add support for multiple ingredient codes in the same Drug Purchase Limit group.
+#define LIMIT_GROUP_MAX_INGRED	25
+
+
+// Test macros
+void log_serious_error_text	(int err, char *msg);
+void log_serious_error_int	(int err, int err_identifier);
+
+#define CHECK_ERROR()					\
+	if (glbErrorCode != NO_ERROR)		\
+	{									\
+		RESTORE_ISOLATION;				\
+	    return glbErrorCode;			\
+	}
+
+#define CHECK_ERROR_T(msg)							\
+	if (glbErrorCode != NO_ERROR)					\
+	{												\
+		log_serious_error_text (glbErrorCode, msg);	\
+		RESTORE_ISOLATION;							\
+	    return glbErrorCode;						\
+	}
+
+#define CHECK_ERROR_I(identifier)							\
+	if (glbErrorCode != NO_ERROR)							\
+	{														\
+		log_serious_error_int (glbErrorCode, identifier);	\
+		RESTORE_ISOLATION;									\
+	    return glbErrorCode;								\
+	}
+
+#define SET_ERROR( err_code )                   \
+        glbErrorCode = (err_code)
+
+/*
+ *  Message buffers sizes
+ *  ---------------------
+ */
+#define IBUFFER_SIZE			8000	/* input buffer size	*/
+#define MAX_MSG_DIM				8000
+#define OBUFFER_SIZE			8000	/* output buffer size	*/
+#define MAX_FIELD_LEN			256
+#define MAX_REC					10	/* Maximum sub records	*/
+#define MAX_REC_ELECTRONIC		99		// DonR 05Jan2015 - Changed back from 999 to 99 for Digital Prescriptions.
+#define MAX_DOC_RX				1000	// Assumes a maximum of 10 doctor prescriptions per drug line - which is a lot!
+#define MAX_TRN6001_DRUGS		999
+#define MAX_1002_MSG			5	/* Maximum number of return message	*/
+/*=======================================================================
+||		       Global message buffersvariables			||
+ =======================================================================*/
+static char		IBuffer[IBUFFER_SIZE] ;
+
+static char		OBuffer[OBUFFER_SIZE] ;
+
+static char		glbBuffer[8000] ;
+
+/*static*/ int		glbErrorCode;
+		/* Global error flag	*/
+static int		out_msg_index;
+
+static char		*get_mem;
+static FILE         *in;
+			/* input file handle	*/
+static FILE 		*out;
+			/* output file handle	*/
+
+/*=======================================================================
+||			    Messages constants.										||
+ =======================================================================*/
+#define RECIP_SRC_NO_PRESC				0
+#define RECIP_SRC_MACABI_DOCTOR			1
+#define RECIP_SRC_HOSPITAL				2
+#define RECIP_SRC_OLD_PEOPLE_HOUSE		3
+#define RECIP_SRC_DENTIST				4
+#define RECIP_SRC_PRIVATE				5
+#define RECIP_SRC_MACABI_STAMP			6
+#define RECIP_SRC_MAC_DOC_BY_HAND		7
+#define RECIP_SRC_MOKED_MACCABI			8
+#define RECIP_SRC_MEUCHEDET				9
+#define RECIP_SRC_LEUMIT				10
+#define RECIP_SRC_HOME_VISIT			11
+#define RECIP_SRC_MACCABI_NURSE			12
+#define RECIP_SRC_AFFILIATED_CLINIC		13
+#define RECIP_SRC_PHARMACIST_EQUIP		15
+#define RECIP_SRC_MAC_DIETICIAN			16
+#define RECIP_SRC_MAC_PHYS_THERAPIST	17
+#define RECIP_SRC_EMERGENCY_NO_RX		18
+#define RECIP_SRC_CONTINUED_PRESC		90
+#define RECIP_SRC_MIXED_SOURCES			99
+
+#define NO_MACBI_MAGE				-1
+#define NO_KEREN_MACBI				-1
+
+#define MACABI_INSTITUTE			2
+#define SUM_MAC_PRICE				1
+
+#define NO_INTERACTION				0
+
+
+#define FROM_UNKNOWN				0	// unknown source
+#define FROM_DOC_AUTHORIZED			1	// doctor_percents
+#define FROM_DOC_SPECIALIST			2	// includes dentists!
+#define FROM_DRUG_LIST_TBL			3	// drug_list (default)
+#define FROM_DRUG_EXTENSION			4
+#define	FROM_MACCABI_PRICE			5
+#define FROM_SPEC_PRESCS_TBL		6
+#define FROM_NO_TABLE				7	// No doctor prescription (?)
+#define	FROM_PHARMACY_ISHUR			8
+#define	FROM_GADGET_APP				9
+
+// DonR 21Sep2004: Values for new InsuranceUsed flag in TPresDrugs structure.
+#define NO_INS_USED			0
+#define BASIC_INS_USED		1
+#define ZAHAV_INS_USED		2
+#define KESEF_INS_USED		3
+#define YAHALOM_INS_USED	7
+
+#define CURR_CODE				2
+
+
+// DonR 14Jan2009: Reasons for assigning specialist participation.
+#define PRESCRIBED_BY_SPECIALIST	1
+#define DOCTOR_SAW_SPEC_LETTER		2
+#define PHARMACY_ISHUR				3
+#define PURCHASE_HISTORY			4
+#define	OLD_PEOPLES_HOME			5
+#define DENTIST_ETC					6
+
+
+// DonR 14Jan2009: Explanation for sale of non-preferred drug.
+//
+// DonR 26Apr2009: Per Iris Shaya, NON_GENERIC_SOLD_AS_IS is now
+// equal to 0 instead of 3. This means that the only time there
+// will be a non-zero value in this slot is when a non-generic
+// drug is being sold under generic-drug conditions.
+// DonR 28Mar2010: Added new reason code for doctor's ishur based
+// on a "tofes" that expired within the last 91 days.
+#define NON_GENERIC_SOLD_AS_IS	0
+#define DOC_AUTH_NON_GENERIC	1
+#define PHARM_AUTH_NON_GENERIC	2
+#define DOC_AUTH_EXPIRED_TOFES	3
+#define INGR_BASED_SUBSTITUTION	4
+
+
+// Reasons to dispense non-preferred drugs:
+#define NO_REASON_GIVEN				 0
+#define DOCTOR_NIXED_SUBSTITUTION	 1
+#define OUT_OF_STOCK_SUB_EQUIV		 2
+#define EXCESS_STOCK				 3
+#define	OUT_OF_STOCK_SUPPLIER		 7	// NIU as of 23Nov2017
+#define	OUT_OF_STOCK_SUB_OTHER		 8
+#define DISPENSED_KACHA				99
+
+
+/*===================================================	
+	We must define to way for 
+	1)host_variables 
+	2)"defines" for using for arrays definition
+	3) "NAMES" that use in both 1),2)
+	2000.05.23
+====================================================*/
+#define	PRINT			 1
+#define	NO_PRINT		 0
+#define	MAX_DYN_VAR	   100
+//yulia 2000.05.23#define PAR_INT				 1
+//yulia 2000.05.23#define PAR_ASC				 2
+//yulia 2000.05.23#define  PAR_DAT			 3
+/*end 2000.05.03*/
+
+
+
+//temp comment
+//#define DUR_CHECK			0
+/*=======================================================================
+||			    Database constants.				||
+ =======================================================================*/
+
+
+/*============================================================================
+ * change all define's to host variables with static "type" = const options  *
+ * add to ORACLE translation                                       2000.04.27*
+ *===========================================================================*/
+
+
+#ifdef	MAIN
+#ifndef NON_SQL
+//EXEC SQL BEGIN DECLARE SECTION;		//Marianna
+#endif
+
+//	static  int   DRUG_NOT_DELIVERED	= 0;
+//	static  int   DRUG_DELIVERED		= 1;
+//
+//	static  int   ROW_NOT_DELETED		= 0;
+//	static  int   ROW_DELETED			= 1;
+//	static  int   ROW_SYS_DELETED		= 2;
+//	static  int   ROW_ALREADY_DELETED	= 3;
+
+	short   DRUG_NOT_DELIVERED	= 0;
+	short   DRUG_DELIVERED		= 1;
+
+	short   ROW_NOT_DELETED		= 0;
+	short   ROW_DELETED			= 1;
+	short   ROW_SYS_DELETED		= 2;
+	short   ROW_ALREADY_DELETED	= 3;
+
+//	static  int   STOP_USE				= 1;
+//	static  int   NO_STOP_USE			= 0;
+
+//	static  int   PHARM_CLOSE_SQL			= 0;
+//	static  int   PHARM_OPEN_SQL			= 1;
+	short   PHARM_CLOSE_SQL			= 0;
+	short   PHARM_OPEN_SQL			= 1;
+
+//	static  int   DRUG_SOLD_WITH_EXT_PRC	= 1;
+//	static  int   DRUG_SOLD_WITH_NO_EXT_PRC	= 0;
+
+//	static  int   NOT_REPORTED_TO_AS400			= 0;
+//	static  int   REPORTED_TO_AS400		 	    = 1;
+	short   NOT_REPORTED_TO_AS400			= 0;
+	short   REPORTED_TO_AS400		 	    = 1;
+	short   NO_NEED_TO_REPORT_TO_AS400	= 2;
+	short   SET_ASIDE_AMT_DISCREPANCY		= 3;
+
+//	static  int   PHARMACY_SOURCE = 2;
+
+//	static  int   NO_PRINT_SQL		= 0;  //use for 3) options oracle
+	int		DUR_CHECK			= 0;
+	int		OVER_DOSE_CHECK	= 1;
+	short	PHARMACIST		= 0;
+	short	DOCTOR			= 1;
+//	static  int   UNIX_SOURCE		= 2;
+
+#ifndef NON_SQL
+//EXEC SQL END DECLARE SECTION;			//Marianna
+#endif
+#else
+	extern short	DRUG_NOT_DELIVERED;
+	extern short	DRUG_DELIVERED;
+	extern short	ROW_NOT_DELETED;
+	extern short	ROW_DELETED;
+	extern short	ROW_SYS_DELETED;
+	extern short	ROW_ALREADY_DELETED;
+	extern short	NOT_REPORTED_TO_AS400;
+	extern short	REPORTED_TO_AS400;
+	extern short	NO_NEED_TO_REPORT_TO_AS400;
+	extern short	SET_ASIDE_AMT_DISCREPANCY;
+	extern short	PHARM_CLOSE_SQL;
+	extern short	PHARM_OPEN_SQL;
+	extern int		DUR_CHECK;
+	extern int		OVER_DOSE_CHECK;
+	extern short	PHARMACIST;
+	extern short	DOCTOR;
+#endif
+
+
+#define PHARM_OPEN		1
+#define PHARM_CLOSE		0
+
+
+/*=======================================================================
+||			Length of (ascii) data types			||
+ =======================================================================*/
+
+/* <-----------------------------------------------------------	*
+ *  Warning:							*
+ *      In order to change the length of a STRING field		*
+ *      you must also change the length in section		*
+ *     "STRING TYPES" below.					*
+ * ----------------------------------------------------------->	*/
+
+#define MSG_ID_LEN				5 /* len of message ID	*/
+#define MSG_ERROR_CODE_LEN			4 /* len of message dim	*/
+#define MSG_HEADER_SIZE		MSG_ID_LEN + MSG_ERROR_CODE_LEN
+
+// DonR 07 Jan 2003 - Add some generic type fields - since many messages have standard data elements.
+#define TGenericFlag_len				1
+#define TGenericYYYYMMDD_len			8
+#define TGenericYYMM_len				4
+#define TGenericHHMMSS_len				6
+#define TGenericTZ_len					9
+#define TGenericAmount_len				9
+
+#define TAllowedProcList_len		       50
+#define TAllowedBelongings_len		       50
+#define TYarpaParticipationCode_len		2
+#define TCalcTypeCode_len			4
+#define TPriceForOP_len				9
+#define TParticipationName_len		       25	
+#define TPharmacistIDExtension_len		1
+#define TCreditYesNoFlg_len			1
+#define TConfirmationReason_len			2
+#define THospitalCode_len			5
+#define TConfirmationType_len			2
+#define Tdiary_month_len			4
+#define Tdiary_new_month_len			6
+#define TMedNumOfMessageLines_len		4
+#define TClosingCode_len  			1
+#define TInstituteCode_len  			2
+#define TTerminalNum_len  			2
+#define TPriceListNum_len  			3
+#define TPharmacyType_len  			1
+#define TNet_len  				1
+#define TCommunicationType_len  		1
+#define TFreeMemory_len  			4
+#define TMessage_len  				1
+#define TGlobalPricelistUpdate_len  		1
+#define TKabalaNum_len				9 
+#define TMedNumOfDrugLines_len			4	
+#define TMaccabiPricelistUpdate_len  		1
+#define TErrorCodeListUpdate_len  		1
+#define TPurchasePricelistUpdate_len  		1
+#define TDrugBookUpdate_len  			1
+#define TDiscountListUpdate_len  		1
+#define TSuppliersListUpdate_len  		1
+#define TInstituteListUpdate_len  		1
+#define TReserve1_len				4
+#define TReserve2_len				4
+#define TOpenMessageLenghtInLines_len		1
+#define TErrorCode_len  			4
+#define TIdentificationCode_len  		1
+#define TMemberRights_len  			3
+#define TMemberRightsCode_len			3
+#define TDocTerminalNum_len			7
+#define TNumOfDrugLinesRecs_len  		1
+#define TMemberParticipatingType_len  		4
+#define TDrugAnswerCode_len  			4
+#define TBilNum_len				10
+#define TNumDrugsUpdated_len			9
+#define TMemberBelongCode_len			2
+#define TMoveCard_len				4
+#define TTypeDoctorIdentification_len		1
+#define TDoctorIdInputType_len  		1
+#define TRecipeSource_len  			2
+#define TPaymentParticipatingType_len		2
+#define TParticipatingType_len  		4
+#define TParticipatingPrecent_len  		5
+#define TParticipatingAmount_len  		5
+#define TSpecConfNumSrc_len			  	1
+#define TMonthLog_len				4
+#define TDuration_len				3
+#define TCancelAuthNum_len  		9
+#define TInteractionType_len  			4
+#define TSeverityLevel_len  			1
+#define TUpdateCode_len  			1
+#define TAnotherParticipatingTypeExist_len  	1
+#define TRegisteredInDrugNote_len  		1
+#define TMaccabiPriceListNum_len  		3
+#define TNewMaccabiPriceListNum_len  		3
+#define TOrderRecordsNum_len  			5
+#define TUrgencyCode_len  			1
+#define TPackageUnits_len  			5
+#define PurchaseOrderConfirmationCode_len  	9
+#define PurchaseOrderConfirmRecordNum_len  	5
+#define TActionType_len  			2
+#define TNumOfDrugLines_len  			4
+#define TAmountType_len  			1
+#define TAnotherMessage_len  			1
+#define TAcceptedLinesNum_len			5
+#define TRealAcceptedRecordsNum_len  		4
+#define TDoseRenewalFrequencyInDays_len  	3
+#define TDoseNum_len  				2
+#define TSourceValidSpecialRecipeNum_len  	1
+#define TMaccabiKerenCode_len  			3
+#define TMaccabiMagenCode_len  			3
+#define TSpecialRecipeNumSource_len  		1
+#define TSpecialRecipeNumCode_len  		1
+#define TCanDeliverRecipeInPrivPharm_len  	1
+#define TErrorCodeToUpdateNum_len  		4
+#define TErrorSevirity_len  			2
+#define TNumOfLinesToUpdate_len  		4
+#define TSpecialConfirmMessageFlag_len		1
+#define TActionCode_len  			1
+#define TCreditYesNo_len  			2
+#define TAuthorizarionNum2_len  		3
+#define TRecordNum_len  			4
+#define TStationNum_len  			2
+#define TPaymentType_len  			2
+#define TSalesActionNum_len  			4
+#define TRefundActionNum_len  			4
+#define TPharmNum_len				7
+#define TUserIdentification_len  		9
+#define THardwareVersion_len  			9
+#define TAvailableDisk_len  			9
+#define TFlushingFileSize_len			9
+#define TLastBackupDate_len  			8
+#define TDate_len  				8
+#define THour_len  				6
+#define TPriceListUpdateDate_len  		8
+#define TPriceListUpdateHour_len  		6
+#define TLastPriceListUpdateDate_len  		8
+#define TLastPriceListUpdateHour_len  		6
+#define TMaccabiPriceListUpdateDate_len  	8
+#define TPurchasePriceListUpdateDate_len  	8
+#define TDrugBookUpdateDate_len  		8
+#define TDiscountListUpdateDate_len  		8
+#define TSuppliersListUpdateDate_len  		8
+#define TInstituteListUpdateDate_len  		8
+#define TErrorCodeListUpdateDate_len  		8
+#define TRecipeIdentifier_len			9
+#define TMemberIdentification_len  		9
+#define TMemberDateOfBirth_len  		8
+#define TConfiramtionDate_len			8
+#define TConfirmationHour_len			6
+#define TLineNum_len				4
+#define TDrugCode_len				5
+#define TUnits_len  				5
+#define TOp_len  				5
+#define TDrugCodeInInteraction_len  		5
+#define TOpDrugPrice_len  			9
+#define TDoctorIdentification_len  		9
+#define TInvoiceNum_len  			7
+#define TDoctorRecipeNum_len  			6
+#define TPharmRecipeNum_len  			6
+#define TDeviceCode_len  			7
+#define TDeviceNum_len  			7
+#define TDeliverConfirmationDate_len  		8
+#define TDeliverConfirmationHour_len  		6
+#define TNumofSpecialConfirmation_len 		8
+#define TCurrentStockOp_len  			9
+#define TCurrentStockInUnits_len  		9
+#define TTotalMemberParticipation_len		9
+#define TTotalDrugPrice_len  			9
+#define TLinkDrugToAddition_len  		5
+#define TRecipeNum_len  			6
+#define TSpecialRecipeStartDate_len  		8
+#define TCancleRecipeNum_len  			6
+#define TCancleInvoiceNum_len			7
+#define TSpecialRecipeStopDate_len  		8
+#define TLastDrugUpdateDate_len  		8
+#define TLastDrugUpdateHour_len  		6
+#define TDrugFileUpdateDate_len  		8
+#define TDrugFileUpdateHour_len  		6
+#define TNumOfDrugsToUpdate_len  		9
+#define TPackageSize_len  			5
+#define TSupplierCode_len  			5
+#define TCompuSoftDrgCode_len  			6	// DonR 17Oct2017 5 -> 6.
+#define TDrugAddition1Code_len  		5
+#define TDrugAddition3Code_len  		5
+#define TDrugAddition2Code_len  		5
+#define TDrugPriceForUpdateNum_len  		2
+#define TNewMaccabiPrice_len  			9
+#define TPurchasePrice_len  			9
+#define TYarppaDrugCode_len  			7
+#define TCurrentStockLeftOver_len  		9
+#define TOrderAmount_len  			9
+#define TManufactorCode_len  			5
+#define TInternalOrderNum_len			8
+#define TAuthorizationNum_len			7
+#define TSuppDevPharmNum_len  			7
+#define TDiscountAmount_len  			9
+#define TDiscountPrecent_len  			5
+#define TTotalAfterDiscount_len  		9
+#define TTotalAfterVat_len  			9
+#define TOpAmout_len  				5
+#define TUnitsAmout_len  			5
+#define TUnitPriceFor1Op_len  			9
+#define TTotalForItemLine_len			9
+#define TFullOpStock_len  			7
+#define TCurrentUnitStock_len			7
+#define TMinOpStock_len  			5
+#define TEnterDate_len  			8
+#define TEnterHour_len  			6
+#define TFromDate_len				8
+#define TToDate_len  				8
+#define TTotalFinanceAccumulate_len  		9
+#define TMemberParticipatingAccumulate_len  	9
+#define TNumOfSoldRecipe_len  			9
+#define TNumOfSoldDrugLines_len  		9
+#define TCancleFinanceAccumulate_len  		7
+#define TNumOfCancledRecipeLines_len  		9
+#define TDeliverFailedCommFinanceAccum_len  	9
+#define TDeliverFailedCommLinesNum_len  	9
+#define TMessageDate_len  			8
+#define TMessageHour_len  			6
+#define TNumOfMessageLines_len  		2
+#define TMessageLine_len  			60
+#define TSupervisorPharmecistIdent_len  	9
+#define TSupervisorPharmecistCardValid_len  	4
+#define TDoseDoseageInOp_len  			5
+#define TDoseDoseageInUnits_len  		5
+#define TTreatmentStartDate_len  		8
+#define TTreatmentStopDate_len  		8
+#define TValidSpecialRecipeNum_len  		8
+#define TPreviousOpDeliverAmount_len  		5
+#define TPreviousUnitsDeliverAmount_len  	5
+#define TPreviousDeliverDate_len  		8
+#define TSpecialRecipeNum_len			8
+#define TUpdateDate_len  			8
+#define TUpdateHour_len  			6
+#define TLastUpdateDate_len  			8
+#define TLastUpdateHour_len  			6
+#define TSupplierNum_len  			5
+#define TZipCode_len  				5
+#define TCommunicationSupplier_len  		5
+#define TReportDate_len  			8
+#define TReportHour_len  			6
+#define TAuthorizarionNum3_len  		9
+#define TCardNum_len  				7
+#define TSalesMoney_len  			9
+#define TRefundsMoney_len  			9
+#define TSoftwareVersion_len  			9
+#define TPhone1_len  				10
+#define TPhone2_len  				10	
+#define TPhone3_len  				10
+#define TOpenShiftMessage_len			60
+#define TMemberFamilyName_len			14
+#define TMemberFirstName_len  			8
+#define TSaleWithoutPrescription_len		1
+#define TDoctorFamilyName_len			14
+#define TDoctorFirstName_len  			8
+#define TGlobalError_len  			60
+#define TInteractionDescLine_len  		40
+#define TDrugRespondLine_len  			40
+#define TDrugDescription_len  			30
+#define TUserNum_len  				9
+#define TErrorDecription_len  			50
+#define TSupplierName_len  			25
+#define TAddress_len  				20
+#define TCity_len  				20
+#define TCity15_len  				15
+#define TFaxNum_len  				10
+#define TMainDeviceType_len  			2
+#define TSemiDeviceType_len  			2
+#define TDeviceName_len				40
+#define TMemberDiscountPercent_len  		5 
+#define TPriceSwap_len  			6 
+#define TAdditionToPrice_len  			7
+#define TSupplierTableCod_len			2
+#define TSupplierType_len			2
+#define TEmployeeID_len				9
+#define TEmployeePassword_len			9
+#define TCheckType_len				1
+#define TMsgExistsFlg_len			1
+#define TPrintFlg_len				1
+#define TPermissionType_len			2
+
+#define TVatAmount_len				9
+#define TBilAmount_len				9
+#define TSupplSendNum_len			10
+#define TBilAmountWithVat_len			9
+#define TBilAmountBeforeVat_len			9
+#define TBilConstr_len				1
+#define TBilInvDiff_len			9
+#define TBasePriceFor1Op_len			9
+
+// DonR 05SEP2002
+#define TElectPR_Stock_len  			7
+#define TElectPR_DiscntReasonLen		5
+#define TElectPR_ReasonToDispLen		2
+#define TElectPR_SubstPermLen			2
+#define TElectPR_HowPartDetLen			2
+#define TElectPR_LineNumLen				2
+
+// DonR 06Feb2003
+#define TGroupCode_len		 			3
+#define TGroupNbr_len		 			3
+#define TItemSeq_len		 			3
+#define TEconPriNumUpdated_len			9
+
+#define TRuleNum_len					9
+#define TElectPR_Profession_len			5
+#define TAuthLevel_len					2
+
+
+/*   Synonims:
+ */ 
+#define Tmaccabi_code_len	TMemberRightsCode_len	
+#define Tkeren_mac_code_len	TMaccabiKerenCode_len
+#define Tmac_magen_code_len	TMaccabiMagenCode_len
+
+#define TSupplierPrice_len  			9  /*Yulia 20021031*/
+
+/*=======================================================================
+||			SHORT INTEGER TYPES				||
+ =======================================================================*/
+
+/*
+ * This paragraph is for disabling
+ * SQL commands for non-SQL files
+ */
+//#ifdef NON_SQL //
+//#define EXEC
+//#define SQL
+//#define begin	long int ____e_l_y______
+//#define end	long int ____l_e_v_y____
+//#define declare
+//#define section
+//#endif //
+
+#ifndef NON_SQL
+//EXEC SQL begin declare section;		//Marianna
+#endif
+
+typedef short int TFlg;
+
+typedef short int TPrintFlg;
+
+typedef short int TYarpaParticipationCode;
+
+typedef short int TCalcTypeCode;
+
+typedef short int TSpecialConfirmMessageFlag;
+
+typedef short int TDoseDoseageInUnits;
+
+typedef short int TDoseDoseageInOp;
+
+typedef short int TPharmacistIDExtension;
+
+typedef short int TConfirmationReason;
+
+typedef short int TConfirmationType;
+
+typedef short int Tdiary_month;
+
+typedef short int TSqlInd;
+
+typedef short int TDeleteFlage;
+
+typedef short int TFlage;
+
+typedef short int TAge;
+
+typedef short int TMessageLineID;
+
+typedef short int TMedNumOfMessageLines;
+
+typedef short int TClosingCode;
+
+typedef short int TInstituteCode;
+
+typedef short int TTerminalNum;
+
+typedef short int TMedNumOfDrugLines;
+
+typedef short int TPriceListNum;
+
+typedef short int TPharmacyType;
+
+typedef short int TNet;
+
+typedef short int TCommunicationType;
+
+typedef short int TMemberDiscountPercent;
+
+typedef short int TFreeMemory;
+
+typedef short int TMessage;
+
+typedef short int TGlobalPricelistUpdate;
+
+typedef short int TMaccabiPricelistUpdate;
+
+typedef short int TPurchasePricelistUpdate;
+
+typedef short int TDrugBookUpdate;
+
+typedef short int TDiscountListUpdate;
+
+typedef short int TSuppliersListUpdate;
+
+typedef short int TInstituteListUpdate;
+
+typedef short int TErrorCodeListUpdate;
+
+typedef short int TSaleWithoutPrescription;
+
+typedef short int TReserve1;
+
+typedef short int TReserve2;
+
+typedef short int TOpenMessageLenghtInLines;
+
+typedef short int TErrorCode;
+
+typedef short int TIdentificationCode;
+
+typedef short int TMemberRights;
+
+typedef short int TMemberRightsCode;
+
+typedef short int TNumOfDrugLinesRecs;
+
+typedef short int TMemberParticipatingType;
+
+typedef short int TDrugAnswerCode;
+
+typedef short int TMemberBelongCode;
+
+typedef short int TMoveCard;
+
+typedef short int TTypeDoctorIdentification;
+
+typedef short int TDoctorIdInputType;
+
+typedef short int TRecipeSource;
+
+typedef short int TPaymentParticipatingType;
+
+typedef short int TParticipatingType;
+
+typedef short int TParticipatingPrecent;
+
+typedef short int TParticipatingAmount;
+
+typedef short int TSpecialConfirmationNumSource;
+
+typedef short int TMonthLog;
+
+typedef short int TDuration;
+
+typedef short int TCancleAuthorizationNum;
+
+typedef short int TSeverityLevel;
+
+typedef short int TUpdateCode;
+
+typedef short int TAnotherParticipatingTypeExist;
+
+typedef short int TRegisteredInDrugNote;
+
+typedef short int TMaccabiPriceListNum;
+
+typedef short int TNewMaccabiPriceListNum;
+
+typedef short int TOrderRecordsNum;
+
+typedef short int TUrgencyCode;
+
+typedef short int TPackageUnits;
+
+typedef short int PurchaseOrderConfirmationCode;
+
+typedef short int PurchaseOrderConfirmRecordNum;
+
+typedef short int TActionType;
+
+typedef short int TNumOfDrugLines;
+
+typedef short int TAmountType;
+
+typedef short int TAnotherMessage;
+
+typedef short int TAcceptedLinesNum;
+
+typedef short int TRealAcceptedRecordsNum;
+
+typedef short int TDoseRenewalFrequencyInDays;
+
+typedef short int TDoseNum;
+
+typedef short int TSourceValidSpecialRecipeNum;
+
+typedef short int TMaccabiKerenCode;
+
+typedef short int TMaccabiMagenCode;
+
+typedef short int TSpecialRecipeNumSource;
+
+typedef short int TSpecialRecipeNumCode;
+
+typedef short int TCanDeliverRecipeInPrivPharm;
+
+typedef short int TErrorCodeToUpdateNum;
+
+typedef short int TErrorSevirity;
+
+typedef short int TNumOfLinesToUpdate;
+
+typedef short int TActionCode;
+
+typedef short int TCreditYesNo;
+
+typedef short int TCreditYesNoFlg;
+
+typedef short int TAuthorizarionNum2;
+
+typedef short int TRecordNum;
+
+typedef short int TStationNum;
+
+typedef short int TPaymentType;
+
+typedef short int TSalesActionNum;
+
+typedef short int TRefundActionNum;
+
+typedef short int TSupplierTableCod;
+
+typedef short int TCheckType;
+
+typedef short int TInteractionType;
+
+typedef short int TOpenCloseFlag;
+
+typedef short int TPermissionType;
+
+typedef short int TMacabiPriceFlg;
+
+typedef short int TMsgExistsFlg;
+
+typedef short int TDoctorBelong; 
+
+typedef short int TBilConstr;
+
+typedef short int TLineNum;
+
+typedef short int TMemberSex;	// DonR 01JUL2003
+
+// DonR 06Feb2003
+typedef short int TGroupCodeShort;
+typedef short int TGroupNbrShort;
+typedef short int TItemSeq;
+
+typedef short int TStatus;
+typedef short int TAuthLevel;
+
+typedef short int	TTreatmentType;
+
+
+/*=======================================================================
+||			 INTEGER TYPES												||
+ =======================================================================*/
+typedef   int THospitalCode;
+
+typedef   int TStopBloodDate;
+
+typedef   int TDeletedRecordUniqeID;
+
+typedef   int TMessageID;
+
+typedef   int TRefundsMoney;
+
+typedef   int TSalesMoney;
+
+typedef   int TPharmNum;
+
+typedef   int TUserIdentification;
+
+typedef   int THardwareVersion;
+
+typedef   int TAvailableDisk;
+
+typedef   int TFlushingFileSize;
+
+typedef   int TMaxNumOfDrugsToUpdate;
+
+typedef   int TLastBackupDate;
+
+typedef   int TDate;
+
+typedef   int THour;
+
+typedef   int TPriceListUpdateDate;
+
+typedef   int TPriceSwap;
+
+typedef   int TAdditionToPrice;
+
+typedef   int TDocTerminalNum;
+
+typedef   int TPriceListUpdateHour;
+
+typedef   int TLastPriceListUpdateDate;
+
+typedef   int TLastPriceListUpdateHour;
+
+typedef   int TMaccabiPriceListUpdateDate;
+
+typedef   int TPurchasePriceListUpdateDate;
+
+typedef   int TDrugBookUpdateDate;
+
+typedef   int TDiscountListUpdateDate;
+
+typedef   int TSuppliersListUpdateDate;
+
+typedef   int TInstituteListUpdateDate;
+
+typedef   int TErrorCodeListUpdateDate;
+
+typedef   int TRecipeIdentifier;
+
+typedef   int TMemberIdentification;
+
+typedef   int TMemberDateOfBirth;
+
+typedef   int TConfiramtionDate;
+
+typedef   int TConfirmationHour;
+
+typedef   int TDrugCode;
+
+typedef   int TUnits;
+
+typedef   int TOp;
+
+typedef   int TDrugCodeInInteraction;
+
+typedef   int TOpDrugPrice;
+
+typedef   int TDoctorIdentification;
+
+typedef   int TInvoiceNum;
+
+typedef   int TDoctorRecipeNum;
+
+typedef   int TPharmRecipeNum;
+
+typedef   int TDeviceCode;
+
+typedef   int TDeviceNum;
+
+typedef   int TDeliverConfirmationDate;
+
+typedef   int TDeliverConfirmationHour;
+
+typedef   int TNumofSpecialConfirmation;
+
+typedef   int TCurrentStockOp;
+
+typedef   int TCurrentStockInUnits;
+
+typedef   int TTotalMemberParticipation;
+
+typedef   int TTotalDrugPrice;
+
+typedef   int TLinkDrugToAddition;
+
+typedef   int TRecipeNum;
+
+typedef   int TSpecialRecipeStartDate;
+
+typedef   int TCancleRecipeNum;
+
+typedef   int TCancleInvoiceNum;
+
+typedef   int TSpecialRecipeStopDate;
+
+typedef   int TLastDrugUpdateDate;
+
+typedef   int TLastDrugUpdateHour;
+
+typedef   int TDrugFileUpdateDate;
+
+typedef   int TDrugFileUpdateHour;
+
+typedef   int TNumOfDrugsToUpdate;
+
+typedef   int TPackageSize;
+
+typedef   int TSupplierCode;
+
+typedef   int TComputersoftDrugCode;
+
+typedef   int TDrugAddition1Code;
+
+typedef   int TDrugAddition3Code;
+
+typedef   int TDrugAddition2Code;
+
+typedef   int TDrugPriceForUpdateNum;
+
+typedef   int TNewMaccabiPrice;
+
+typedef   int TPurchasePrice;
+
+typedef   int TYarppaDrugCode;
+
+typedef   int TCurrentStockLeftOver;
+
+typedef   int TOrderAmount;
+
+typedef   int TManufactorCode;
+
+typedef   int TInternalOrderNum;
+
+typedef   int TAuthorizationNum;
+
+typedef   int TSuppDevPharmNum;
+
+typedef   int TDiscountAmount;
+
+typedef   int TDiscountPrecent;
+
+typedef   int TBilAmount;
+
+typedef   int TVatAmount;
+
+typedef   int TOpAmout;
+
+typedef   int TUnitsAmout;
+
+typedef   int TUnitPriceFor1Op;
+
+typedef   int TBasePriceFor1Op;
+
+typedef   int TTotalForItemLine;
+
+typedef   int TFullOpStock;
+
+typedef   int TCurrentUnitStock;
+
+typedef   int TMinOpStock;
+
+typedef   int TEnterDate;
+
+typedef   int TEnterHour;
+
+typedef   int TFromDate;
+
+typedef   int TToDate;
+
+typedef   int TTotalFinanceAccumulate;
+
+typedef   int TMemberParticipatingAccumulate;
+
+typedef   int TNumOfSoldRecipe;
+
+typedef   int TNumOfSoldDrugLines;
+
+typedef   int TKabalaNum;
+
+typedef   int TCancleFinanceAccumulate;
+
+typedef   int TNumOfCancledRecipeLines;
+
+typedef   int TDeliverFailedCommFinanceAccum;
+
+typedef   int TDeliverFailedCommLinesNum;
+
+typedef   int TMessageDate;
+
+typedef   int TMessageHour;
+
+typedef   int TNumOfMessageLines;
+
+typedef   int TSupervisorPharmecistIdent;
+
+typedef   int TSupervisorPharmecistCardValid;
+
+typedef   int TTreatmentStartDate;
+
+typedef   int TTreatmentStopDate;
+
+typedef   int TValidSpecialRecipeNum;
+
+typedef   int TPreviousOpDeliverAmount;
+
+typedef   int TPreviousUnitsDeliverAmount;
+
+typedef   int TPreviousDeliverDate;
+
+typedef   int TSpecialRecipeNum;
+
+typedef   int TUpdateDate;
+
+typedef   int TUpdateHour;
+
+typedef   int TLastUpdateDate;
+
+typedef   int TLastUpdateHour;
+
+typedef   int TSupplierNum;
+
+typedef   int TPriceForOP;
+
+typedef   int TZipCode;
+
+typedef   int TCommunicationSupplier;
+
+typedef   int TReportDate;
+
+typedef   int TReportHour;
+
+typedef   int TAuthorizarionNum3;
+
+typedef   int TCardNum;
+
+typedef   int TEmployeeID;
+
+typedef   int TEmployeePassword;
+
+typedef   int TBilAmountWithVat;
+
+typedef   int TBilAmountBeforeVat; 
+
+typedef   int TBilInvDiff;
+
+typedef   int Tdiary_monthNew;
+
+typedef   int Tfee;
+
+typedef   int TRuleNum;
+typedef   int TProfessionx;
+
+/*=======================================================================
+||				STRING TYPES				||
+ =======================================================================*/
+
+typedef char TAllowedProcList[50 + 1];
+
+typedef char TAllowedBelongings[50 + 1];
+
+typedef char TParticipationName[25 + 1];
+
+typedef char TPhone[10 + 1];
+
+typedef char TPhone1[10 + 1];
+
+typedef char TPhone2[10 + 1];
+
+typedef char TPhone3[10 + 1];
+
+typedef char TMessageLine[60 + 1];
+
+typedef char TSoftwareVersion[9 + 1];
+
+typedef char TOpenShiftMessage[60 + 1];
+
+typedef char TMemberFamilyName[14 + 1];
+
+typedef char TMemberFirstName[8 + 1];
+
+typedef char TDoctorFamilyName[14 + 1];
+
+typedef char TDoctorFirstName[8 + 1];
+
+typedef char TGlobalError[60 + 1];
+
+typedef char TInteractionDescLine[40 + 1];
+
+typedef char TDrugRespondLine[40 + 1];
+
+typedef char TDrugDescription[30 + 1];
+
+typedef char TUserNum[9 + 1];
+
+typedef char TErrorDecription[50 + 1];
+
+typedef char TSupplierName[25 + 1];
+
+typedef char TAddress[20 + 1];
+
+typedef char TCity[20 + 1];
+
+typedef char TCity15[15 + 1];
+
+typedef char TFaxNum[10 + 1];
+
+typedef char TMainDeviceType[2 + 1];
+
+typedef char TSemiDeviceType[2 + 1];
+
+typedef char TDeviceName[40 + 1];
+
+typedef char TSupplierType[2 + 1];
+
+typedef char TBilNum[10+1];
+
+typedef char TSupplSendNum[10+1];
+
+
+
+/*=======================================================================
+||				GENERIC TYPEDEFS (DonR 05Feb2003						||
+ =======================================================================*/
+
+// DonR 05 Feb 2003 - Add some generic type fields - since many messages have
+// standard data elements.
+typedef short int	TGenericFlag;
+typedef   int	TGenericYYYYMMDD;
+typedef short int	TGenericYYMM;
+typedef   int	TGenericHHMMSS;
+typedef   int	TGenericTZ;
+typedef char		TGenericCharFlag	[ 1 + 1];
+typedef char		TGenericText75		[75 + 1];
+
+
+/*=======================================================================
+||			      Special buffers				||
+ =======================================================================*/
+
+typedef struct raw_data_header
+{
+	int		actual_rows;
+	int		alloc_rows;
+} RAW_DATA_HEADER;
+
+
+// DonR 15Feb2006: Add generic-ingredient data to drugs-in-blood data.
+typedef struct
+{
+	short		code;
+	double		quantity;
+	double		quantity_std;
+	double		per_quant;
+	char		units		[ 3 + 1];
+	char		per_units	[ 3 + 1];
+}	TIngredient;
+
+typedef struct				/* -----< DRUGS IN BLOOD >----- */
+{
+	TDrugCode					Code;
+	TTreatmentStopDate			StopDate;
+	TTreatmentStopDate			StopBloodDate;
+	TTreatmentStartDate			StartDate;
+	int							PurchaseTime;
+	TDoctorIdentification		DoctorId;
+	TTypeDoctorIdentification	DoctorIdType;
+	TUnits						Units;
+	TOp							Op;
+	TIngredient					Ingredient[3];
+	double						AdjLimIngrUsage;	// DonR 16Sep2013. For now, not loaded automatically by get_drugs_in_blood().
+	TDuration					Duration;
+	short int					THalf;
+	int							PrescriptionID;
+	short int					LineNo;
+	TRecipeSource				Source;
+	int							TotalUnits;
+	short						PurchaseLimitFlag;
+	int							PurchaseLimitGroupCode;
+	short						BoughtAtDiscount;
+	short						ClassCode;	// DonR 26May2010: "Stickim".
+	int							SpecialPrescNum;
+	short						PharmacologyGroup;
+	int							EconomypriGroup;
+	char						LargoType [1 + 1];
+	short						TreatmentType;
+	short						chronic_flag;
+	short						in_drug_interact;
+	int							PharmacyCode;
+} DURDrugsInBlood;
+
+typedef struct				/* -< DRUGS IN BLOOD BUFFER  >- */
+{
+	DURDrugsInBlood	*Durgs;
+	int				max;
+	int				size;
+} TDrugsBuf;
+
+
+typedef struct pharmacy_info	// PHARMACY INFO FROM DATABASE (more complete info than old version).
+{
+	short	pharmacy_permission;
+	short	price_list_num;
+	short	found_and_legal;
+	short	open_close_flg;
+	short	pharm_category;
+	short	pharm_card;
+	short	leumi_permission;
+	short	CreditPharm;
+	short	maccabicare_pharm;
+	short	maccabi_pharmacy;
+	short	private_pharmacy;
+	short	prati_plus_pharmacy;
+	short	hesder_category;
+	short	has_hesder_maccabi;
+	short	vat_exempt;
+	short	meishar_enabled;
+	short	order_originator;
+	short	order_fulfiller;
+	short	can_sell_future_rx;
+} PHARMACY_INFO;
+
+
+typedef struct pharmacy_row		/* -<   PHARMACY KEY         >- */
+{
+	int				pharmacy_num;
+	short			institute_code;
+	PHARMACY_INFO	info;
+} PHARMACY_ROW;
+
+
+typedef struct severity_row		/* -< SEVERITY ROW IN BUFFER >- */
+{
+	TErrorCode		error_code;
+	TSeverityLevel	severity_level;
+} SEVERITY_ROW;
+
+
+typedef struct percent_row		/* -< PERCENT ROW IN BUFFER >- */
+{
+	TParticipatingType		percent_code;
+	TParticipatingPrecent	percent;
+} PERCENT_ROW;
+
+typedef struct
+{
+	char	participation_name	[25 + 1];
+	short	calc_type_code;
+	short	member_institued;
+	short	yarpa_part_code;
+	int		tax;
+	short	member_price_code;
+	int		update_date;
+	int		update_time;
+	short	del_flg;
+	short	member_price_prcnt;
+	int		max_pkg_price;
+	int		min_reduced_price;	// Copy of "tax", for clarity.
+}	Tmember_price_row;
+
+
+// DonR 22Nov2011: Revamped structure to reflect current naming conventions (Basic/Kesef/Zahav)
+// and permit aggregate SELECTS by separating out the health-basket flags for the three
+// insurance categories.
+typedef struct				/* -< DRUGS PARTICIPATING TST >-*/
+{
+	TMemberParticipatingType	basic_part;
+	TMemberParticipatingType	kesef_part;
+	TMemberParticipatingType	zahav_part;
+	int							basic_fixed_price;
+	int							kesef_fixed_price;
+	int							zahav_fixed_price;
+	short						in_health_basket;	// DonR 18Dec2007.
+} TParticTst;
+
+typedef struct				/* -< DRUGS DISCOUNT SOURCE >-*/
+{
+	short int			table;
+	short int 			insurance_used;
+	short int	    	state;
+} TRetPartSource;
+
+typedef struct tag_DUR_Data		/* -<DRUG-INTERACTION-LINE>- */
+{
+	TRecipeIdentifier	interact_presc_id;
+	short int			line_no;
+	short int			interact_line_no;
+	TDrugCode			largo_code;
+	TDrugCode			interact_largo_cod;
+	TTreatmentStopDate	StopDate;
+	TTreatmentStopDate	interact_StopDate;
+	TStopBloodDate		StopBloodDate;
+	TStopBloodDate		interact_StopBloodDate;
+} DUR_Data;
+
+
+typedef struct doctor_drug_row		/* -<DOCTOR-DRUG KEY IN BUF>- */
+{
+	TDoctorIdentification	doctor_id;
+	TDrugCode				drug_code;
+	TParticTst				info;
+	TDoctorBelong			doctor_belong;
+} DOCTOR_DRUG_ROW;
+
+typedef struct doctor_drug_row_arg		/* -<DRUG argument for search>- */
+{
+	TDoctorIdentification	doctor_id;
+	TDrugCode				drug_code;
+	TParticTst				info;
+	TDoctorBelong			doctor_belong;
+	DOCTOR_DRUG_ROW			*last_found_drug;
+} DOCTOR_DRUG_ROW_ARG;
+
+
+
+typedef struct interaction_row		/* -<INTERACTION KEY IN BUF>- */
+{
+	TDrugCode			first_drug_code;
+	TDrugCode			second_drug_code;
+	TInteractionType	interaction_type;
+} INTERACTION_ROW;
+
+
+typedef struct prescription_row		/* -<PRESCRIPTION KEY IN BUF>-*/
+{
+	TRecipeIdentifier	prescription_id;
+} PRESCRIPTION_ROW;
+
+
+typedef struct message_recid_row		/* -<MESSAGE ID IN BUF>-*/
+{
+	TRecipeIdentifier	message_rec_id;
+} MESSAGE_RECID_ROW;
+
+
+typedef struct delpr_recid_row		/* -<DELETED PR ID IN BUF>-*/
+{
+	TRecipeIdentifier	delpr_rec_id;
+} DELPR_RECID_ROW;
+
+
+typedef struct prescr_written_row		/* -<PRESCRIPTION-WRITTEN KEY IN BUF>-*/
+{
+	TRecipeIdentifier	this_id;
+	TRecipeIdentifier	next_id;
+	TRecipeIdentifier	last_reserved_id;
+	short				error_code;
+} PRESCR_WRITTEN_ROW;
+
+
+
+// DonR 09Jun2010: "Generic" structure to hold drug_list data.
+typedef struct
+{
+	int		largo_code;
+	char	long_name			[30 + 1];
+	char	short_name			[17 + 1];
+	char	name_25				[25 + 1];
+	short	preferred_flg;
+	int		preferred_largo;
+	short	multi_pref_largo;
+	short	del_flg;
+	char	del_flg_cont;
+	short	is_out_of_stock;
+	int		parent_group_code;
+	char	parent_group_name	[25 + 1];
+	int		economypri_group;
+	short	specialist_drug;
+	short	has_shaban_rules;
+	short	in_doctor_percents;
+	short	class_code;
+	short	drug_book_flg;
+	short	maccabicare_flag;
+	short	assuta_drug_status;
+	short	t_half;
+	short	chronic_flag;
+	short	cronic_months;
+	short	allow_future_sales;
+	short	additional_price;
+	char	package				[10 + 1];
+	int		package_size;
+	double	package_volume;
+	int		effective_package_size;
+	short	openable_pkg;
+	short	calc_op_by_volume;
+	short	expiry_date_flag;
+	short	shape_code;
+	short	shape_code_new;
+	char	form_name			[25 + 1];
+	char	unit_abbreviation	[ 3 + 1];
+	short	must_prescribe_qty;
+	short	split_pill_flag;
+	int		supplemental_1;
+	int		supplemental_2;
+	int		supplemental_3;
+	int		supplier_code;
+	int		computersoft_code;
+	char	bar_code_value		[14 + 1];
+	short	no_presc_sale_flag;
+	short	home_delivery_ok;
+	char	largo_type;
+	short	in_gadget_table;
+	short	treatment_typ_cod;
+	short	in_health_pack;
+	short	health_basket_new;
+	short	pharm_group_code;
+	short	member_price_code;
+	int		price_prcnt;
+	int		price_prcnt_magen;
+	int		price_prcnt_keren;
+	short	enabled_status;
+	short	enabled_mac;
+	short	enabled_hova;
+	short	enabled_keva;
+	char	drug_type;
+	short	priv_pharm_sale_ok;
+	short	pharm_sale_new;
+	char	pharm_sale_test;
+	short	status_send;
+	char	sale_price			[ 5 + 1];
+	char	sale_price_strudel	[ 5 + 1];
+	char	interact_flg;
+	short	in_drug_interact;
+	short	in_overdose_table;
+	short	magen_wait_months;
+	short	keren_wait_months;
+	short	drug_book_doct_flg;
+	short	ishur_required;
+	TIngredient		Ingredient[3];
+	short	purchase_limit_flg;
+	int		qty_lim_grp_code;
+	short	ishur_qty_lim_flg;
+	short	tight_ishur_limits;
+	short	ishur_qty_lim_ingr;
+	short	rule_status;
+	short	sensitivity_flag;
+	int		sensitivity_code;
+	short	sensitivity_severe;
+	short	needs_29_g;
+	short	print_generic_flg;
+	short	copies_to_print;
+	int		substitute_drug;
+	int		fps_group_code;
+	short	tikrat_mazon_flag;
+	short	cont_treatment;
+	short	how_to_take_code;
+	short	time_of_day_taken;
+	short	treatment_days;
+	int		illness_bitmap;
+	short	has_diagnoses;
+	int		refresh_date;
+	int		refresh_time;
+	int		changed_date;
+	int		changed_time;
+	int		pharm_update_date;
+	int		pharm_update_time;
+	int		doc_update_date;
+	int		doc_update_time;
+	int		as400_batch_date;
+	int		as400_batch_time;
+	int		update_date;
+	int		update_time;
+	int		update_date_d;
+	int		update_time_d;
+	char	pharm_diff			[50 + 1];
+}	TDrugListRow;
+
+
+
+typedef struct	// Doctor_presc table structure - DonR 28Oct2014.
+{
+	int		member_id;
+	short	member_id_code;
+	int		clicks_patient_id;
+	int		doctor_id;
+	int		doctor_presc_id;
+	int		largo_prescribed;
+	int		valid_from_date;
+	int		valid_until_date;
+	long	order_number;
+	short	sold_status;
+	short	ordered_status;
+	short	deleted_status;
+	long	visit_number;
+	int		visit_date;
+	int		visit_time;
+	char	clinic_address		[255 + 1];
+	short	line_number;
+	char	speciality_desc		[ 25 + 1];
+	short	specialist_ishur;
+	int		rule_number;
+	short	prescription_type;
+	short	digital_presc_flag;
+	short	dose_number;
+	short	op;
+	short	total_units;
+	short	qty_method;
+	short	usage_method_code;
+	char	usage_instructions	[100 + 1];
+	double	amt_per_dose;
+	char	unit_abbreviation	[  3 + 1];
+//	short	shape_code;
+	short	doses_per_day;
+	short	treatment_length;
+	short	course_treat_days;
+	short	course_len;
+	char	course_len_units	[  6 + 1];
+	short	num_courses;
+	char	days_per_week		[ 20 + 1];
+	char	morning_evening		[200 + 1];
+	char	treatment_side		[ 10 + 1];
+	char	member_phone		[ 10 + 1];
+	char	clinic_phone		[ 10 + 1];
+	int		row_added_date;
+	int		row_added_time;
+	int		last_sold_date;
+	int		last_sold_time;
+	short	tot_units_sold;
+	short	tot_op_sold;
+	short	linux_update_flag;
+	int		linux_update_date;
+	int		linux_update_time;
+	short	extern_update_flag;
+	int		extern_update_date;
+	int		extern_update_time;
+	short	reported_to_as400;
+	short	reported_to_cds;
+	short	effective_unit_len;
+	int		ComputedValidUntil;
+}	TDoctorPrescRow;
+
+
+
+typedef struct	// Trn. 6001 prescription-data structure - DonR 28Oct2014.
+{
+	short				IsExtraLargo;
+	TDoctorPrescRow		Rx;
+	TDrugListRow		DL;
+	TDrugListRow		DL_prescribed;
+	TDoctorFirstName	DoctorFirstName;
+	TDoctorFamilyName	DoctorFamilyName;
+	char				DoctorPhone	[10 + 1];
+	short				PriceCode;
+	short				FixedPriceFlag;
+	int					ReducedPrice;
+	short				FoundAs400Ishur;
+	short				PriceMessageCode;
+	short				PtnRequiresPratiPlus;
+	short				PrDateValidForSale;
+	short				SuppressOutputToPharmacy;
+	short				OPToSell;
+	short				UnitsToSell;
+	int					dose_times_100;
+	short				NumRxInVisit;
+	short				DrugAnswerCode;
+	short				DFatalErr;
+	short				OtherValidRxExists;
+	short				DeliveryPermitted;
+}	T6001_Drugs;
+
+
+typedef struct	// Prior sale data for Transaction 6001 prescribed drugs.
+{
+	int					EconomypriGroup;
+	int					LargoCode;
+	int					LastSaleDate;
+	int					LastSaleTime;
+	short				OP;
+	short				Units;
+}	T6001_LastRelevantSale;
+
+
+typedef struct		// Drug sale "lines"
+{
+	TDrugListRow					DL;		// DonR 09Jun2010: Will eventually replace many fields below.
+	TDrugCode						DrugCode;
+	TOp								Op;
+	TUnits							Units;
+	TOp								Doctor_Op;
+	TUnits							Doctor_Units;
+	TDuration						Duration;
+	TOpDrugPrice					OpDrugPrice;
+	TLinkDrugToAddition				LinkDrugToAddition;
+	TOpDrugPrice					RetOpDrugPrice;
+	TOpDrugPrice					YarpaDrugPrice;
+	TOpDrugPrice					PriceForPtnCalc;	// DonR 19Feb2012: For Eilat pharmacies, this will be price minus VAT.
+	TOpDrugPrice					MacabiDrugPrice;
+	TMacabiPriceFlg					MacabiPriceFlg;
+	TMemberParticipatingType		RetPartCode;
+	TMemberParticipatingType		BasePartCode;
+	TDrugAnswerCode					DrugAnswerCode;
+	TInteractionDescLine			InteractionDescLine;
+	TDrugCodeInInteraction			DrugInInteraction;
+	TDrugCodeInInteraction			RetDrugInteraction;
+	TPriceSwap						PriceSwap;
+	TAdditionToPrice				AdditionToPrice;
+	int								DiscountApplied;
+	TInteractionType				interaction_type;
+	int								StopUseDate;
+	int								StopBloodDate;
+	short							DFatalErr;
+	short							ATestOverDosed;
+	short							PrticSet;
+	TUnits							over_dose_limit;
+	short							no_magen_flg;
+	short							no_keren_flg;
+	TRetPartSource					ret_part_source;
+	TParticipatingPrecent			part_for_discount;
+	short							BasePartCodeFrom;
+	short							in_health_pack;
+	TNumofSpecialConfirmation		SpecPrescNum;			//20020430
+	TSpecialConfirmationNumSource	SpecPrescNumSource;
+	TOpDrugPrice					SupplierDrugPrice;		//20021031 Yulia
+	TMemberParticipatingType		mac_magen_code;			// DonR 25Nov2003
+	TMemberParticipatingType		keren_mac_code;			// DonR 25Nov2003
+	short							InsPlusPtnSource;		// DonR 21Sep2004
+	double							TotIngrQuantity[3];		// DonR 11Jul2010
+	double							IngrQuantityStd[3];		// DonR 20Jun2013
+	short							HasIshurWithLimit;
+	short							HasPrescFixedPrice;		// DonR 13Jun2006
+	char							PurchaseLimitFrom;			// DonR 29Jun2006
+	int								PurchaseLimitUnits;			// DonR 29Jun2006
+	double							PurchaseLimitIngredLim;		// DonR 30Nov2016
+	short							PurchaseLimitMonths;		// DonR 29Jun2006
+	int								PurchaseLimitOpenDt;		// DonR 20Jul2006
+	int								PurchaseLimitStartHist;		// DonR 07Nov2010
+	short							PurchaseLimitMethod;		// DonR 30Nov2016
+	short							PurchaseLimitWarningOnly;	// DonR 30Nov2016
+	short							PurchaseLimitIngrCode [LIMIT_GROUP_MAX_INGRED];		// DonR 01Mar2017 - made into an array.
+	short							PurchaseLimitIngrCount;								// DonR 01Mar2017 - support for multiple ingredients in group.
+	short							PurchaseLimitExemptDisease;	// DonR 30Nov2016
+	short							PurchaseLimitSourceReject;	// DonR 13Dec2016
+	short							BoughtAtDiscount;		// DonR 02Jul2006
+	short							IshurWithTikra;			// DonR 26Apr2007
+	short							IshurTikraType;			// DonR 08Jun2010
+	int								IshurStartDate;			// DonR 11Dec2017 CR #12458
+	short							WhySpecialistPtnGiven;	// DonR 14Jan2009
+	short							WhyNonPreferredSold;	// DonR 14Jan2009
+	int								rule_number;			// DonR 10Jun2010
+	short							rule_needs_29g;			// DonR 01Sep2015
+	short							why_future_sale_ok;		// DonR 25Jun2013
+	short							qty_limit_chk_type;		// DonR 25Jun2013
+	int								qty_lim_ishur_num;		// DonR 25Jun2013
+	int								vacation_ishur_num;		// DonR 25Jun2013
+	short							actual_usage_checked;	// DonR 10Sep2013
+	short							course_len;				// DonR 03Feb2015 - could be in days, weeks, or months.
+	char							course_len_units[  6 + 1];	// DonR 03Feb2015
+	short							course_len_days;		// DonR 10Sep2013, renamed 03Feb2015.
+	short							course_treat_days;		// DonR 10Sep2013
+	short							calc_courses;			// DonR 10Sep2013
+	short							calc_treat_days;		// DonR 10Sep2013
+	int								total_units;			// DonR 10Sep2013
+	int								fully_used_units;		// DonR 10Sep2013
+	int								partly_used_units;		// DonR 10Sep2013
+	int								discarded_units;		// DonR 10Sep2013
+	double							avg_partial_unit;		// DonR 10Sep2013
+	double							proportion_used;		// DonR 10Sep2013
+	double							net_lim_ingr_used;		// DonR 10Sep2013
+	short							DocIDType;				// 06Jan2015 Digital Prescriptions
+	int								DocID;					// 06Jan2015 Digital Prescriptions
+	int								DocID_FromLookup;		// 11Dec2018 CR #15277.
+	int								DocFacility;			// 06Jan2015 Digital Prescriptions
+	short							DocChkInteractions;		// DonR 15May2017
+	short							PrescSource;			// 06Jan2015 Digital Prescriptions
+	long							VisitNumber;			// 06Jan2015 Digital Prescriptions
+	int								VisitDate;				// 27Mar2017
+	int								FirstDocPrID;			// 27Mar2017
+	short							IsDigital;				// 06Jan2015 Digital Prescriptions
+	short							FirstRx;				// 06Jan2015 Digital Prescriptions
+	short							NumDocRxes;				// 06Jan2015 Digital Prescriptions
+	int								MaxPrDate;				// 07Jan2015 Digital Prescriptions
+	short							BarcodeScanned;			// 20Aug2018 CR #15804
+	int								ph_OTC_unit_price;		// 20Aug2018 Meishar for OTC
+	int								member_diagnosis;		// 02Oct2018 CR #13262.
+} TPresDrugs;
+
+
+typedef struct		// Doctor-prescription "trailer" data for Digital Prescription transactions.
+{
+	int		LargoPrescribed;	// DonR: added 22Sep2019 to simplify Health Alerts code.
+	int		DocID;				// DonR: added 20Nov2016 to simplify previous-partial-sale lookup logic.
+	int		clicks_patient_id;
+	long	VisitNumber;
+	short	line_number;
+	int		PrID;
+	int		FromDate;
+	int		Units;
+	int		OP;
+	int		UnitsUnsold;
+	int		OP_Unsold;
+	short	prev_sold_status;
+} TDocRx;
+
+
+typedef struct		// Unfilled/partially-filled doctor-prescription "trailer" data for Digital Prescription transactions.
+{
+	long	VisitNumber;
+	int		PrID;
+	int		FromDate;
+	int		Doctor_Largo;
+	short	Filled_Status;
+	short	Reason_Code;
+} TUnfilledRx;
+
+
+typedef struct	// Trn. 6001 prescription-data structure - DonR 28Oct2014.
+{
+	short				DocIDType;
+	int					DocID;
+	TDoctorFirstName	DoctorFirstName;
+	TDoctorFamilyName	DoctorFamilyName;
+	char				DoctorPhone	[10 + 1];
+	short				check_interactions;
+}	TDoctorInfo;
+
+
+typedef struct				/* -------< 1005 DRUGs >------- */
+{
+    TDrugCode						DrugCode;
+    TOp								Op;
+	TUnits							Units;
+    TDuration						Duration;
+    TOpDrugPrice					OpDrugPrice;
+    TCurrentStockOp					CurrentStockOp;
+    TCurrentStockInUnits			CurrentStockInUnits;
+    TTotalMemberParticipation		TotalMemberParticipation;
+	int								member_ptn_amt;
+    TTotalDrugPrice					TotalDrugPrice;
+    TLinkDrugToAddition				LinkDrugToAddition;
+    short int						LineNo;
+    TPriceSwap						PriceSwap;
+    TAdditionToPrice				AdditionToPrice;
+    short int						THalf;
+    short int						Flg;
+    char							LargoType;
+    TMemberDiscountPercent			Discount;
+    TMemberDiscountPercent			DiscountPercent;	// DonR: 28AUG2002 (Electronic Prescr.)
+    int								package_size;		// DonR: 11SEP2002 (Electronic Prescr.)
+    short							openable_package;	// DonR: 11SEP2002 (Electronic Prescr.)
+    TOpDrugPrice					SupplierDrugPrice;	//20021031 Yulia
+	TNumofSpecialConfirmation		SpecPrescNum;		// DonR 03Feb2004
+	TSpecialConfirmationNumSource	SpecPrescNumSource;	// DonR 03Feb2004
+	short int						ParticipMethod;		// DonR 27Jun2004
+	short int						MacabiPriceFlag;	// DonR 29Jun2004
+	short int						in_health_pack;		// DonR 16Nov2008
+	short							tikrat_mazon_flag;	// DonR 01Mar2011
+	short							IshurWithTikra;		// DonR 01Mar2011
+	short							IshurTikraType;		// DonR 01Mar2011
+	int								rule_number;		// DonR 01Mar2011
+	int								dr_visit_date;		// DonR 04Mar2015
+	int								dr_presc_date;		// DonR 14Jun2015
+	int								dr_largo_code;		// DonR 14Jun2015
+	short							NumRxLinks;			// 11Jun2017 CR #8425 - Number of pd_rx_link rows written for this drug line.
+} Msg1005Drugs;
+
+
+typedef struct				/* -------< 6005 DRUGs >------- */
+{
+	int			DrugCode;
+	int			Op;
+	int			Units;
+    short		Duration;
+	int			OpDrugPrice;
+	int			StockOP;
+	int			StockUnits;
+	int			TotalPtn;
+	int			TotalDrugPrice;
+	int			LinkToAddition;
+    short		LineNo;
+ 	int			AdditionToPrice;
+    short		THalf;
+    short		Flg;
+    char		LargoType;
+//	short		Discount;	DonR 23May2019 CR #29169: This variable doesn't get assigned any values, and was used in error to set price_extension on 6005-Spool INSERTS.
+    int			package_size;
+    short		openable_package;
+ 	int			SupplierDrugPrice;
+	int			SpecPrescNum;
+	short		SpecPrescNumSource;
+	short		ParticipMethod;
+	short		MemberPtnCode;
+	int			member_ptn_amt;
+	short		MacabiPriceFlag;
+	short		in_health_pack;
+	short		tikrat_mazon_flag;
+	short		IshurWithTikra;
+	short		IshurTikraType;
+	int			rule_number;
+	short		LineNumber;
+	short		SubstPermitted;
+	int			NumPerDose;
+	short		DosesPerDay;
+	short		in_gadget_table;
+	int			SaleDate;
+	int			Orig_Largo_Code;
+	int			PrevUnsoldUnits;
+	int			PrevUnsoldOP;
+	int			FixedPrice;
+	int			ph_otc_unit_price;
+	int			PrescWrittenID;
+	short		MemberDiscPC;
+	int			DoctorRecipeNum;
+	int			StopBloodDate;
+	short		ingr_code			[3];
+	double		ingr_quant			[3];
+	double		ingr_quant_std		[3];
+	double		ingr_quant_bot		[3];
+	double		ingr_quant_bot_std	[3];
+	double		per_quant			[3];
+	double		package_volume;
+	int			DrugDiscountAmt;
+	short		DrugDiscountCode;
+	short		InsuranceUsed;
+	char		DrugTikraType;
+	char		DrugSubsidized;
+	short		InHealthBasket;
+	short		use_instr_template;
+	short		how_to_take_code;
+	char		unit_code			[4];
+	short		course_treat_days;
+	short		course_len;
+	char		course_len_units	[11];
+	short		course_len_days;
+	char		days_of_week		[21];
+	char		times_of_day		[201];
+	char		side_of_body		[11];
+	short		ElectPrStatus;
+	short		use_instr_changed;
+	short		DocIDType;
+	int			DocID;
+	int			DocFacility;
+	short		PrescSource;
+	short		IsDigital;				// 22Aug2018
+	long		VisitNumber;
+	short		BarcodeScanned;			// 20Aug2018 CR #15804
+	short		FirstRx;
+	short		NumDocRxes;
+	short		NumRxLinks;		// 11Jun2017 CR #8425emergency - Number of pd_rx_link rows written for this drug line.
+} Msg6005Drugs;
+
+
+// DonR 01Jan2010: Fixed-price and in-health-basket data are already in
+// the TParticTst substructure - so deleted them from the DrugExtension
+// "parent" structure.
+typedef struct				/* -----< DRUG EXTENSION >----- */
+{
+	TOp			op;
+	TUnits		units;
+	TDuration	duration;
+	short		no_presc_sale_flag;
+	int			rule_number;		// DonR 10Jun2010
+	TParticTst	prc;
+	short		price_code;
+	int			fixed_price;
+	char		insurance_type[2];
+	short		needs_29_g;
+	short		permission_type;	// DonR 12Jun2018
+} DrugExtension;
+
+
+typedef struct drug_extension_row
+{
+	TDrugCode			largo_code;
+	TAge				from_age;
+	TAge				to_age;
+	TMemberSex			member_gender;		// DonR 30Oct2003
+//	TPermissionType		permission_type;	// DonR 12Jun2018 - moved this to the DrugExtension structure ("info").
+	TTreatmentType		treatment_type;
+	DrugExtension		info;
+} DRUG_EXTENSION_ROW;
+
+typedef struct tag_TStockReportRec
+{
+	TLineNum			v_LineNum;
+	TDrugCode			v_DrugCode;
+	TOpAmout			v_OpAmout;
+	TUnitsAmout			v_UnitsAmout;
+	TAmountType			v_AmountType;
+	TBasePriceFor1Op	v_BasePriceFor1Op;
+	TUnitPriceFor1Op	v_UnitPriceFor1Op;
+	TTotalForItemLine	v_TotalForItemLine;
+	TFullOpStock		v_FullOpStock;
+	TCurrentUnitStock	v_CurrentUnitStock;
+	TMinOpStock			v_MinOpStock;
+} TStockReportRec;
+
+typedef struct tag_TPrescDrugRec
+{
+	TDrugCode				v_DrugCode;
+	TCurrentStockOp			v_CurrentStockOp;
+	TCurrentStockInUnits	v_CurrentStockInUnits;
+	TSqlInd					v_Flg;
+} TPrescDrugRec;
+
+typedef struct tag_TMoneyEmptyLine_Rec
+{
+	TStationNum				v_StationNum;
+	TUserIdentification		v_UserIdentification;
+	TCardNum				v_CardNum;
+	TPaymentType			v_PaymentType;
+	TSalesMoney				v_SalesMoney;
+	TSalesActionNum			v_SalesActionNum;
+	TRefundsMoney			v_RefundsMoney;
+	TRefundActionNum		v_RefundActionNum;
+} TMoneyEmpLineRec;
+
+typedef struct tag_TPharmIshurRequest
+{
+    TDrugCode					v_DrugCode;
+	TDrugCode					v_PreferredDrug;
+	TMemberParticipatingType	v_PrtCodeRequested;
+	TTotalMemberParticipation	v_PrtAmtRequested;
+	TRuleNum					v_RuleNum;
+	TProfessionx				v_Profession;
+	TPackageSize				v_PackageSize;
+	TStatus						v_Status;
+	short						v_ExtendAs400IshurDays;
+	TMemberParticipatingType	keren_mac_code;
+	TMemberParticipatingType	mac_magen_code;
+	int							EconomypriGroup;		// DonR 13Jan2005
+	short int					SpecialistDrug;			// DonR 16Jan2005
+	short int					PrefSpecialistDrug;		// DonR 16Jan2005
+} TPharmIshurRequest;
+
+// DonR 27Mar2014: Health Alert Rules.
+typedef struct
+{
+	int		largo_code;
+	short	pharmacology;
+	short	treatment_type;
+	short	min_treatment_type;
+	short	max_treatment_type;
+	short	chronic_flag;
+	short	ingredient;
+	short	enabled;
+} T_HAR_DrugTest;
+
+typedef struct
+{
+	short			rule_number;
+	char			rule_desc1	[81];
+	char			rule_desc2	[81];
+	short			rule_enabled;
+	int				rule_start_date;
+	int				rule_end_date;
+	short			msg_code_assigned;
+	short			member_age_min;
+	short			member_age_max;
+	short			member_sex;
+	short			drug_test_mode;
+	short			minimum_count;
+	short			maximum_count;
+	T_HAR_DrugTest	DRG [5];
+	short			purchase_hist_days;
+	short			presc_sale_only;
+	short			lab_check_type;
+	int				lab_req_code		[6];
+	int				lab_result_low;
+	int				lab_result_high;
+	short			lab_check_days;
+	short			lab_min_age_mm;
+	short			lab_max_age_mm;
+	int				ok_if_seen_prof [10];
+	short			ok_if_seen_within;
+	short			ok_if_seen_enabled;
+	int				MinPurchaseDate;
+	int				MinLabTestDate;
+	int				MinDocVisitDate;
+	char			invert_rasham		[2];
+	short			rasham_code			[5];
+	char			invert_diagnosis	[2];
+	int				diagnosis_code		[5];
+	char			invert_illnesses	[2];
+	short			illness_code		[3];
+	short			rasham_enabled;
+	short			diagnoses_enabled;
+	short			illnesses_enabled;
+	short			drug_tests_enabled;
+	int				illness_bitmap;
+} THealthAlertRules;
+
+typedef struct
+{
+	int		ID;
+	short	ID_code;
+	int		old_ID;
+	short	old_ID_code;
+	int		BirthDate;			// DonR 08Aug2016: Added to support health-alert checking.
+	short	age_months;
+	short	sex;
+	short	in_hospital;
+	short	current_vetek;
+	short	prev_vetek;
+	short	maccabi_code;
+	short	discount_percent;
+	int		illness_bitmap;
+	char	insurance_type		[1 + 1];
+	char	prev_insurance_type	[1 + 1];
+	short	Has_PL_99997_Ishur;	// DonR 29Nov2016
+	int		PL_99997_OpenDate;	// DonR 29Nov2016
+	int		PL_99997_IshurNum;	// DonR 29Nov2016
+	int		clicks_patient_id;	// DonR 01Mar2015: Added this, but I'm not sure when/if it will actually be use.
+	short	card_date;			// DonR 30Jan2018: Added just to enable some code cleanup.
+	int		update_date;		// DonR 01Jun2015: Support for service-without-card requests.
+	int		update_time;		// DonR 01Jun2015: Support for service-without-card requests.
+	short	authorizealways;	// DonR 01Jun2015: Support for service-without-card requests.
+	int		updated_by;			// DonR 01Jun2015: Support for service-without-card requests.
+	short	check_od_interact;	// DonR 23Jan2018 CR #13937 - new flag from members table to replace SELECT from MemberNotCheck.
+	short	RowExists;			// DonR 14Aug2016: Whether we actually read a row from the members table.
+} TMemberData;
+
+
+/*=======================================================================
+||			1055 datatypes & defines			||
+ =======================================================================*/
+
+typedef struct
+{
+	char	var_name[61];
+	int		var_type;	/* DUR / OVERDOSE	*/
+	int		var_code;	/* key for VAR_DATA	*/
+	int		var_length;
+} DYN_VAR;
+
+typedef struct
+{
+	char	*var_data;
+	int		var_type;		/* ASCII / binary */
+} VAR_DATA;
+
+typedef struct
+{
+	int						pharmacy_code;
+	int						institued_code;
+	int						terminal_id;
+	int						prescription_id;
+	int						line_no;
+	int						largo_code;
+	int						largo_code_inter;
+	int						interaction_type;
+	int						date;
+	int						time;
+	int						del_flg;
+	int						presc_id_inter;
+	int						line_no_inter;
+	int						member_id;
+	int						mem_id_extension;
+	int						doctor_id;
+	int						doctor_id_type;
+	int						sec_doctor_id;
+	int						sec_doctor_id_type;
+	int						error_code;
+	int						duration;
+	int						op;
+	int						units;
+	int						stop_blood_date;
+	int						check_type;
+	int						destination;
+	int						print_flg;
+	int						doc_approved_flag;
+} PRESC_ERR;
+
+typedef struct
+{
+	TDrugDescription		drug_desc;
+	TDrugDescription		drug_inter_desc;
+	int						interaction_sever;
+	TInteractionDescLine	interaction_desc;
+	TInteractionDescLine	interaction_desc_add;
+	TDoctorFirstName		doctor_first_name;
+	TDoctorFamilyName		doctor_last_name;
+	TPhone					doctor_phone;
+	TDate					stop_blood_date;
+	TDoctorFirstName		sec_doctor_first_n;
+	TDoctorFamilyName		sec_doctor_last_n;
+	TMemberFirstName		member_first_name;
+	TMemberFamilyName		member_last_name;
+} DUR_DATA;
+
+typedef struct
+{
+	TDrugDescription	drug_desc;
+	TDate				purchase_date;
+	int					duration;
+	TOp					op;
+	TUnits				units;
+	TDoctorFirstName	doc_first_name;
+	TDoctorFamilyName	doc_last_name;
+	TDoctorFirstName	curr_doc_f_name;
+	TDoctorFamilyName	curr_doc_l_name;
+	TPhone				curr_doc_phone;
+	TPhone				doc_phone;
+} OVD_DATA;
+
+typedef struct
+{
+	char				msg_row[81];
+	char				msg_alternate[81];	// DonR 01Mar2010: Used for "backup" text in the event that "normal"
+											// message line has variables but they're all empty.
+	short int			msg_sub_cycle;
+} MESS_ROW;
+
+typedef struct
+{
+	int					msg_row_max;
+	int					msg_row_alloc;
+	MESS_ROW			*msg_rows;
+} MESS_DATA;
+
+// DonR 24Nov2016: Add structure for Drug Purchase Limit data.
+typedef struct
+{
+	int		largo_code;
+	short	class_code;
+	int		qty_lim_grp_code;
+	short	limit_method;
+	int		max_units;
+	double	ingr_qty_std;
+	short	presc_source;
+	short	permit_source;
+	short	warning_only;
+	short	ingredient_code;
+	short	exempt_diseases;
+	short	duration_months;
+	int		history_start_date;
+	short	class_type;
+	int		class_history_days;
+	int		ishur_num;
+	short	ishur_type;
+	int		ishur_open_date;
+	int		ishur_close_date;
+	short	status;
+} DRUG_PURCHASE_LIMIT;
+
+
+#ifndef NON_SQL
+//EXEC SQL end declare section;			//Marianna
+#endif
+
+/*
+ * This paragraph is for disabling
+ * SQL commands for non-SQL files
+ */
+//#ifdef NON_SQL				//
+
+//#undef EXEC					//
+//#undef SQL					//
+//#undef begin				//
+//#undef end					//
+//#undef declare				//
+//#undef section				//
+
+//#endif						//
+
+/*=======================================================================
+||			    Function prototypes				||
+ =======================================================================*/
+int PrintErr		(	char	*output_buf,
+				int	errcode,
+				int     msgindex			);
+
+void  close_files	(	FILE	*f_1,
+				FILE	*f_2				);
+
+void ChckInputLen	(	int	diff				);
+
+int get_file_names	(	char	*in_file,
+				char	*out_file,
+				char	*cmdline_str			);
+
+void WriteErrAndexit	(	int	errcode,
+				int	msg_index			);
+
+void AsciiToBin		(	char	*buff,
+				int	len,
+				int	*p_val				);
+
+int get_message_header	(	char	*input_buf,
+				int	*pMsgID,
+				int	*pMsgEC				);
+
+char GetChar (char **p_buffer);
+
+short	GetShort	(char **p_buffer, int ascii_len);
+int		GetInt		(char **p_buffer, int ascii_len);
+long	GetLong		(char **p_buffer, int ascii_len);
+
+void	  GetString	(	char	**p_buffer,
+				char	*str,
+				int	ascii_len			);
+
+void GetNothing (char ** p_buffer,	int ascii_len);
+
+int   GeToSpoolIndex	(	char	*in_file			);
+
+//void  AddHeader		(	int	msg_index,
+//				int	err_msg				);
+//
+int	diff_from_now	(	int	date,
+				int	time				);
+
+short rx_source_found (TPresDrugs *DrugLine, short DrugCount, short SourceTest, short SecondSourceTest, short Mode);
+
+/*
+ * Handlers to messages
+ * --------------------
+ */
+
+int   HandlerToMsg_1001 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1003_1063	(
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr,
+	int		transaction_num
+    );
+
+int   HandlerToMsg_1005_1065	(
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr,
+	int		transaction_num
+    );
+
+int   HandlerToMsg_1007	(
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1009	(
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   DownloadDrugList	(	char		*input_buf,
+							int			input_size,
+							char		*output_buf,
+							int			*output_size,
+							int		    *output_type_flg,
+							SSMD_DATA	*ssmd_data_ptr,
+							int			MessageIndex_in	);
+
+int   HandlerToMsg_1013	(
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1022 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1026 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1043 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1047 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1049 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1014 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1051 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1053 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int   HandlerToMsg_1055 (
+    char    *input_buf,
+    int     input_size,
+    char    *output_buf,
+    int	    *output_size,
+    int	    *output_type_flg,
+    SSMD_DATA	*ssmd_data_ptr
+    );
+
+int HandlerToMsg_2001 (char			*IBuffer,
+					   int			TotalInputLen,
+					   char			*OBuffer,
+					   int			*p_outputWritten,
+					   int			*output_type_flg,
+					   SSMD_DATA	*ssmd_data_ptr);
+
+int HandlerToMsg_2003 (char			*IBuffer,
+					   int			TotalInputLen,
+					   char			*OBuffer,
+					   int			*p_outputWritten,
+					   int			*output_type_flg,
+					   SSMD_DATA	*ssmd_data_ptr);
+
+int HandlerToMsg_2005 (char			*IBuffer,
+					   int			TotalInputLen,
+					   char			*OBuffer,
+					   int			*p_outputWritten,
+					   int			*output_type_flg,
+					   SSMD_DATA	*ssmd_data_ptr);
+
+//int   HandlerToMsg_2007( char		*IBuffer,
+//			 int		TotalInputLen,
+//			 char		*OBuffer,
+//			 int		*p_outputWritten,
+//			 int		*output_type_flg,
+//			 SSMD_DATA	*ssmd_data_ptr);
+
+int   HandlerToMsg_2033( char		*IBuffer,
+			 int		TotalInputLen,
+			 char		*OBuffer,
+			 int		*p_outputWritten,
+			 int		*output_type_flg,
+			 SSMD_DATA	*ssmd_data_ptr);
+
+int HandlerToMsg_2070_2092 (int			TrNum,
+							char		*IBuffer,
+						    int			TotalInputLen,
+							char		*OBuffer,
+							int			*p_outputWritten,
+							int			*output_type_flg,
+							SSMD_DATA	*ssmd_data_ptr);
+
+int HandlerToMsg_6001 (char			*IBuffer,
+					   int			TotalInputLen,
+					   char			*OBuffer,
+					   int			*p_outputWritten,
+					   int			*output_type_flg,
+					   SSMD_DATA	*ssmd_data_ptr,
+					   int			*NumProcessed_out);
+
+int HandlerToMsg_6003 (	int			TrNum,
+						char		*IBuffer,
+						int			TotalInputLen,
+						char		*OBuffer,
+						int			*p_outputWritten,
+						int			*output_type_flg,
+						SSMD_DATA	*ssmd_data_ptr,
+						int			*NumProcessed_out);
+
+int HandlerToMsg_6005 (char			*IBuffer,
+					   int			TotalInputLen,
+					   char			*OBuffer,
+					   int			*p_outputWritten,
+					   int			*output_type_flg,
+					   SSMD_DATA	*ssmd_data_ptr);
+
+int HandlerToSpool_6005 (char			*IBuffer,
+						 int			TotalInputLen,
+						 char			*OBuffer,
+						 int			*p_outputWritten,
+						 int			*output_type_flg,
+						 SSMD_DATA		*ssmd_data_ptr,
+						 short int		commfail_flag);
+
+
+
+
+
+/*
+ * Generic functions( -> called in both SPOOL & REALTIME ) modes:
+ * --------------------------------------------------------------
+ */
+int   GENERIC_HandlerToMsg_1007( char		*IBuffer,
+				 int		TotalInputLen,
+				 char		*OBuffer,
+				 int		*p_outputWritten,
+				 int		*output_type_flg,
+				 SSMD_DATA	*ssmd_data_ptr,
+				 short int	commfail_flag,
+				 int		fromSpool );
+
+int   GENERIC_HandlerToMsg_1022( char		*IBuffer,
+				 int		TotalInputLen,
+				 char		*OBuffer,
+				 int		*p_outputWritten,
+				 int		*output_type_flg,
+				 SSMD_DATA	*ssmd_data_ptr,
+				 short int	commfail_flag,
+				 int		fromSpool );
+
+int   GENERIC_HandlerToMsg_1053( char		*IBuffer,
+				 int		TotalInputLen,
+				 char		*OBuffer,
+				 int		*p_outputWritten,
+				 int		*output_type_flg,
+				 SSMD_DATA	*ssmd_data_ptr,
+				 short int	commfail_flag,
+				 int		fromSpool );
+
+int   GenHandlerToMsg_1001( char		*IBuffer,
+			     int		TotalInputLen,
+			     char		*OBuffer,
+			     int		*p_outputWritten,
+			     int		*output_type_flg,
+			     SSMD_DATA		*ssmd_data_ptr,
+			     int		fromspool,
+			     int		commerr_flag);
+
+int   GenHandlerToMsg_1013( char		*IBuffer,
+			     int		TotalInputLen,
+			     char		*OBuffer,
+			     int		*p_outputWritten,
+			     int		*output_type_flg,
+			     SSMD_DATA		*ssmd_data_ptr,
+			     int		fromspool,
+			     int		commerr_flag);
+
+//int GENERIC_HandlerToMsg_2007 (char			*IBuffer,
+//							   int			TotalInputLen,
+//							   char			*OBuffer,
+//							   int			*p_outputWritten,
+//							   int			*output_type_flg,
+//							   SSMD_DATA	*ssmd_data_ptr,
+//							   short		commfail_flag,
+//							   short		fromSpool);
+
+int GENERIC_HandlerToMsg_2033 (char			*IBuffer,
+							   int			TotalInputLen,
+							   char			*OBuffer,
+							   int			*p_outputWritten,
+							   int			*output_type_flg,
+							   SSMD_DATA	*ssmd_data_ptr,
+							   short		commfail_flag,
+							   short		fromSpool);
+
+/*
+ * Handlers to spool
+ * -----------------
+ */
+int   HandlerToSpool_1001( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1005( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1007( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1013( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1022( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1053( char		*IBuffer,
+			   int		TotalInputLen,
+			   char		*OBuffer,
+			   int		*p_outputWritten,
+			   int		*output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int   HandlerToSpool_1061( char    *input_buf,
+			   int     input_size,
+			   char    *output_buf,
+			   int	    *output_size,
+			   int	    *output_type_flg,
+			   SSMD_DATA	*ssmd_data_ptr,
+			   short int	commfail_flag );
+
+int HandlerToSpool_2005 (char			*IBuffer,
+						 int			TotalInputLen,
+						 char			*OBuffer,
+						 int			*p_outputWritten,
+						 int			*output_type_flg,
+						 SSMD_DATA		*ssmd_data_ptr,
+						 short int		commfail_flag);
+
+//int   HandlerToSpool_2007(	char		*IBuffer,
+//							int			TotalInputLen,
+//							char		*OBuffer,
+//							int			*p_outputWritten,
+//							int			*output_type_flg,
+//							SSMD_DATA	*ssmd_data_ptr,
+//							short int	commfail_flag);
+
+int   HandlerToSpool_2033(	char		*IBuffer,
+							int			TotalInputLen,
+							char		*OBuffer,
+							int			*p_outputWritten,
+							int			*output_type_flg,
+							SSMD_DATA	*ssmd_data_ptr,
+							short int	commfail_flag);
+
+
+short FindDrugPurchLimit (int			DrugCode_in,
+						  short			Gender_in,
+						  int			MemberBirthday_in,
+						  TDrugsBuf		*DrugsBufPtr_in,
+						  TPresDrugs	*CurrSaleDrugsArrayPtr_in,
+						  int			CurrSaleNumDrugs_in,
+						  int			*Units_out,
+						  short			*Months_out,
+						  int			*HistStartDate_out,
+						  TErrorCode	*ErrCode_out,
+						  int			*Restart_out);
+
+
+int test_interaction_and_overdose (TMemberData						*Member,
+								   TDate							MemMaxDrugDate_in,
+//								   TGenericTZ						DocID_in,
+//								   TTypeDoctorIdentification		DocIdType_in,
+								   TPharmNum						PharmNum_in,
+								   PHARMACY_INFO					*PharmInfoPtr_in,
+								   TInstituteCode					InstCode_in,
+								   TTerminalNum						TerminalNum_in,
+								   TRecipeIdentifier				RecipeID_in,
+								   TPresDrugs						*DrugArray_in,
+								   TNumOfDrugLinesRecs				NumLines_in,
+								   TNumofSpecialConfirmation		SpecConfNum_in,
+								   TSpecialConfirmationNumSource	SpecConfSource_in,
+								   short							ErrorMode_in,
+								   short							ElectPR_flag_in,
+								   TDocRx							*DocRxArray_in,
+								   TMsgExistsFlg					*MsgFlag_out,
+								   TMsgExistsFlg					*MsgIsUrgent_out,
+								   TErrorCode						*ErrorCode_out,
+								   int								*ReStart_out);
+
+int write_interaction_and_overdose (
+									TPharmNum						PharmNum_in,
+									TInstituteCode					InstCode_in,
+									TTerminalNum					TerminalNum_in,
+									TGenericTZ						MemberID_in,
+									TIdentificationCode				MemIdCode_in,
+									int								dur_od_err_in,
+									int								detail_err_in,
+									short int						PrintFlag_in,
+									short int						ErrorMode_in,
+									short int						ElectronicPr_in,
+									TGenericTZ						DocID_in,
+									TTypeDoctorIdentification		DocIdType_in,
+									TRecipeIdentifier				RecipeID_in,
+									TDrugCode						Largo1_in,
+									short							doc_approved_flag_in,
+
+									TInteractionType				interaction_type_in,
+									int								CheckType_in,
+
+									short int						Subscript1_in,
+
+									short int						Subscript2_in,
+									DURDrugsInBlood					*BloodDrug_in,
+									TPresDrugs						*PresDrug_in,
+									int								StopBloodDate_in);
+
+int find_preferred_drug (TDrugCode		SoldDrug_in,
+						 int			EconomypriGroup_in,
+						 short			PreferredFlag_in,
+						 int			PreferredLargo_in,
+						 short			NeedHistoryCheck_in,
+						 short			SwapOutType_3_Drugs_in,
+						 int			TreatmentContractor_in,
+						 int			MemberId_in,
+						 short			MemberIdCode_in,
+						 TDrugCode		*PrefDrug_out,
+						 short			*SpecialistDrug_out,
+						 int			*ParentGroupCode_out,
+						 short			*PrefDrugMemberPrice_out,
+						 short			*DispenseAsWritten_out,
+						 short			*InHealthBasket_out,
+						 short			*RuleStatus_out,
+						 TDrugListRow	*DL_out,
+						 TErrorCode	*ErrorCode_out);
+
+short MemberFailedToPickUpDrugs (TMemberData *Member_in);
+
+void ChckDate		(	int	date /* format: YYYYMMDD */	);
+
+void ChckTime		(	int	time /* format: HHNNSS   */	);
+
+void free_ptr		(	void					);
+
+int  tm_to_date		(	struct	tm *tms				);
+
+void date_to_tm		(	int	inp,
+				struct	tm *TM				);
+
+void time_to_tm		(	int	inp,
+				struct	tm *TM				);
+
+int  GetMonsDif		(	int	base_date,
+				int	sub_date			);
+
+int  GetDaysDiff	(	int	base_day,
+				int	sub_day				);
+
+int  AddDays		(	int	base_day,
+				int	add_day				);
+
+
+//TErrorCode
+//	GET_PARTICIPATING_PERCENT(
+//				  TParticipatingType	percent_code,
+//				  TParticipatingPrecent	*percent
+//				  );
+//
+//
+//TErrorCode
+//	GET_PARTICIPATING_CODE(
+//			       TParticipatingPrecent	percent,
+//			       TParticipatingType	*percent_code
+//			       );
+
+#define GET_PARTICIPATING_PERCENT(percent_code,percent) read_member_price(percent_code,NULL,percent)
+
+#define GET_MEMBER_PRICE_ROW(percent_code,PriceRow) read_member_price(percent_code,PriceRow,NULL)
+
+int read_member_price (short				PriceCode_in,
+					   Tmember_price_row	*PriceRow_out,
+					   short				*Percent_out);
+
+
+TErrorSevirity
+	GET_ERROR_SEVERITY(
+			   TErrorCode	error_code
+			   );
+
+
+TErrorCode
+	GET_PHARMACY_MEM_INFO(
+			      TPharmNum		pharm_num,
+			      TInstituteCode	institute_code,
+			      PHARMACY_INFO	*phrm_info
+			      );
+
+
+TErrorCode
+	UPDATE_PHARMACY_IN_SHERED_MEM(
+				      TPharmNum		pharm_num,
+				      TInstituteCode	institute_code,
+				      PHARMACY_INFO	*phrm_info
+				      );
+
+
+TErrorCode
+	GET_INTERACATION(
+			 TDrugCode		first_drug_code,
+			 TDrugCode		second_drug_code,
+			 TInteractionType	*interaction_type
+			 );
+
+
+TErrorCode
+	FIND_DOCTOR_PARTICIPATING(
+				  TDoctorIdentification	doctor_id,
+				  TDrugCode		drug_code,
+				  TParticTst		*participating_info,
+				  TDoctorBelong         *doctor_belong  
+				  );
+
+TErrorCode
+	FIND_DRUG_PARTICIPATING(
+				  TDrugCode		    drug_code,
+				  TParticTst		*participating_info,
+				  TDoctorBelong     *doctor_belong,
+				  DOCTOR_DRUG_ROW       **last_found_drug
+				  );
+
+TErrorCode
+	FIND_NEXT_DRUG_PARTICIPATING(
+				  TDrugCode			drug_code,
+				  TParticTst		*participating_info,
+				  TDoctorBelong     *doctor_belong,
+				  DOCTOR_DRUG_ROW       **last_found_drug
+				  );
+
+
+
+TErrorCode
+	FIND_SPEC_PARTICIP_BY_DRUG(
+				  TDrugCode		drug_code,
+				  TParticTst		*participating_info
+				  );
+
+
+
+TErrorCode
+	GET_PRESCRIPTION_ID(
+			    TRecipeIdentifier	*recipe_identifier
+			    );
+
+
+TErrorCode
+	FIND_DRUG_EXTENSION(
+			    TDrugCode			LargoCode_in,
+			    TAge				member_age,
+				TMemberSex			member_gender,
+			    TPermissionType		permission_type,
+			    TFlg				no_presc_flg,
+				TTreatmentType		treatment_type,
+			    DrugExtension		*drug_ext_info
+			    );
+
+
+TErrorCode GetParticipatingCode (TMemberParticipatingType	presParti,
+								 TParticTst					*prt,
+								 TPresDrugs					*PresLinP,
+								 int						FixedPriceEnabled);
+
+TErrorCode TestParticipByDrug(	TAge				memberAge,
+				short int			phrm_perm,
+				TPresDrugs			*presdrugs
+				);
+
+TErrorCode SumMemberDrugsUsed(
+			      TPresDrugs		*pDrug,
+			      TMemberIdentification	membId,
+			      TIdentificationCode	idType,
+			      TDuration			duration,
+			      int			*SumUnits
+			      );
+
+int read_drug (int				DrugCode_in,
+			   int				MaxVisibleDrug_in,
+			   PHARMACY_INFO	*PharmInfo_in,
+			   bool				SeeDeletedDrugs_in,
+			   TDrugListRow		*DL_out,
+			   TPresDrugs		*PresDrugs_out);
+
+TErrorCode predict_member_participation (TMemberData	*Member_in,
+										 TDrugListRow	*DL_in,
+										 PHARMACY_INFO	*PhrmInfo_in,
+										 short			DocIdType_in,
+										 int			DocId_in,
+										 int			VisitDate_in,
+										 short			*PriceCode_out,
+										 short			*FixedPriceFlag_out,
+										 short			*PermissionType_out,
+										 short			*ErrorCode_out);
+
+TErrorCode FindLowestPtnForPrescRequest	(short			NewPriceCode_in,
+										 int			NewFixedPrice_in,
+										 short			OldPriceCode_in,
+										 int			OldFixedPrice_in,
+										 char			*insurance_type_in,
+										 short			*AssignedPriceCode_out,
+										 int			*AssignedFixedPrice_out,
+										 short			*AssignedFixedPriceExists_out,
+										 short			*AssignedInsuranceUsed_out);
+
+short CheckForServiceWithoutCard (TMemberData	*Member,
+								  PHARMACY_INFO	Phrm_info);
+
+
+// DonR 18Dec2017: Added a new "mode" parameter and renamed ReadDrugPurchaseLimitData() to ReadDrugPurchaseLimData_x().
+// The new version of the function is called via two macros: ReadDrugPurchaseLimitData() is #defined so that the function
+// works in "normal" mode, reading Drug Purchase Limits for all limit methods; while ReadPurchaseLimitMethod_0_1() works
+// in "fallback" mode, reading Method 0 and Method 1 limits only. This is used in test_purchase_limits() when a Method 3/4
+// limit was found, but there is no applicable AS/400 ishur to provide a date for the start of limit checking.
+TErrorCode	ReadDrugPurchaseLimData_x (TMemberData			*Member_in,
+									   TPresDrugs			*CurrSaleDrugArray_in,
+									   short				CurrSaleDrugLineNumber_in,
+									   short				CurrSaleDrugLineCount_in,
+									   TDrugsBuf			*BloodDrugsBuf_in,
+									   short				IgnoreMethod_2_3_4_in,
+									   DRUG_PURCHASE_LIMIT	*PurchaseLimit_out,
+									   TErrorCode			*ErrorCode_out,
+									   int					*reStart_out);
+
+#define	ReadDrugPurchaseLimitData(	Member_in,						\
+									CurrSaleDrugArray_in,			\
+									CurrSaleDrugLineNumber_in,		\
+									CurrSaleDrugLineCount_in,		\
+									BloodDrugsBuf_in,				\
+									PurchaseLimit_out,				\
+									ErrorCode_out,					\
+									reStart_out	)					\
+		ReadDrugPurchaseLimData_x (	Member_in,						\
+									CurrSaleDrugArray_in,			\
+									CurrSaleDrugLineNumber_in,		\
+									CurrSaleDrugLineCount_in,		\
+									BloodDrugsBuf_in,				\
+									0, /* Read all limit methods */	\
+									PurchaseLimit_out,				\
+									ErrorCode_out,					\
+									reStart_out	)
+
+#define	ReadPurchaseLimitMethod_0_1(	Member_in,						\
+										CurrSaleDrugArray_in,			\
+										CurrSaleDrugLineNumber_in,		\
+										CurrSaleDrugLineCount_in,		\
+										BloodDrugsBuf_in,				\
+										PurchaseLimit_out,				\
+										ErrorCode_out,					\
+										reStart_out	)					\
+																		\
+		ReadDrugPurchaseLimData_x	(	Member_in,						\
+										CurrSaleDrugArray_in,			\
+										CurrSaleDrugLineNumber_in,		\
+										CurrSaleDrugLineCount_in,		\
+										BloodDrugsBuf_in,				\
+										1, /* Ignore Methods 2,3,4 */	\
+										PurchaseLimit_out,				\
+										ErrorCode_out,					\
+										reStart_out	)
+// DonR 18Dec2017 end.
+
+#endif /* MSG_HANDLER_H */ //
+
+/*=======================================================================
+||			      End Of MsgHndlr.h				||
+ =======================================================================*/

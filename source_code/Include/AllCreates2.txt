@@ -1,0 +1,2625 @@
+
+
+{ TABLE "macabi".as400clientpar row size = 65 number of columns = 14 index size = 9 }
+
+create table "macabi".as400clientpar 
+  (
+    transaction integer not null ,
+    dim integer not null ,
+    seq_number integer not null ,
+    frequency_min integer 
+    system integer 
+    table_name char(15),
+    always_enabled smallint 
+    period_1_start integer 
+    period_1_end integer 
+    period_2_start integer 
+    period_2_end integer 
+    period_3_start integer 
+    period_3_end integer 
+    portion integer 
+  )
+
+
+
+{ TABLE "macabi".as400in_audit row size = 92 number of columns = 11 index size = 9 }
+
+create table "macabi".as400in_audit 
+  (
+    trn_id integer not null ,
+    from_table char(30) 
+    to_table char(30) 
+    date integer not null ,
+    time integer not null ,
+    err_code integer not null ,
+    msg_count integer not null ,
+    total_rows integer 
+    active_rows integer 
+    max_grow_percent smallint 
+    max_shrink_percent smallint 
+  ) 
+
+
+
+{ TABLE "macabi".confirm_authority row size = 27 number of columns = 2 index size = 7 }
+
+create table "macabi".confirm_authority
+  (
+    authority_code smallint not null ,
+    authority_desc char(25) not null
+  ) 
+
+
+
+{ TABLE "macabi".coupons row size = 40 number of columns = 12 index size = 11 }
+
+create table "macabi".coupons 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    expires_cyymm integer 
+    expiry_status smallint 
+    fund_code smallint 
+    del_flg smallint 
+    update_date integer 
+    update_time integer 
+    insert_date integer 
+    insert_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) 
+
+
+
+{ TABLE "macabi".credit_reasons row size = 98 number of columns = 7 index size = 7 }
+
+create table "macabi".credit_reasons 
+  (
+    credit_reason_code smallint not null ,
+    short_desc char(30) 
+    long_desc char(50) 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) 
+
+
+{ TABLE "macabi".discount_remarks row size = 35 number of columns = 4 index size = 0 }
+
+create table "macabi".discount_remarks 
+  (
+    remark_code smallint not null ,
+    remark_text char(25) 
+    update_date integer 
+    update_time integer 
+  ) 
+
+
+{ TABLE "macabi".doctor_percents row size = 44 number of columns = 15 index size = 52 }
+
+create table "macabi".doctor_percents 
+  (
+    doctor_id integer not null ,
+    largo_code integer not null ,
+    basic_price_code smallint 
+    kesef_price_code smallint 
+    zahav_price_code smallint 
+    prev_bas_prc_cod smallint 
+    prev_ksf_prc_cod smallint 
+    prev_zhv_prc_cod smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null ,
+    license integer 
+    treatment_category smallint 
+  )
+
+
+{ TABLE "macabi".doctor_presc row size = 798 number of columns = 59 index size = 158 }
+
+create table "macabi".doctor_presc 
+  (
+    member_id integer 
+    member_id_code smallint 
+    cds_patient_id integer 
+    clicks_patient_id integer 
+    doctor_id integer 
+    doctor_presc_id integer 
+    largo_prescribed integer 
+    valid_from_date integer 
+    valid_until_date integer 
+    order_number integer 
+    sold_status smallint 
+    close_by_rounding smallint 
+    ordered_status smallint 
+    deleted_status smallint 
+    visit_number bigint 
+    visit_date integer 
+    visit_time integer 
+    clinic_address varchar(255) 
+    line_number smallint 
+    speciality_desc varchar(25) 
+    specialist_ishur smallint 
+    rule_number integer 
+    prescription_type smallint 
+    digital_presc_flag smallint 
+    dose_number smallint 
+    op smallint 
+    total_units smallint 
+    qty_method smallint 
+    usage_method_code smallint 
+    usage_instructions varchar(100) 
+    amt_per_dose float 
+    unit_abbreviation char(3) 
+    doses_per_day smallint 
+    treatment_length smallint 
+    course_treat_days smallint 
+    course_len smallint 
+    course_len_units char(6) 
+    num_courses smallint 
+    days_per_week varchar(20) 
+    morning_evening varchar(200) 
+    treatment_side char(10) 
+    member_phone char(10) 
+    clinic_phone char(10) 
+    row_added_date integer 
+    row_added_time integer 
+    cds_update_date integer 
+    cds_update_time integer 
+    last_sold_date integer 
+    last_sold_time integer 
+    tot_units_sold smallint 
+    tot_op_sold smallint 
+    linux_update_flag smallint 
+    linux_update_date integer 
+    linux_update_time integer 
+    extern_update_flag smallint 
+    extern_update_date integer 
+    extern_update_time integer 
+    reported_to_as400 smallint 
+    reported_to_cds smallint 
+  ) 
+
+
+{ TABLE "macabi".doctor_speciality row size = 26 number of columns = 7 index size = 22 }
+
+create table "macabi".doctor_speciality 
+  (
+    doctor_id integer,
+    speciality_code integer,
+    update_date integer,
+    update_time integer,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint 
+  ) 
+
+
+{ TABLE "macabi".doctors row size = 101 number of columns = 12 index size = 9 }
+
+create table "macabi".doctors 
+  (
+    doctor_id integer not null ,
+    first_name varchar(8) not null ,
+    last_name varchar(14) not null ,
+    street_and_no varchar(20) not null ,
+    city varchar(20) not null ,
+    phone varchar(10) not null ,
+    check_interactions smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null 
+  ) 
+
+
+{ TABLE "macabi".drug_diagnoses row size = 18 number of columns = 5 index size = 13 }
+
+create table "macabi".drug_diagnoses 
+  (
+    largo_code integer not null ,
+    illness_code smallint 
+    diagnosis_code integer not null ,
+    as400_batch_date integer 
+    as400_batch_time integer 
+  )
+
+
+{ TABLE "macabi".drug_extension row size = 229 number of columns = 58 index size = 45 }
+
+create table "macabi".drug_extension 
+  (
+    largo_code integer not null ,
+    extension_largo_co char(2) not null ,
+    rule_number integer 
+    insurance_type char(1) 
+    send_and_use smallint 
+    treatment_category smallint 
+    ivf_flag char(1) 
+    price_code smallint 
+    fixed_price integer 
+    refill_period smallint 
+    effective_date integer 
+    open_date integer 
+    close_date integer 
+    rule_name varchar(75) 
+    confirm_authority smallint 
+    from_age smallint not null ,
+    to_age smallint not null ,
+    wait_months smallint 
+    extend_rule_days smallint 
+    sex smallint 
+    must_confirm_deliv smallint not null ,
+    max_amount_duratio smallint not null ,
+    permission_type smallint not null ,
+    no_presc_sale_flag smallint not null ,
+    enabled_status smallint 
+    enabled_mac smallint 
+    enabled_hova smallint 
+    enabled_keva smallint 
+    basic_price_code smallint 
+    basic_fixed_price integer 
+    kesef_price_code smallint 
+    kesef_fixed_price integer 
+    zahav_price_code smallint 
+    zahav_fixed_price integer 
+    yahalom_price_code smallint 
+    yahalom_fixed_prc integer 
+    ins_type_sort smallint 
+    ptn_percent_sort smallint 
+    prev_bas_prc_cod smallint 
+    prev_ksf_prc_cod smallint 
+    prev_zhv_prc_cod smallint 
+    max_op integer not null ,
+    max_units integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    changed_date integer 
+    changed_time integer 
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null ,
+    in_health_basket smallint 
+    health_basket_new smallint 
+    needs_29_g smallint 
+    sort_sequence smallint 
+    rrn serial not null ,
+    del_flg_c char(1) 
+  ) 
+
+
+{ TABLE "macabi".drug_extn_doc row size = 213 number of columns = 43 index size = 37 }
+
+create table "macabi".drug_extn_doc 
+  (
+    rule_number integer 
+    largo_code integer not null ,
+    send_and_use smallint 
+    wait_months smallint 
+    extension_largo_co char(2) not null ,
+    confirm_authority_ smallint not null ,
+    conf_auth_desc char(25) 
+    from_age smallint not null ,
+    to_age smallint not null ,
+    member_price_code smallint not null ,
+    member_price_prcnt smallint 
+    keren_price_code smallint not null ,
+    keren_price_prcnt smallint 
+    magen_price_code smallint not null ,
+    magen_price_prcnt smallint 
+    yahalom_price_code smallint 
+    yahalom_price_pct integer 
+    max_op integer not null ,
+    max_units integer not null ,
+    max_amount_duratio smallint not null ,
+    permission_type smallint not null ,
+    no_presc_sale_flag smallint not null ,
+    fixed_price integer 
+    fixed_price_keren integer 
+    fixed_price_magen integer 
+    fixed_prc_yahalom integer 
+    ivf_flag char(1) 
+    refill_period smallint 
+    rule_name varchar(75) 
+    in_health_basket smallint 
+    health_basket_new smallint 
+    treatment_category smallint 
+    sex smallint 
+    needs_29_g smallint 
+    del_flg_c char(1) 
+    del_flg smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    rrn serial not null 
+  ) 
+
+
+{ TABLE "macabi".drug_forms row size = 27 number of columns = 8 index size = 20 }
+
+create table "macabi".drug_forms 
+  (
+    largo_code integer not null ,
+    form_number smallint not null ,
+    valid_from integer 
+    valid_until integer 
+    update_date integer not null ,
+    update_time integer not null ,
+    updatedby integer 
+    del_flg char(1) 
+  ) 
+
+
+{ TABLE "macabi".drug_interaction row size = 110 number of columns = 10 index size = 13 }
+
+create table "macabi".drug_interaction 
+  (
+    first_largo_code integer not null ,
+    second_largo_code integer not null ,
+    interaction_type smallint not null ,
+    note1 varchar(40),
+    note2 varchar(40),
+    update_date integer not null ,
+    update_time integer not null ,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null 
+  ) 
+
+
+{ TABLE "macabi".drug_list row size = 606 number of columns = 144 index size = 108 }
+
+create table "macabi".drug_list 
+  (
+    largo_code integer not null ,
+    long_name varchar(30) not null ,
+    short_name varchar(17),
+    name_25 varchar(25) 
+    preferred_flg smallint 
+    preferred_largo integer 
+    multi_pref_largo smallint 
+    del_flg smallint not null ,
+    del_flg_cont char(1),
+    is_out_of_stock smallint 
+    parent_group_code integer 
+    parent_group_name char(25) 
+    economypri_group integer 
+    economypri_seq smallint 
+    specialist_drug smallint 
+    has_shaban_rules smallint 
+    in_doctor_percents smallint 
+    class_code smallint 
+    drug_book_flg smallint not null ,
+    maccabicare_flag smallint 
+    assuta_drug_status smallint 
+    t_half smallint not null ,
+    chronic_flag smallint 
+    cronic_months smallint not null ,
+    allow_future_sales smallint 
+    additional_price smallint not null ,
+    package char(10) not null ,
+    package_size integer not null ,
+    package_volume float 
+    openable_pkg smallint 
+    calc_op_by_volume smallint 
+    expiry_date_flag smallint 
+    shape_code smallint 
+    shape_code_new smallint 
+    form_name varchar(25),
+    unit_abbreviation char(3) 
+    must_prescribe_qty smallint 
+    split_pill_flag smallint 
+    supplemental_1 integer not null ,
+    supplemental_2 integer not null ,
+    supplemental_3 integer not null ,
+    supplier_code integer not null ,
+    computersoft_code integer not null ,
+    bar_code_value char(14) 
+    no_presc_sale_flag smallint not null ,
+    home_delivery_ok smallint 
+    largo_type char(1) not null ,
+    in_gadget_table smallint 
+    treatment_typ_cod smallint 
+    in_health_pack smallint not null ,
+    health_basket_new smallint 
+    pharm_group_code smallint 
+    member_price_code smallint not null ,
+    prev_mbr_prc_cod smallint 
+    price_prcnt integer 
+    price_prcnt_magen integer 
+    price_prcnt_keren integer 
+    price_pct_yahalom integer 
+    enabled_status smallint 
+    enabled_mac smallint 
+    enabled_hova smallint 
+    enabled_keva smallint 
+    drug_type char(1),
+    priv_pharm_sale_ok smallint not null ,
+    pharm_sale_new smallint,
+    pharm_sale_test char(1) 
+    status_send smallint,
+    sale_price char(5),
+    sale_price_strudel char(5) 
+    in_drug_interact smallint 
+    interact_flg char(1),
+    in_overdose_table smallint 
+    magen_wait_months smallint,
+    keren_wait_months smallint,
+    yahalom_wait_mm smallint 
+    drug_book_doct_flg smallint 
+    ishur_required smallint 
+    ingr_1_code smallint 
+    ingr_2_code smallint 
+    ingr_3_code smallint 
+    ingr_1_quant float 
+    ingr_2_quant float 
+    ingr_3_quant float 
+    ingr_1_quant_std float 
+    ingr_2_quant_std float 
+    ingr_3_quant_std float 
+    ingr_1_units char(3) 
+    ingr_2_units char(3) 
+    ingr_3_units char(3) 
+    per_1_quant float 
+    per_2_quant float 
+    per_3_quant float 
+    per_1_units char(3) 
+    per_2_units char(3) 
+    per_3_units char(3) 
+    purchase_limit_flg smallint 
+    qty_lim_grp_code integer 
+    ishur_qty_lim_flg smallint 
+    ishur_qty_lim_ingr smallint 
+    rule_status smallint 
+    sensitivity_flag smallint 
+    sensitivity_code integer 
+    sensitivity_severe smallint 
+    needs_29_g smallint 
+    print_generic_flg smallint 
+    copies_to_print smallint 
+    substitute_drug integer 
+    fps_group_code integer 
+    tikrat_mazon_flag smallint 
+    cont_treatment smallint 
+    how_to_take_code smallint 
+    time_of_day_taken smallint 
+    treatment_days smallint 
+    for_cystic_fibro smallint 
+    for_tuberculosis smallint 
+    for_gaucher smallint 
+    for_aids smallint 
+    for_dialysis smallint 
+    for_thalassemia smallint 
+    for_hemophilia smallint 
+    for_cancer smallint 
+    for_car_accident smallint 
+    for_work_accident smallint 
+    for_reserved_1 smallint 
+    for_reserved_2 smallint 
+    for_reserved_3 smallint 
+    for_reserved_99 smallint 
+    illness_bitmap integer 
+    has_diagnoses smallint 
+    refresh_date integer 
+    refresh_time integer 
+    changed_date integer 
+    changed_time integer 
+    pharm_update_date integer 
+    pharm_update_time integer 
+    doc_update_date integer 
+    doc_update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    update_date integer not null ,
+    update_time integer not null ,
+    update_date_d integer 
+    update_time_d integer 
+    pharm_diff char(50) 
+  ) 
+
+
+{ TABLE "macabi".drug_purchase_lim row size = 64 number of columns = 19 index size = 39 }
+
+create table "macabi".drug_purchase_lim 
+  (
+    largo_code integer not null ,
+    class_code smallint 
+    qty_lim_grp_code integer not null ,
+    limit_method smallint 
+    max_units integer not null ,
+    ingr_qty_std float 
+    presc_source smallint 
+    permit_source smallint 
+    warning_only smallint 
+    ingredient_code smallint 
+    exempt_diseases smallint 
+    duration_months smallint not null ,
+    history_start_date integer 
+    received_date integer not null ,
+    received_time integer not null ,
+    changed_date integer not null ,
+    changed_time integer not null ,
+    transmit_date integer 
+    transmit_time integer 
+  ) extent size 40 next size 20 lock mode row;
+
+
+{ TABLE "macabi".drug_shape row size = 80 number of columns = 12 index size = 9 }
+
+create table "macabi".drug_shape 
+  (
+    drug_shape_code smallint not null ,
+    drug_shape_desc char(4) 
+    shape_name_eng char(25) 
+    shape_name_heb char(25) 
+    calc_op_by_volume smallint 
+    home_delivery_ok smallint 
+    calc_actual_usage smallint 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".drugdoctorprof row size = 67 number of columns = 20 index size = 26 }
+
+create table "macabi".drugdoctorprof 
+  (
+    largo_code integer 
+    professiongroup char(2) not null ,
+    enabled_status smallint 
+    price_prcnt_gnrl integer 
+    fixed_price_basic integer 
+    price_prcnt_keren integer 
+    fixed_price_kesef integer 
+    price_prcnt_magen integer 
+    fixed_price_zahav integer 
+    price_pct_yahalom integer 
+    fixed_prc_yahalom integer 
+    wait_months smallint 
+    in_health_basket smallint 
+    health_basket_new smallint 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".druggencomponents row size = 19 number of columns = 6 index size = 20 }
+
+create table "macabi".druggencomponents 
+  (
+    largo_code integer 
+    gen_comp_code smallint 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".drugnotes row size = 38 number of columns = 11 index size = 24 }
+
+create table "macabi".drugnotes 
+  (
+    largo_code integer 
+    gnrldrugnotetype char(1) not null ,
+    gnrldrugnotecode integer 
+    update_date integer 
+    update_time integer 
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".drugsale_del_queue row size = 8 number of columns = 2 index size = 13 }
+
+create table "macabi".drugsale_del_queue 
+  (
+    prescription_id integer not null ,
+    largo_code integer not null 
+  ) extent size 64 next size 32 lock mode row;
+
+
+{ TABLE "macabi".drx_status_queue row size = 68 number of columns = 20 index size = 19 }
+
+create table "macabi".drx_status_queue 
+  (
+    member_id integer 
+    member_id_code smallint 
+    doctor_id integer 
+    visit_number bigint 
+    doctor_presc_id integer 
+    line_number smallint 
+    largo_prescribed integer 
+    valid_from_date integer 
+    sold_status smallint 
+    close_by_rounding smallint 
+    upd_units_sold smallint 
+    upd_op_sold smallint 
+    last_sold_date integer 
+    last_sold_time integer 
+    linux_update_flag smallint 
+    linux_update_date integer 
+    linux_update_time integer 
+    queued_date integer 
+    queued_time integer 
+    reported_to_cds smallint 
+  ) extent size 32 next size 32 lock mode row;
+
+
+{ TABLE "macabi".dur_msgs row size = 174 number of columns = 8 index size = 15 }
+
+create table "macabi".dur_msgs 
+  (
+    msg_type smallint not null ,
+    msg_dest smallint not null ,
+    msg_part smallint not null ,
+    msg_sub_cycle smallint 
+    msg_sever smallint not null ,
+    msg_row_num smallint not null ,
+    msg_row varchar(80),
+    msg_row_alternate varchar(80) 
+    primary key (msg_type,msg_dest,msg_part,msg_sever,msg_row_num) 
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".dynamic_var row size = 47 number of columns = 4 index size = 0 }
+
+create table "macabi".dynamic_var 
+  (
+    dynam_type smallint not null ,
+    dynam_code smallint not null ,
+    dynam_len smallint,
+    dynam_var varchar(40)
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".economypri row size = 69 number of columns = 22 index size = 109 }
+
+create table "macabi".economypri 
+  (
+    drug_group char(1) not null ,
+    group_code integer 
+    group_nbr smallint 
+    item_seq smallint 
+    send_and_use_pharm smallint 
+    largo_code integer 
+    clicks_version smallint 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1) not null ,
+    fictitious_flg smallint 
+    received_date integer 
+    received_time integer 
+    received_seq integer 
+    system_code char(1) 
+    refresh_date integer 
+    refresh_time integer 
+    changed_date integer 
+    changed_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".force_new_ql_codes row size = 26 number of columns = 3 index size = 9 }
+
+create table "macabi".force_new_ql_codes 
+  (
+    parent_group_code integer not null ,
+    parent_group_name char(20) 
+    enabled_flag smallint 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".gadget_spool row size = 72 number of columns = 20 index size = 15 }
+
+create table "macabi".gadget_spool 
+  (
+    pharmacy_code integer not null ,
+    prescription_id integer not null ,
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    largo_code integer not null ,
+    service_code integer not null ,
+    service_number integer not null ,
+    service_type integer not null ,
+    op integer not null ,
+    op_price integer not null ,
+    total_ptn integer not null ,
+    event_date integer not null ,
+    doctor_id integer not null ,
+    request_date integer not null ,
+    request_num integer 
+    action_code smallint not null ,
+    as400_error_code smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    reported_to_as400 smallint 
+  ) extent size 100 next size 100 lock mode row;
+
+
+{ TABLE "macabi".gadget_spool_timer row size = 10 number of columns = 3 index size = 0 }
+
+create table "macabi".gadget_spool_timer 
+  (
+    run_interval smallint 
+    last_run_date integer 
+    last_run_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".gadgets row size = 82 number of columns = 20 index size = 13 }
+
+create table "macabi".gadgets 
+  (
+    gadget_code integer 
+    service_desc varchar(25) 
+    largo_code integer not null ,
+    service_code integer not null ,
+    service_number smallint not null ,
+    service_type smallint not null ,
+    get_ptn_from_as400 smallint 
+    enabled_pvt_pharm smallint 
+    enabled_status smallint 
+    enabled_mac smallint 
+    enabled_hova smallint 
+    enabled_keva smallint 
+    enabled_without_rx smallint 
+    side smallint 
+    refresh_date integer 
+    refresh_time integer 
+    changed_date integer 
+    changed_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 80 next size 20 lock mode page;
+
+
+{ TABLE "macabi".gencomponents row size = 56 number of columns = 6 index size = 16 }
+
+create table "macabi".gencomponents 
+  (
+    gen_comp_code smallint 
+    gen_comp_desc varchar(40) not null ,
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".generyinteraction row size = 21 number of columns = 8 index size = 18 }
+
+create table "macabi".generyinteraction 
+  (
+    first_gen_code smallint 
+    second_gen_code smallint 
+    interaction_type smallint 
+    inter_note_code smallint 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".geninternotes row size = 157 number of columns = 7 index size = 16 }
+
+create table "macabi".geninternotes 
+  (
+    inter_note_code smallint 
+    interaction_note varchar(40) not null ,
+    inter_long_note varchar(100) 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".gnrldrugnotes row size = 341 number of columns = 19 index size = 19 }
+
+create table "macabi".gnrldrugnotes 
+  (
+    gnrldrugnotetype char(1) not null ,
+    gdn_type_new char(1) 
+    gnrldrugnotecode integer 
+    gnrldrugnote varchar(50) not null ,
+    gdn_long_note varchar(200) 
+    gdn_category smallint 
+    gdn_sex smallint 
+    gdn_from_age smallint 
+    gdn_to_age smallint 
+    gdn_seq_num smallint 
+    gdn_connect_type smallint 
+    gdn_connect_desc varchar(25) 
+    gdn_severity smallint 
+    gdn_sensitv_type integer 
+    gdn_sensitv_desc varchar(25) 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".health_alert_rules row size = 360 number of columns = 72 index size = 7 }
+
+create table "macabi".health_alert_rules 
+  (
+    rule_number smallint not null ,
+    rule_desc1 varchar(80) 
+    rule_desc2 varchar(80) 
+    rule_enabled smallint 
+    rule_valid_from integer 
+    rule_valid_until integer 
+    msg_code_assigned smallint 
+    member_age_min smallint 
+    member_age_max smallint 
+    member_sex smallint 
+    grp1_largo_code integer 
+    grp1_pharmacology smallint 
+    grp1_treatment_typ smallint 
+    grp1_min_treat_typ smallint 
+    grp1_ingredient smallint 
+    grp2_largo_code integer 
+    grp2_pharmacology smallint 
+    grp2_treatment_typ smallint 
+    grp2_min_treat_typ smallint 
+    grp2_ingredient smallint 
+    grp3_largo_code integer 
+    grp3_pharmacology smallint 
+    grp3_treatment_typ smallint 
+    grp3_min_treat_typ smallint 
+    grp3_ingredient smallint 
+    grp4_largo_code integer 
+    grp4_pharmacology smallint 
+    grp4_treatment_typ smallint 
+    grp4_min_treat_typ smallint 
+    grp4_ingredient smallint 
+    grp5_largo_code integer 
+    grp5_pharmacology smallint 
+    grp5_treatment_typ smallint 
+    grp5_min_treat_typ smallint 
+    grp5_ingredient smallint 
+    purchase_hist_days smallint 
+    presc_sale_only smallint 
+    lab_check_type smallint 
+    lab_req_code integer 
+    lab_req_code_alt_1 integer 
+    lab_req_code_alt_2 integer 
+    lab_req_code_alt_3 integer 
+    lab_req_code_alt_4 integer 
+    lab_req_code_alt_5 integer 
+    lab_result_low integer 
+    lab_result_high integer 
+    lab_check_days smallint 
+    lab_min_age_mm smallint 
+    lab_max_age_mm smallint 
+    ok_if_seen_prof_1 integer 
+    ok_if_seen_prof_2 integer 
+    ok_if_seen_prof_3 integer 
+    ok_if_seen_prof_4 integer 
+    ok_if_seen_prof_5 integer 
+    ok_if_seen_prof_6 integer 
+    ok_if_seen_prof_7 integer 
+    ok_if_seen_prof_8 integer 
+    ok_if_seen_prof_9 integer 
+    ok_if_seen_prof_10 integer 
+    ok_if_seen_within smallint 
+    invert_rasham char(1) 
+    rasham_code_1 smallint 
+    rasham_code_2 smallint 
+    rasham_code_3 smallint 
+    rasham_code_4 smallint 
+    rasham_code_5 smallint 
+    invert_diagnosis char(1) 
+    diagnosis_code_1 integer 
+    diagnosis_code_2 integer 
+    diagnosis_code_3 integer 
+    diagnosis_code_4 integer 
+    diagnosis_code_5 integer 
+  ) extent size 40 next size 32 lock mode row;
+
+
+{ TABLE "macabi".hmo_membership row size = 33 number of columns = 6 index size = 7 }
+
+create table "macabi".hmo_membership 
+  (
+    organization_code smallint not null ,
+    description char(15) 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".hospital_member row size = 87 number of columns = 11 index size = 11 }
+
+create table "macabi".hospital_member 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    entry_date integer 
+    discharge_date integer 
+    in_hospital smallint 
+    hospital_num integer 
+    hospital_name char(25),
+    department_name char(30),
+    update_date integer 
+    update_time integer 
+    insertdate integer 
+    primary key (member_id,mem_id_extension) 
+  ) extent size 2000 next size 1000 lock mode row;
+
+
+{ TABLE "macabi".hospitalmsg row size = 2249 number of columns = 20 index size = 30 }
+
+create table "macabi".hospitalmsg 
+  (
+    contractor integer 
+    termid integer 
+    idnumber integer 
+    idcode integer 
+    hospdate integer,
+    nursedate integer,
+    contrname varchar(30),
+    hospitalnumb integer 
+    typeresult varchar(25),
+    rescount integer 
+    resname1 varchar(30),
+    hospname varchar(25),
+    departname varchar(30),
+    resultsize integer 
+    patalogyflg integer 
+    insertdate integer 
+    inserttime integer 
+    result char(2048),
+    rrn serial not null ,
+    flg_system integer 
+    unique (rrn) 
+  ) extent size 200000 next size 50000 lock mode row;
+
+
+{ TABLE "macabi".how_to_take row size = 50 number of columns = 4 index size = 0 }
+
+create table "macabi".how_to_take 
+  (
+    how_to_take_code smallint not null ,
+    how_to_take_desc char(40) 
+    update_date integer 
+    update_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".illness_codes row size = 70 number of columns = 6 index size = 7 }
+
+create table "macabi".illness_codes 
+  (
+    illness_code smallint not null ,
+    illness_name char(60) 
+    illness_bit_number smallint 
+    override_basket smallint 
+    is_actual_disease smallint 
+    use_diagnoses smallint 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".interaction_type row size = 63 number of columns = 8 index size = 0 }
+
+create table "macabi".interaction_type 
+  (
+    interaction_type smallint,
+    dur_message varchar(40),
+    interaction_level smallint,
+    update_date integer,
+    update_time integer,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".labresother row size = 99 number of columns = 22 index size = 35 }
+
+create table "macabi".labresother 
+  (
+    contractor integer 
+    termid integer 
+    idnumber integer 
+    idcode integer 
+    reqid integer 
+    reqcode integer 
+    labid integer 
+    route integer 
+    result integer 
+    lowerlimit integer 
+    upperlimit integer 
+    units char(15),
+    approvaldate integer 
+    forwarddate integer 
+    reqdate integer 
+    pregnantwoman integer 
+    completed integer 
+    group integer 
+    reqid_main integer 
+    insertdate integer 
+    inserttime integer 
+    rrn serial not null ,
+    unique (rrn) 
+  ) extent size 2500000 next size 250000 lock mode row;
+
+
+{ TABLE "macabi".macabi_centers row size = 252 number of columns = 18 index size = 9 }
+
+create table "macabi".macabi_centers 
+  (
+    macabi_centers_num integer not null ,
+    first_center_type char(2) not null ,
+    second_center_type char(2) not null ,
+    macabi_centers_nam varchar(40) not null ,
+    street_and_no varchar(20) not null ,
+    city varchar(20) not null ,
+    phone_1 varchar(10) not null ,
+    phone_2 varchar(10) 
+    fax_num varchar(10) not null ,
+    allowed_proc_list char(50) not null ,
+    allowed_belongings char(50) not null ,
+    credit_flag smallint not null ,
+    discount_percent smallint not null ,
+    zip_code integer not null ,
+    assuta_card_number char(10) 
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint not null 
+  ) extent size 40 next size 40 lock mode row;
+
+
+{ TABLE "macabi".member_diagnoses row size = 22 number of columns = 5 index size = 9 }
+
+create table "macabi".member_diagnoses 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    diagnosis_code integer not null ,
+    diagnosis_date integer 
+    batch_timestamp datetime year to second 
+  ) extent size 100000 next size 50000 lock mode row;
+
+
+{ TABLE "macabi".member_drug_29g row size = 40 number of columns = 11 index size = 15 }
+
+create table "macabi".member_drug_29g 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    largo_code integer not null ,
+    start_date integer 
+    end_date integer 
+    pharmacy_code integer 
+    form_29g_type smallint 
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 100 next size 100 lock mode row;
+
+
+{ TABLE "macabi".member_price row size = 63 number of columns = 14 index size = 7 }
+
+create table "macabi".member_price 
+  (
+    participation_name char(25) not null ,
+    calc_type_code smallint not null ,
+    member_institued smallint not null ,
+    yarpa_part_code smallint not null ,
+    tax integer not null ,
+    member_price_code smallint not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null ,
+    member_price_prcnt smallint not null ,
+    ptn_percent_sort smallint 
+    max_pkg_price integer 
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".member_prof_visit row size = 20 number of columns = 6 index size = 22 }
+
+create table "macabi".member_prof_visit 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    profession_code integer not null ,
+    visit_date integer not null ,
+    visit_time integer not null ,
+    reported_to_as400 smallint 
+  ) extent size 8000 next size 4000 lock mode row;
+
+
+{ TABLE "macabi".member_rasham row size = 16 number of columns = 4 index size = 9 }
+
+create table "macabi".member_rasham 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    rasham_code smallint not null ,
+    batch_timestamp datetime year to second 
+    
+    check (rasham_code >= 0 ) constraint "macabi".min_rasham_code
+  ) extent size 40000 next size 20000 lock mode row;
+
+
+{ TABLE "macabi".membercard row size = 22 number of columns = 6 index size = 9 }
+
+create table "macabi".membercard 
+  (
+    idnumber integer 
+    idcode smallint 
+    cardissuedate integer 
+    insertdate integer 
+    inserttime integer 
+    updatedby integer 
+  ) extent size 4400 next size 100 lock mode row;
+
+
+{ TABLE "macabi".memberpharm row size = 198 number of columns = 19 index size = 11 }
+
+create table "macabi".memberpharm 
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    seq_number integer not null ,
+    pharmacy_code integer not null ,
+    pharmacy_type smallint not null ,
+    open_date integer not null ,
+    close_date integer not null ,
+    pharmacy_code_temp integer not null ,
+    pharmacy_type_temp smallint not null ,
+    open_date_temp integer not null ,
+    close_date_temp integer not null ,
+    restriction_type smallint not null ,
+    description char(70) not null ,
+    description_temp char(70) not null ,
+    unix_recv_date integer not null ,
+    unix_recv_time integer not null ,
+    changed_date integer not null ,
+    changed_time integer not null ,
+    del_flg smallint not null ,
+    primary key (member_id,mem_id_extension) 
+  ) extent size 40 next size 20 lock mode row;
+
+
+
+{ TABLE "macabi".members row size = 277 number of columns = 67 index size = 39 }
+
+create table "macabi".member2
+  (
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    card_date smallint not null ,
+    father_name varchar(8) not null ,
+    first_name varchar(8),
+    last_name varchar(14),
+    street varchar(12),
+    house_num char(4),
+    sex smallint,
+    date_of_bearth integer,
+    marital_status smallint,
+    insurance_type char(1)
+    yahalom_code smallint
+    yahalom_from integer
+    yahalom_until integer
+    mac_magen_code smallint,
+    mac_magen_from integer,
+    mac_magen_until integer,
+    carry_over_vetek integer
+    insurance_status smallint,
+    max_drug_date integer,
+    old_member_id integer,
+    old_id_extension smallint,
+    update_date integer,
+	update_time integer,
+    data_update_date integer
+    data_update_time integer
+    city varchar(20),
+    del_flg smallint not null ,
+    credit_type_code smallint,
+    zip_code integer,
+    asaf_code smallint,
+    member_discount_pt smallint,
+    keren_mac_from integer,
+    keren_mac_until integer,
+    keren_wait_flag smallint
+    doctor_status integer,
+    phone varchar(10),
+    maccabi_code smallint,
+    maccabi_until integer,
+    authorizealways smallint
+    urgentonlygroup smallint
+    keren_mac_code smallint,
+    updated_by integer,
+    spec_presc smallint
+    has_tikra smallint
+    has_coupon smallint
+    in_hospital smallint
+    check_od_interact smallint
+    updateadr integer
+    idnumber_main integer
+    idcode_main smallint
+    first_english varchar(15),
+    last_english varchar(15),
+    mess integer
+    snif integer
+    illness_1 smallint
+    illness_2 smallint
+    illness_3 smallint
+    illness_4 smallint
+	illness_5 smallint
+    illness_6 smallint
+    illness_7 smallint
+    illness_8 smallint
+    illness_9 smallint
+    illness_10 smallint
+    illness_bitmap integer
+  ) extent size 400000 next size 100000 lock mode row;
+
+
+
+{ TABLE "macabi".message_texts row size = 105 number of columns = 8 index size = 9 }
+
+create table "macabi".message_texts 
+  (
+    message_id integer not null ,
+    message_line smallint not null ,
+    message_text char(60) not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    user_id varchar(24,1) not null ,
+    valid_until integer not null ,
+    del_flg smallint not null 
+  ) extent size 1000 next size 500 lock mode row;
+
+
+{ TABLE "macabi".messages_details row size = 2543 number of columns = 14 index size = 44 }
+
+create table "macabi".messages_details 
+  (
+    rec_id integer not null ,
+    date integer not null ,
+    time integer not null ,
+    msg_idx smallint not null ,
+    spool_flg smallint not null ,
+    ok_flg smallint not null ,
+    error_code smallint not null ,
+    proc_time integer not null ,
+    num_processed integer 
+    pharmacy_code integer not null ,
+    terminal_id smallint not null ,
+    member_id integer not null ,
+    member_id_ext smallint not null ,
+    message_raw lvarchar(2500) not null 
+  ) extent size 5000000 next size 5000000 lock mode row;
+
+
+{ TABLE "macabi".money_emp_lines row size = 54 number of columns = 18 index size = 20 }
+
+create table "macabi".money_emp_lines 
+  (
+    r_count serial not null ,
+    diary_month smallint not null ,
+    pharmacy_code integer not null ,
+    action_type smallint not null ,
+    receipt_num integer not null ,
+    terminal_id smallint not null ,
+    user_ident integer not null ,
+    card_num integer not null ,
+    del_flg smallint not null ,
+    date integer not null ,
+    time integer not null ,
+    terminal_id_proc smallint not null ,
+    payment_type smallint not null ,
+    sale_total integer not null ,
+    sale_num smallint not null ,
+    refund_total integer not null ,
+    refund_num smallint not null ,
+    reported_to_as400 smallint not null 
+  ) extent size 20000 next size 10000 lock mode row;
+
+
+{ TABLE "macabi".money_empty row size = 52 number of columns = 18 index size = 20 }
+
+create table "macabi".money_empty 
+  (
+    error_code smallint not null ,
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    del_flg smallint not null ,
+    comm_error_code smallint not null ,
+    terminal_id smallint not null ,
+    date integer not null ,
+    time integer not null ,
+    receipt_num integer not null ,
+    serial_no_2 smallint not null ,
+    serial_no_3 integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    num_of_lines_4 smallint not null ,
+    diary_month smallint not null ,
+    action_type smallint not null ,
+    reported_to_as400 smallint not null ,
+    r_count serial not null 
+  ) extent size 4000 next size 1000 lock mode row;
+
+
+{ TABLE "macabi".online_orders row size = 54 number of columns = 13 index size = 13 }
+
+create table "macabi".online_orders 
+  (
+    online_order_num bigint not null ,
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    made_by_pr_id integer not null ,
+    made_by_pharmacy integer not null ,
+    made_date integer not null ,
+    made_time integer not null ,
+    start_work_date integer 
+    start_work_time integer 
+    last_sold_pr_id integer 
+    last_sold_pharmacy integer 
+    last_sold_date integer 
+    last_sold_time integer 
+  ) extent size 5000 next size 5000 lock mode row;
+
+
+{ TABLE "macabi".over_dose row size = 28 number of columns = 8 index size = 11 }
+
+create table "macabi".over_dose 
+  (
+    largo_code integer,
+    from_age smallint,
+    update_date integer,
+    update_time integer,
+    del_flg smallint,
+    max_units_per_day integer,
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 128 next size 32 lock mode page;
+
+
+{ TABLE "macabi".pc_error_message row size = 195 number of columns = 7 index size = 7 }
+
+create table "macabi".pc_error_message 
+  (
+    error_description varchar(60) not null ,
+    error_line varchar(60) not null ,
+    error_code smallint not null ,
+    severity_level smallint not null ,
+    severity_pharm smallint not null ,
+    c_define_name varchar(64),
+    reported_to_as400 smallint not null 
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".pd_rx_link row size = 88 number of columns = 24 index size = 53 }
+
+create table "macabi".pd_rx_link 
+  (
+    prescription_id integer not null ,
+    line_no smallint not null ,
+    member_id integer not null ,
+    member_id_code smallint not null ,
+    doctor_id integer not null ,
+    visit_number bigint 
+    clicks_line_number smallint 
+    doctor_presc_id integer not null ,
+    largo_prescribed integer not null ,
+    largo_sold integer 
+    valid_from_date integer not null ,
+    visit_date integer 
+    op_sold integer 
+    units_sold integer 
+    sold_drug_op integer 
+    sold_drug_units integer 
+    rx_sold_status smallint 
+    close_by_rounding smallint 
+    sold_date integer 
+    prev_unsold_op integer 
+    prev_unsold_units integer 
+    date integer 
+    time integer 
+    reported_to_as400 smallint 
+  ) extent size 2000000 next size 1000000 lock mode row;
+
+
+{ TABLE "macabi".pharm_spool_lock row size = 16 number of columns = 4 index size = 9 }
+
+create table "macabi".pharm_spool_lock 
+  (
+    pharmacy_code integer not null ,
+    pid integer 
+    date integer 
+    time integer 
+  ) extent size 64 next size 32 lock mode row;
+
+
+{ TABLE "macabi".pharm_trn_permit row size = 14 number of columns = 6 index size = 18 }
+
+create table "macabi".pharm_trn_permit 
+  (
+    transaction_num smallint not null ,
+    spool smallint 
+    frequency integer not null ,
+    ok_maccabi smallint 
+    ok_pvt_hesder smallint 
+    ok_non_hesder smallint 
+  ) extent size 32 next size 32 lock mode row;
+
+
+{ TABLE "macabi".pharmacology row size = 41 number of columns = 6 index size = 16 }
+
+create table "macabi".pharmacology 
+  (
+    pharm_group_code smallint 
+    pharm_group_name varchar(25) not null ,
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1)
+  ) extent size 1024 next size 1024 lock mode page;
+
+
+{ TABLE "macabi".pharmacy row size = 530 number of columns = 47 index size = 24 }
+
+create table "macabi".pharmacy 
+  (
+    term_address integer not null ,
+    term_quantity smallint not null ,
+    pharmacy_code integer not null ,
+    pharmacy_name varchar(30) not null ,
+    institued_code smallint not null ,
+    pharm_category smallint 
+    street_and_no varchar(20) not null ,
+    city varchar(20) not null ,
+    owner smallint not null ,
+    hesder_category smallint 
+    comm_type smallint not null ,
+    phone_1 varchar(10) not null ,
+    phone_2 varchar(10) not null ,
+    phone_3 varchar(10) not null ,
+    price_list_code smallint not null ,
+    vat_exempt smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint not null ,
+    pharmacist_last_na char(14) not null ,
+    pharmacist_first_n char(8) not null ,
+    permission_type smallint not null ,
+    can_sell_future_rx smallint 
+    open_close_flag smallint not null ,
+    message_1 char(60),
+    message_2 char(60),
+    message_3 char(60),
+    message_4 char(60),
+    message_5 char(60),
+    software_ver_need char(9) not null ,
+    phone varchar(10) not null ,
+    card smallint 
+    leumi_permission smallint 
+    credit smallint 
+    fps_fee_level integer 
+    fps_fee_lower integer 
+    fps_fee_upper integer 
+    contract_type smallint 
+    contract_incl_tax smallint 
+    contract_code integer 
+    contract_effective integer 
+    auto_close_shift smallint 
+    maccabicare_flag smallint 
+    meishar_enabled smallint 
+    allow_future_sales smallint 
+    order_originator smallint 
+    order_fulfiller smallint 
+  ) extent size 600 next size 300 lock mode row;
+
+
+{ TABLE "macabi".pharmacy_contract row size = 56 number of columns = 12 index size = 27 }
+
+create table "macabi".pharmacy_contract 
+  (
+    contract_code integer not null ,
+    contract_from_date integer not null ,
+    contract_to_date integer not null ,
+    contract_min_amt integer not null ,
+    contract_max_amt integer not null ,
+    contract_fee integer not null ,
+    contract_status smallint not null ,
+    fps_group_code integer 
+    fps_group_name char(16) 
+    update_date integer 
+    update_time integer 
+    del_flg smallint 
+  ) extent size 40 next size 40 lock mode page;
+
+
+{ TABLE "macabi".pharmacy_daily_sum row size = 70 number of columns = 19 index size = 28 }
+
+create table "macabi".pharmacy_daily_sum 
+  (
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    diary_month smallint not null ,
+    date integer not null ,
+    terminal_id smallint,
+    sum integer not null ,
+    member_part_sum integer not null ,
+    presc_count integer not null ,
+    presc_lines_count integer not null ,
+    delete_sum integer not null ,
+    del_member_prt_sum integer not null ,
+    deleted_sales integer 
+    delete_lines integer not null ,
+    net_fail_sum integer not null ,
+    net_fail_lines integer not null ,
+    net_fail_presc integer not null ,
+    net_fail_mem_part integer not null ,
+    purchase_sum integer 
+    del_purchase_sum integer 
+  ) extent size 8500 next size 1000 lock mode row;
+
+
+{ TABLE "macabi".pharmacy_ishur row size = 213 number of columns = 41 index size = 58 }
+
+create table "macabi".pharmacy_ishur 
+  (
+    pharmacy_code integer not null ,
+    institute_code smallint not null ,
+    terminal_id smallint not null ,
+    diary_month smallint not null ,
+    ishur_date integer not null ,
+    ishur_time integer not null ,
+    ishur_source smallint not null ,
+    pharm_ishur_num integer not null ,
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    authority_level smallint not null ,
+    auth_id_type smallint not null ,
+    authority_id integer not null ,
+    auth_first_name varchar(8) not null ,
+    auth_last_name varchar(14) not null ,
+    as400_ishur_src smallint not null ,
+    as400_ishur_num integer not null ,
+    as400_ishur_extend smallint 
+    line_number smallint not null ,
+    largo_code integer not null ,
+    preferred_largo integer 
+    member_price_code smallint not null ,
+    const_sum_to_pay integer not null ,
+    insurance_used smallint 
+    rule_number integer not null ,
+    speciality_code integer not null ,
+    treatment_category smallint 
+    needs_29_g smallint 
+    in_health_pack smallint 
+    no_presc_sale_flag smallint 
+    ishur_text varchar(80),
+    error_code smallint not null ,
+    comm_error_code smallint 
+    used_flg smallint not null ,
+    used_pr_id integer not null ,
+    used_pr_line_num smallint not null ,
+    updated_date integer not null ,
+    updated_time integer not null ,
+    updated_by_trn smallint not null ,
+    reported_to_as400 smallint not null ,
+    rrn serial not null 
+  ) extent size 35000 next size 5000 lock mode row;
+
+
+{ TABLE "macabi".pharmacy_log row size = 167 number of columns = 44 index size = 20 }
+
+create table "macabi".pharmacy_log 
+  (
+    r_count serial not null ,
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    error_code smallint not null ,
+    comm_error_code smallint not null ,
+    open_close_flag smallint not null ,
+    price_list_code smallint not null ,
+    price_list_date integer not null ,
+    price_list_macabi_ integer not null ,
+    price_list_cost_da integer not null ,
+    drug_list_date integer not null ,
+    hardware_version integer not null ,
+    owner smallint not null ,
+    comm_type smallint not null ,
+    phone_1 varchar(10) not null ,
+    phone_2 varchar(10) not null ,
+    phone_3 varchar(10) not null ,
+    message_flag smallint not null ,
+    price_list_flag smallint not null ,
+    price_l_mcbi_flag smallint not null ,
+    drug_list_flag smallint not null ,
+    discounts_date integer not null ,
+    suppliers_date integer not null ,
+    macabi_centers_dat integer not null ,
+    error_list_date integer not null ,
+    disk_space integer not null ,
+    net_flag smallint not null ,
+    comm_fail_filesize integer not null ,
+    backup_date integer not null ,
+    pc_date integer not null ,
+    pc_time integer not null ,
+    db_date integer not null ,
+    db_time integer not null ,
+    closing_type smallint not null ,
+    user_ident integer not null ,
+    error_code_list_fl smallint not null ,
+    discounts_flag smallint not null ,
+    suppliers_flag smallint not null ,
+    macabi_centers_fla smallint not null ,
+    software_ver_need char(9) not null ,
+    software_ver_pc char(9) not null ,
+    terminal_id smallint not null ,
+    available_mem smallint not null ,
+    reported_to_as400 smallint not null 
+  ) extent size 10000 next size 5000 lock mode row;
+
+
+{ TABLE "macabi".pharmacy_message row size = 30 number of columns = 9 index size = 42 }
+
+create table "macabi".pharmacy_message 
+  (
+    pharmacy_code integer not null ,
+    owner smallint not null ,
+    sent_to smallint not null ,
+    date integer not null ,
+    time integer not null ,
+    delivery_date integer not null ,
+    delivery_time integer not null ,
+    institued_code smallint not null ,
+    message_id integer not null 
+  ) extent size 2000 next size 1000 lock mode row;
+
+
+{ TABLE "macabi".pharmdrugnotes row size = 103 number of columns = 12 index size = 10 }
+
+create table "macabi".pharmdrugnotes 
+  (
+    gnrldrugnotetype char(1) 
+    gnrldrugnotecode integer 
+    gnrldrugnote varchar(50) 
+    gdn_category smallint 
+    gdn_seq_num smallint 
+    gdn_connect_type smallint 
+    gdn_connect_desc varchar(25) 
+    gdn_severity smallint 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1) 
+  ) extent size 200 next size 200 lock mode row;
+
+
+{ TABLE "macabi".presc_drug_inter row size = 100 number of columns = 35 index size = 29 }
+
+create table "macabi".presc_drug_inter 
+  (
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    terminal_id smallint not null ,
+    special_presc_num integer not null ,
+    spec_pres_num_sors smallint not null ,
+    prescription_id integer not null ,
+    line_no smallint not null ,
+    largo_code integer not null ,
+    largo_code_inter integer not null ,
+    interaction_type smallint not null ,
+    doc_approved_flag smallint 
+    date integer not null ,
+    time integer not null ,
+    del_flg smallint not null ,
+    presc_id_inter integer not null ,
+    line_no_inter smallint not null ,
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    doctor_id integer not null ,
+    doctor_id_type smallint not null ,
+    sec_doctor_id integer not null ,
+    sec_doctor_id_type smallint not null ,
+    error_code smallint not null ,
+    duration smallint not null ,
+    op integer not null ,
+    units integer not null ,
+    stop_blood_date integer not null ,
+    check_type smallint not null ,
+    destination smallint not null ,
+    print_flg smallint not null ,
+    reported_to_as400 smallint not null ,
+    sec_presc_date integer not null ,
+    dtl_error_code smallint 
+    elect_pr_flag smallint 
+    error_mode smallint 
+  ) extent size 100000 next size 50000 lock mode row;
+
+
+{ TABLE "macabi".presc_per_host row size = 288 number of columns = 10 index size = 0 }
+
+create table "macabi".presc_per_host 
+  (
+    host_name varchar(255) not null ,
+    short_name char(2) 
+    low_limit integer not null ,
+    upper_limit integer not null ,
+    msg_low_limit integer 
+    msg_upr_limit integer 
+    delpr_low_limit integer 
+    delpr_upr_limit integer 
+    presc_id_online integer 
+    active smallint 
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".prescr_source row size = 37 number of columns = 7 index size = 7 }
+
+create table "macabi".prescr_source 
+  (
+    pr_src_code smallint not null ,
+    pr_src_desc char(25) not null ,
+    pr_src_docid_type smallint 
+    id_type_accepted smallint 
+    pr_src_doc_device smallint 
+    pr_src_priv_pharm smallint 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".prescription_drugs row size = 394 number of columns = 97 index size = 99 }
+
+create table "macabi".prescription_drugs 
+  (
+    prescription_id integer not null ,
+    line_no smallint not null ,
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    largo_code integer not null ,
+    action_type smallint 
+    reported_to_as400 smallint not null ,
+    comm_error_code smallint not null ,
+    doctor_id integer not null ,
+    doctor_id_type smallint not null ,
+    doctor_facility integer 
+    op integer not null ,
+    op_prescribed integer 
+    units integer not null ,
+    units_prescribed integer 
+    duration integer not null ,
+    stop_use_date integer not null ,
+    t_half integer not null ,
+    date integer not null ,
+    time integer not null ,
+    updated_by integer not null ,
+    del_flg smallint not null ,
+    delivered_flg smallint not null ,
+    paid_for smallint 
+    price_replace integer 
+    price_extension integer 
+    member_diagnosis integer 
+    link_ext_to_drug integer not null ,
+    price_for_op integer 
+    ph_otc_unit_price integer 
+    total_drug_price integer 
+    op_stock integer not null ,
+    units_stock integer not null ,
+    total_member_price integer 
+    member_ptn_amt integer 
+    drug_answer_code smallint not null ,
+    member_price_code smallint not null ,
+    calc_member_price smallint not null ,
+    presc_source smallint 
+    digital_rx smallint 
+    macabi_price_flg smallint not null ,
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    price_for_op_ph integer 
+    stop_blood_date integer not null ,
+    doctor_presc_id integer 
+    dr_presc_date integer 
+    dr_largo_code integer 
+    dr_visit_date integer 
+    num_linked_rxes smallint 
+    subst_permitted smallint 
+    units_unsold integer 
+    op_unsold integer 
+    units_per_dose integer 
+    doses_per_day integer 
+    use_instr_template smallint 
+    how_to_take_code smallint 
+    unit_code char(3) 
+    course_treat_days smallint 
+    course_length smallint 
+    course_units char(10) 
+    course_length_days smallint 
+    days_of_week varchar(20) 
+    times_of_day varchar(40) 
+    side_of_body char(10) 
+    use_instr_changed smallint 
+    particip_method smallint 
+    rule_number integer 
+    member_discount_pt integer 
+    member_discount_amt integer 
+    prescr_wr_rrn integer 
+    special_presc_num integer 
+    spec_pres_num_sors smallint 
+    qty_lim_ishur_num integer 
+    vacation_ishur_num integer 
+    ishur_with_tikra smallint 
+    ishur_tikra_type smallint 
+    ingr_1_code smallint 
+    ingr_2_code smallint 
+    ingr_3_code smallint 
+    ingr_1_quant_bot float 
+    ingr_2_quant_bot float 
+    ingr_3_quant_bot float 
+    ingr_1_quant_std float 
+    ingr_2_quant_std float 
+    ingr_3_quant_std float 
+    tikra_type_code char(1) 
+    subsidized smallint 
+    discount_granted integer 
+    discount_code smallint 
+    tikrat_mazon_flag smallint 
+    elect_pr_status smallint 
+    credit_type_code smallint 
+    credit_type_used smallint 
+    why_future_sale_ok smallint 
+    qty_limit_chk_type smallint 
+    barcode_scanned smallint 
+  ) extent size 4000000 next size 1000000 lock mode row;
+
+
+{ TABLE "macabi".prescription_msgs row size = 26 number of columns = 9 index size = 26 }
+
+create table "macabi".prescription_msgs 
+  (
+    prescription_id integer not null ,
+    largo_code integer not null ,
+    line_no smallint 
+    error_code smallint not null ,
+    severity smallint 
+    date integer not null ,
+    time integer not null ,
+    delivered_flg smallint 
+    reported_to_as400 smallint 
+  ) extent size 300000 next size 50000 lock mode row;
+
+
+{ TABLE "macabi".prescription_usage row size = 72 number of columns = 19 index size = 28 }
+
+create table "macabi".prescription_usage 
+  (
+    prescription_id integer not null ,
+    line_no smallint not null ,
+    largo_code integer 
+    course_len smallint 
+    course_treat_days smallint 
+    duration smallint 
+    calc_courses smallint 
+    calc_treat_days smallint 
+    total_units integer 
+    fully_used_units integer 
+    partly_used_units integer 
+    discarded_units integer 
+    avg_partial_unit float 
+    proportion_used float 
+    net_lim_ingr_used float 
+    date integer 
+    time integer 
+    delivered_flg smallint 
+    reported_to_as400 smallint 
+  ) extent size 6000 next size 2000 lock mode row;
+
+
+{ TABLE "macabi".prescriptions row size = 173 number of columns = 61 index size = 93 }
+
+create table "macabi".prescriptions 
+  (
+    del_flg smallint not null ,
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    action_type smallint 
+    price_list_code smallint 
+    member_id integer not null ,
+    mem_id_extension smallint not null ,
+    member_institued smallint not null ,
+    insurance_type char(1) 
+    card_owner_id integer 
+    card_owner_id_code smallint 
+    doctor_id integer not null ,
+    doctor_id_type smallint not null ,
+    presc_source smallint 
+    prescription_id integer not null ,
+    member_price_code smallint not null ,
+    num_payments smallint 
+    payment_method smallint 
+    special_presc_num integer 
+    spec_pres_num_sors smallint 
+    date integer not null ,
+    time integer not null ,
+    error_code smallint not null ,
+    prescription_lines smallint not null ,
+    credit_type_code smallint not null ,
+    card_date smallint not null ,
+    member_discount_pt smallint 
+    terminal_id smallint not null ,
+    doctor_insert_mode smallint not null ,
+    elect_pr_status smallint 
+    receipt_num integer not null ,
+    user_ident integer not null ,
+    presc_pharmacy_id integer not null ,
+    macabi_code smallint not null ,
+    macabi_centers_num integer not null ,
+    diary_month smallint not null ,
+    doctor_presc_id integer 
+    reported_to_as400 smallint not null ,
+    delivered_flg smallint not null ,
+    comm_error_code smallint not null ,
+    sale_req_error smallint 
+    memb_prc_code_ph smallint not null ,
+    next_presc_start integer not null ,
+    next_presc_stop integer not null ,
+    waiting_msg_flg smallint not null ,
+    reason_to_disp smallint 
+    reason_for_discnt integer 
+    doc_device_code integer 
+    credit_type_used smallint 
+    del_presc_id integer 
+    del_pharm_code integer 
+    del_sale_date integer 
+    del_pharm_presc_id integer 
+    credit_reason_code smallint 
+    tikra_called_flag smallint 
+    tikra_error_code smallint 
+    tikra_status_code smallint 
+    tikra_discount integer 
+    subsidy_amount integer 
+    origin_code smallint 
+    online_order_num bigint 
+  ) extent size 3000000 next size 500000 lock mode row;
+
+
+{ TABLE "macabi".price_list row size = 72 number of columns = 19 index size = 48 }
+
+create table "macabi".price_list 
+  (
+    price_list_code smallint not null ,
+    largo_code integer not null ,
+    yarpa_price integer not null ,
+    macabi_price integer not null ,
+    supplier_price integer not null ,
+    date_yarpa integer not null ,
+    time_yarpa integer not null ,
+    date_macabi integer not null ,
+    time_macabi integer not null ,
+    update_date integer 
+    update_time integer 
+    refresh_date integer 
+    refresh_time integer 
+    changed_date integer 
+    changed_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    supplier_yarpa integer 
+    del_flg smallint not null 
+  ) extent size 5000 next size 1000 lock mode row;
+
+
+{ TABLE "macabi".profession row size = 64 number of columns = 14 index size = 7 }
+
+create table "macabi".profession 
+  (
+    profession smallint 
+    group smallint 
+    descr varchar(18),
+    accepturgent smallint 
+    sexesallowed smallint 
+    minageallowed smallint 
+    maxageallowed smallint 
+    lastupdatedate integer 
+    lastupdatetime integer 
+    updatedby smallint 
+    descr_small varchar(10),
+    labotherallow integer 
+    tax integer 
+    tax1019 integer 
+  ) extent size 16 next size 16 lock mode page;
+
+
+{ TABLE "macabi".purchase_lim_class row size = 136 number of columns = 14 index size = 7 }
+
+create table "macabi".purchase_lim_class 
+  (
+    class_code smallint not null ,
+    class_type smallint 
+    class_sex smallint 
+    class_min_age smallint 
+    class_max_age smallint 
+    class_priority smallint 
+    class_history_days integer 
+    class_hist_start integer 
+    class_long_desc char(75) 
+    class_short_desc char(25) 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".purchase_lim_ishur row size = 143 number of columns = 23 index size = 32 }
+
+create table "macabi".purchase_lim_ishur 
+  (
+    member_id integer not null ,
+    member_id_code smallint not null ,
+    largo_code integer not null ,
+    ishur_source smallint not null ,
+    ishur_num integer not null ,
+    ishur_type smallint not null ,
+    del_flg smallint 
+    reason_code smallint not null ,
+    ishur_text char(65) not null ,
+    max_units integer not null ,
+    ingr_qty_std float 
+    duration_months smallint not null ,
+    auth_tz integer not null ,
+    request_doc_id integer not null ,
+    doc_has_seen_ishur smallint 
+    received_date integer not null ,
+    received_time integer not null ,
+    changed_date integer not null ,
+    changed_time integer not null ,
+    transmit_date integer 
+    transmit_time integer 
+    open_date integer not null ,
+    close_date integer not null 
+  ) extent size 1200 next size 200 lock mode row;
+
+
+{ TABLE "macabi".rx_late_arrival_q row size = 94 number of columns = 25 index size = 49 }
+
+create table "macabi".rx_late_arrival_q 
+  (
+    actioncode_in smallint 
+    member_id_in integer 
+    member_id_code_in smallint 
+    prescid_in integer 
+    lineno_in smallint 
+    docid_in integer 
+    docidtype_in smallint 
+    docprid_in integer 
+    largoprescribed_in integer 
+    largosold_in integer 
+    validfromdate_in integer 
+    solddate_in integer 
+    soldtime_in integer 
+    op_sold_in smallint 
+    unitssold_in smallint 
+    prevunsoldop_in smallint 
+    prevunsoldunits_in smallint 
+    rx_found smallint 
+    sale_db_timestamp datetime year to second 
+    proc_db_timestamp datetime year to second 
+    next_process_time datetime year to second 
+    visitdate_out integer 
+    visittime_out integer 
+    rx_added_date_out integer 
+    rx_added_time_out integer 
+  ) extent size 2000 next size 500 lock mode row;
+
+
+{ TABLE "macabi".rx_status_changes row size = 34 number of columns = 9 index size = 25 }
+
+create table "macabi".rx_status_changes 
+  (
+    clicks_patient_id integer 
+    doctor_presc_id integer not null ,
+    visit_number bigint 
+    line_number smallint 
+    largo_prescribed integer 
+    prev_sold_status smallint 
+    sold_status smallint 
+    insert_date integer 
+    insert_time integer 
+  ) extent size 4000 next size 2000 lock mode row;
+
+
+{ TABLE "macabi".sale row size = 121 number of columns = 15 index size = 9 }
+
+create table "macabi".sale 
+  (
+    sale_number integer not null ,
+    sale_name char(75) 
+    sale_owner smallint not null ,
+    sale_audience smallint not null ,
+    start_date integer 
+    end_date integer 
+    sale_type smallint not null ,
+    min_op_to_buy integer 
+    op_to_receive integer 
+    min_purchase_amt integer 
+    purchase_discount smallint 
+    tav_knia_amt integer 
+    update_date integer 
+    update_time integer 
+    del_flg smallint 
+    primary key (sale_number) 
+  ) extent size 32 next size 32 lock mode row;
+
+
+{ TABLE "macabi".sale_bonus_recv row size = 28 number of columns = 8 index size = 22 }
+
+create table "macabi".sale_bonus_recv 
+  (
+    sale_number integer not null ,
+    largo_code integer not null ,
+    op_to_receive integer 
+    discount_percent smallint 
+    sale_price integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint 
+    primary key (sale_number,largo_code) 
+  ) extent size 32 next size 32 lock mode row;
+
+
+{ TABLE "macabi".sale_fixed_price row size = 22 number of columns = 6 index size = 13 }
+
+create table "macabi".sale_fixed_price 
+  (
+    sale_number integer not null ,
+    largo_code integer not null ,
+    sale_price integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint 
+    primary key (sale_number,largo_code) 
+  ) extent size 80 next size 20 lock mode row;
+
+
+{ TABLE "macabi".sale_pharmacy row size = 18 number of columns = 5 index size = 13 }
+
+create table "macabi".sale_pharmacy 
+  (
+    sale_number integer not null ,
+    pharmacy_code integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint 
+    primary key (sale_number,pharmacy_code) 
+  ) extent size 32 next size 32 lock mode row;
+
+
+{ TABLE "macabi".sale_target row size = 26 number of columns = 8 index size = 13 }
+
+create table "macabi".sale_target 
+  (
+    sale_number integer not null ,
+    pharmacy_type smallint not null ,
+    pharmacy_size smallint not null ,
+    target_op integer not null ,
+    max_op integer 
+    update_date integer not null ,
+    update_time integer not null ,
+    del_flg smallint 
+    primary key (sale_number,pharmacy_type,pharmacy_size) 
+  ) extent size 16 next size 16 lock mode row;
+
+
+{ TABLE "macabi".setup row size = 515 number of columns = 10 index size = 71 }
+
+create table "macabi".setup 
+  (
+    program_name varchar(32) not null ,
+    parameter_name varchar(32) not null ,
+    parameter_value varchar(32),
+    parameter_type smallint,
+    parameter_min_val varchar(32),
+    parameter_max_val varchar(32),
+    parameter_def_val varchar(32),
+    parameter_prev_val varchar(32),
+    parameter_desc varchar(254),
+    short_desc varchar(26),
+    primary key (program_name,parameter_name) 
+  ) extent size 16 next size 16 lock mode row;
+
+
+{ TABLE "macabi".shrinkdoctor row size = 90 number of columns = 12 index size = 0 }
+
+create table "macabi".shrinkdoctor 
+  (
+    table_name char(18),
+    table_num integer 
+    shrink_time integer 
+    active integer 
+    real_table_name char(18),
+    update_date integer 
+    update_time integer 
+    delete_date integer 
+    ok_flag integer 
+    deleted integer 
+    fieldname char(18) 
+    commit_count integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".spclty_drug_grp row size = 24 number of columns = 6 index size = 17 }
+
+create table "macabi".spclty_drug_grp 
+  (
+    group_code integer 
+    largo_code integer 
+    drug_ep_group integer 
+    parent_group_code integer 
+    update_date integer 
+    update_time integer 
+    primary key (group_code,largo_code,parent_group_code) 
+  ) extent size 240 next size 60 lock mode page;
+
+
+{ TABLE "macabi".spclty_largo_prcnt row size = 97 number of columns = 34 index size = 42 }
+
+create table "macabi".spclty_largo_prcnt 
+  (
+    speciality_code integer not null ,
+    largo_code integer not null ,
+    enabled_status smallint 
+    enabled_mac smallint 
+    enabled_hova smallint 
+    enabled_keva smallint 
+    insurance_type char(1) 
+    price_code smallint 
+    fixed_price integer 
+    wait_months smallint 
+    basic_price_code smallint 
+    basic_fixed_price integer 
+    kesef_price_code smallint 
+    kesef_fixed_price integer 
+    zahav_price_code smallint 
+    zahav_fixed_price integer 
+    yahalom_price_code smallint 
+    yahalom_fixed_prc integer 
+    ins_type_sort smallint 
+    ptn_percent_sort smallint 
+    prev_bas_prc_cod smallint 
+    prev_ksf_prc_cod smallint 
+    prev_zhv_prc_cod smallint 
+    in_health_basket smallint 
+    health_basket_new smallint 
+    update_date integer not null ,
+    update_time integer not null ,
+    changed_date integer 
+    changed_time integer 
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null 
+  ) extent size 400 next size 100 lock mode row;
+
+
+{ TABLE "macabi".sql_srv_audit row size = 34 number of columns = 10 index size = 9 }
+
+create table "macabi".sql_srv_audit 
+  (
+    pid integer not null ,
+    computer_id char(2) 
+    date integer not null ,
+    time integer not null ,
+    msg_id smallint not null ,
+    in_progress smallint not null ,
+    msg_rec_id integer not null ,
+    msg_len integer not null ,
+    err_code integer not null ,
+    msg_count integer not null 
+  ) extent size 80 next size 20 lock mode row;
+
+
+{ TABLE "macabi".sql_srv_audit_doc row size = 26 number of columns = 8 index size = 9 }
+
+create table "macabi".sql_srv_audit_doc 
+  (
+    procid integer not null ,
+    computer_id char(2) 
+    date integer not null ,
+    time integer not null ,
+    msgcode smallint not null ,
+    in_progress smallint not null ,
+    err_code integer not null ,
+    msg_count integer not null 
+  ) extent size 100 next size 48 lock mode row;
+
+
+{ TABLE "macabi".stock row size = 108 number of columns = 28 index size = 89 }
+
+create table "macabi".stock 
+  (
+    r_count serial not null ,
+    pharmacy_code integer not null ,
+    institued_code smallint not null ,
+    user_ident integer not null ,
+    action_type smallint not null ,
+    serial_no integer not null ,
+    date integer not null ,
+    time integer not null ,
+    supplier_for_stock integer not null ,
+    invoice_no varchar(10) not null ,
+    discount_sum integer not null ,
+    diary_month integer not null ,
+    error_code smallint not null ,
+    comm_error_code smallint not null ,
+    terminal_id smallint not null ,
+    num_of_lines_4 smallint not null ,
+    update_date integer not null ,
+    del_flg smallint not null ,
+    update_time integer not null ,
+    reported_to_as400 smallint not null ,
+    vat_amount integer not null ,
+    bil_amount integer not null ,
+    suppl_bill_date integer not null ,
+    suppl_sendnum varchar(10) not null ,
+    bil_amountwithvat integer not null ,
+    bil_amount_beforev integer not null ,
+    bill_constr smallint not null ,
+    bill_invdiff integer not null 
+  ) extent size 20000 next size 10000 lock mode row;
+
+
+{ TABLE "macabi".stock_report row size = 74 number of columns = 22 index size = 81 }
+
+create table "macabi".stock_report 
+  (
+    r_count serial not null ,
+    line_num smallint,
+    pharmacy_code integer not null ,
+    terminal_id smallint not null ,
+    action_type smallint not null ,
+    serial_no integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    diary_month integer not null ,
+    largo_code integer not null ,
+    inventory_op integer not null ,
+    units_amount integer not null ,
+    quantity_type smallint not null ,
+    base_price integer,
+    price_for_op integer not null ,
+    total_drug_price integer not null ,
+    op_stock integer not null ,
+    units_stock integer not null ,
+    min_stock_in_op integer not null ,
+    comm_error_code smallint not null ,
+    del_flg smallint not null ,
+    reported_to_as400 smallint not null 
+  ) extent size 40000 next size 40000 lock mode row;
+
+
+{ TABLE "macabi".subsidy_messages row size = 53 number of columns = 7 index size = 7 }
+
+create table "macabi".subsidy_messages 
+  (
+    subsidy_code smallint not null ,
+    short_desc char(10) 
+    long_desc char(25) 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".suppliers row size = 203 number of columns = 22 index size = 24 }
+
+create table "macabi".suppliers 
+  (
+    supplier_code integer not null ,
+    supplier_name varchar(25) not null ,
+    street_and_no varchar(20) not null ,
+    city varchar(20) not null ,
+    phone_1 varchar(10) not null ,
+    phone_2 varchar(10) not null ,
+    fax_num varchar(10) not null ,
+    comm_supplier integer not null ,
+    zip_code integer not null ,
+    update_date integer not null ,
+    update_time integer not null ,
+    refresh_date integer 
+    refresh_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+    del_flg smallint not null ,
+    supplier_table_cod smallint not null ,
+    supplier_type char(2) not null ,
+    employee_id integer not null ,
+    allowed_proc_list char(50) not null ,
+    employee_password integer not null ,
+    check_type smallint not null 
+  ) extent size 3200 next size 1600 lock mode page;
+
+
+{ TABLE "macabi".sysparams row size = 202 number of columns = 67 index size = 7 }
+
+create table "macabi".sysparams 
+  (
+    sysparamskey smallint 
+    taxamount smallint 
+    inactivitytimeout smallint 
+    hostrsptimeout smallint 
+    lastupdatedate integer 
+    lastupdatetime integer 
+    updatedby smallint 
+    tax10_12_1019 smallint,
+    tax_machon_mac smallint,
+    tax_machon_pr smallint,
+    tax_all smallint,
+    tax_machon_mac_12 integer 
+    tax_urgent smallint 
+    lowerleumitprice integer 
+    upperleumitprice integer 
+    tax_speak_child smallint,
+    tax_speak smallint 
+    lastclicksdate integer 
+    emergencytime smallint 
+    min_refill_days smallint 
+    expensive_drug_prc integer 
+    overseasmaxsaleamt integer 
+    maxdailybuy_pvt integer 
+    maxdailybuy_pplus integer 
+    maxdailybuy_mac integer 
+    max_otc_credit_mon integer 
+    max_future_presc smallint 
+    nihultikrotenabled smallint 
+    enablepplusmeishar smallint 
+    check_card_date smallint 
+    ddi_pilot_enabled smallint 
+    vat_percent float 
+    validhandtime integer 
+    minpharmacytoas400 smallint 
+    clicks_yahalom_flg smallint 
+    ishur_cycle_ovrlap integer 
+    flgmembcontr53 integer 
+    flgmembcontr54 integer 
+    lababsentday integer 
+    flglabres integer 
+    sale_ok_early_days smallint 
+    sale_ok_late_days smallint 
+    del_valid_months smallint 
+    use_new_doc_rx_tbl smallint 
+    use_sale_tables smallint 
+    test_sale_equality smallint 
+    nocard_ph_maxvalid integer 
+    nocard_ph_pvt_kill integer 
+    nocard_ph_mac_kill integer 
+    svc_w_o_card_days smallint 
+    no_show_reject_num smallint 
+    no_show_hist_days smallint 
+    no_show_warn_code smallint 
+    no_show_err_code smallint 
+    round_pkgs_2_pharm smallint 
+    round_pkgs_sold smallint 
+    max_unsold_op_pct smallint 
+    max_units_op_off float 
+    papsdate integer 
+    papstime integer 
+    patldate integer 
+    patltime integer 
+    usage_memory_mons smallint 
+    max_order_sit_days smallint 
+    max_order_work_hrs smallint 
+    ingrsubstmaxratio float 
+    bakarakamutit_mons smallint 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".tables_update row size = 41 number of columns = 3 index size = 38 }
+
+create table "macabi".tables_update 
+  (
+    table_name varchar(32) not null ,
+    update_date integer not null ,
+    update_time integer not null 
+  ) extent size 16 next size 16 lock mode row;
+
+
+{ TABLE "macabi".tempmemb row size = 24 number of columns = 7 index size = 20 }
+
+create table "macabi".tempmemb 
+  (
+    cardid integer 
+    idcode smallint 
+    idnumber integer 
+    validuntil integer 
+    lastupdatedate integer 
+    lastupdatetime integer 
+    updatedby smallint 
+  ) extent size 10000 next size 2000 lock mode row;
+
+
+{ TABLE "macabi".tikra_type row size = 62 number of columns = 7 index size = 6 }
+
+create table "macabi".tikra_type 
+  (
+    tikra_type_code char(1) not null ,
+    short_desc char(15) 
+    long_desc char(30) 
+    update_date integer 
+    update_time integer 
+    as400_batch_date integer 
+    as400_batch_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".unit_of_measure row size = 79 number of columns = 8 index size = 0 }
+
+create table "macabi".unit_of_measure 
+  (
+    unit_abbreviation char(3) not null ,
+    short_desc_english char(8) 
+    long_desc_english char(25) 
+    short_desc_hebrew char(8) 
+    long_desc_hebrew char(25) 
+    send_to_pharmacy smallint 
+    update_date integer 
+    update_time integer 
+  ) extent size 32 next size 32 lock mode page;
+
+
+{ TABLE "macabi".usage_instruct row size = 146 number of columns = 19 index size = 24 }
+
+create table "macabi".usage_instruct 
+  (
+    shape_num smallint not null ,
+    shape_code char(4) 
+    shape_desc char(25) 
+    inst_code smallint not null ,
+    inst_msg varchar(40) 
+    inst_seq smallint not null ,
+    calc_op_flag smallint 
+    unit_code char(3) 
+    unit_seq smallint 
+    unit_name char(8) 
+    unit_desc varchar(25) 
+    open_od_window smallint 
+    concentration_flag smallint 
+    total_unit_name char(10) 
+    round_units_flag smallint 
+    update_date integer 
+    update_time integer 
+    updatedby integer 
+    del_flg char(1) 
+  ) extent size 32 next size 32 lock mode page;
+

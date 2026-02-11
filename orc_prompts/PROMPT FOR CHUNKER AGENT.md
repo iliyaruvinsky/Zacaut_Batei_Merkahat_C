@@ -1,8 +1,8 @@
 # PROMPT FOR CHUNKER AGENT (CH)
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-11
 **Updated By:** Orc
-**Status:** 🔵 READY
+**Status:** 🟡 ACTIVE
 
 ---
 
@@ -36,15 +36,153 @@
 
 ---
 
-## CURRENT TASK: CH-FATHER-001
+## 🚨 CURRENT TASK: CH-MACODBC-001
 
-**Status:** 🔵 READY - CAN START
+**Status:** ✅ COMPLETE
+
+**Target:** MacODBC.h — ODBC infrastructure header (hybrid header/implementation)
+
+**Path:** `source_code/Include/MacODBC.h` (4,121 lines exact)
+
+**Research:** `RESEARCH/MacODBC_deepdive.md` (RES-MACODBC-001 ✅)
+
+**Author context:** MacODBC.h is a database-interface infrastructure replacing Informix embedded SQL (ESQL) with ODBC. Built around a single dispatcher (`ODBC_Exec`) called via 25 API wrapper macros. Supports simultaneous MS-SQL + Informix connections. Nobody other than the author (Don Radlauer) has examined this file — the entire application depends on it.
+
+---
+
+### Primary File
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| MacODBC.h | 4,121 | Central ODBC infrastructure — macros, enums, structs, globals, 11 function implementations under `#ifdef MAIN` |
+
+### Required Context Files
+
+| File | Purpose for Chunking |
+|------|---------------------|
+| `source_code/Include/MacODBC_MyOperatorIDs.h` | Operation enum + `ODBC_MAXIMUM_OPERATION` array sizing |
+| `source_code/Include/GenSql.h` | SQL/sqlca context consumed by MacODBC |
+| `source_code/Include/GenSql_ODBC_OperatorIDs.h` | GenSql operation-ID entries |
+| `source_code/Include/GenSql_ODBC_Operators.c` | Reusable operation-switch cases |
+| `source_code/*/MacODBC_MyOperators.c` | Per-component SQL operation definitions (injected at line 2745-2748) |
+| `source_code/*/MacODBC_MyCustomWhereClauses.c` | Per-component custom WHERE clauses (injected at line 2864-2867) |
+| `source_code/GenSql/GenSql.c` | MAIN_DB/ALT_DB + ODBC_MIRRORING_ENABLED config flow |
+
+**Output:** `CHUNKS/MacODBC/`
+
+---
+
+### CHUNKING STRATEGY FOR MacODBC.h
+
+**Strategy:** Mixed section-level + function-level chunking
+
+**Target chunk size:** 2000-4000 tokens per chunk
+
+This is NOT a typical source file. It's a hybrid header/implementation with a clear sectional structure. Use **section-level** chunking for the header portion and **function-level** chunking for the implementation block.
+
+#### Section-Level Chunks (header portion, lines 1-445)
+
+| Chunk ID | Section | Lines | Content |
+|----------|---------|-------|---------|
+| `ch_macodbc_001_header` | File header + guards + includes | 1-45 | Purpose, #pragma once, #includes |
+| `ch_macodbc_002_constants` | Core constants | 47-101 | ODBC attrs, pointer-validation flags, sticky/parameter limits |
+| `ch_macodbc_003_enums` | Enum definitions | 104-151 | ODBC_DatabaseProvider, ODBC_CommandType, tag_bool |
+| `ch_macodbc_004_structs_globals` | Structs + globals (#ifdef MAIN split) | 163-273 | ODBC_DB_HEADER, ODBC_ColumnParams, all global variable definitions/externs |
+| `ch_macodbc_005_macros` | Macro API | 277-348 | SQL_WORKED/FAILED, 25 wrapper macros, 3 error macros |
+| `ch_macodbc_006_declarations` | Function declarations + SIGSEGV handler ptr | 351-419 | All 11 function prototypes |
+| `ch_macodbc_007_error_enum` | ODBC_ErrorCategory enum | 339-348 | Error category enum (between macros and declarations) |
+
+#### Function-Level Chunks (implementation block, lines 422-4121)
+
+| Chunk ID | Function | Lines | Strategy |
+|----------|----------|-------|----------|
+| `ch_macodbc_010_exec_*` | ODBC_Exec | 446-2657 | **SUB-CHUNKED** (see below) |
+| `ch_macodbc_020_getmainop` | SQL_GetMainOperationParameters | 2661-2817 | Single chunk (157 lines) |
+| `ch_macodbc_021_getwhere` | SQL_GetWhereClauseParameters | 2821-2902 | Single chunk (82 lines) |
+| `ch_macodbc_022_customizedb` | SQL_CustomizePerDB | 2906-3136 | Single chunk (231 lines) |
+| `ch_macodbc_023_parsecols` | ParseColumnList | 3140-3330 | Single chunk (191 lines) |
+| `ch_macodbc_024_findforupdate` | find_FOR_UPDATE_or_GEN_VALUES | 3334-3439 | Single chunk (106 lines) |
+| `ch_macodbc_025_connect` | ODBC_CONNECT | 3443-3794 | Single chunk (352 lines) |
+| `ch_macodbc_026_cleanup` | CleanupODBC | 3798-3819 | Single chunk (22 lines) |
+| `ch_macodbc_027_errorhandler` | ODBC_ErrorHandler | 3823-4004 | Single chunk (182 lines) |
+| `ch_macodbc_028_isvalidptr` | ODBC_IsValidPointer | 4013-4070 | Single chunk (58 lines) |
+| `ch_macodbc_029_segfaultcatcher` | macODBC_SegmentationFaultCatcher | 4073-4118 | Single chunk (46 lines) |
+
+#### ODBC_Exec Sub-Chunking (MANDATORY — 2,212 lines)
+
+`ODBC_Exec` (446-2657) is the central dispatcher. It MUST be sub-chunked semantically by processing phase, NOT by arbitrary line splits.
+
+| Sub-chunk ID | Phase | Lines | Content |
+|-------------|-------|-------|---------|
+| `ch_macodbc_010a_cmd_decode` | Command decode + init | 446-772 | Function entry, command-type switch (634-763), validation |
+| `ch_macodbc_010b_first_call` | First-call initialization | 780-847 | Signal handler install, bool-size probe, one-time setup |
+| `ch_macodbc_010c_op_metadata` | Operation metadata loading | 899-1072 | SQL_GetMainOperationParameters, dynamic SQL, custom WHERE, mirror flag |
+| `ch_macodbc_010d_sticky` | Sticky statement lifecycle | 1086-1231 | Statement allocation, sticky admission (max 120), prepared-state validation, mirror stmt alloc |
+| `ch_macodbc_010e_sql_construct` | SQL construction + customization | 1269-1401 | Column list parsing, SQL_CustomizePerDB call, PREPARE, mirror PREPARE |
+| `ch_macodbc_010f_bind` | Pointer validation + parameter binding | 1456-1640 | SIGSEGV pointer checks (1524/1560/1595), SQLBindCol, SQLBindParameter |
+| `ch_macodbc_010g_execute` | Execute + mirror + fetch | 1641-2283 | SQLExecute, mirror execute, SQLFetch, row counts, merged mirror results |
+| `ch_macodbc_010h_txn_close` | Transaction + isolation + close/free/return | 2284-2657 | Commit/Rollback, dirty/committed/repeatable read, close cursor, free stmt, return |
+
+#### Cross-Reference Metadata
+
+Each chunk must include in its metadata:
+- `dependencies`: Headers and external functions referenced
+- `calls`: Functions called within the chunk
+- `called_by`: Which macros/functions route to this code
+- `cross_refs`: Related chunks and components
+- `tags`: Semantic tags (e.g., "cursor_management", "mirroring", "error_handling", "pointer_validation")
+
+#### Include-Injection Boundaries
+
+Two critical points where per-component code is injected via `#include`:
+1. **Line 2745-2748**: `#include "MacODBC_MyOperators.c"` — inside `SQL_GetMainOperationParameters`
+2. **Line 2864-2867**: `#include "MacODBC_MyCustomWhereClauses.c"` — inside `SQL_GetWhereClauseParameters`
+
+These are cross-reference boundaries. Tag chunks containing them with all components that provide these files.
+
+---
+
+### OUTPUT REQUIREMENTS
+
+#### Directory Structure
+```
+CHUNKS/MacODBC/
+├── repository.json           # All chunks with metadata
+├── graph.json                # Dependency relationships
+├── analysis.json             # Codebase statistics
+├── run_manifest.json         # Execution metadata
+└── DOCUMENTER_INSTRUCTIONS.md # Handoff document
+```
+
+#### repository.json Notes
+
+- Use the chunk IDs specified above (ch_macodbc_001 through ch_macodbc_029, with 010a-010h for ODBC_Exec sub-chunks)
+- Include exact `line_start` and `line_end` for every chunk
+- Include `token_count` (exact, not estimated)
+- Include `summary` for each chunk
+- Tag mirroring-related chunks with `"mirroring"`
+- Tag pointer-validation chunks with `"pointer_validation"`, `"sigsegv"`
+- Tag sticky-statement chunks with `"sticky_statements"`, `"prepared_statement_cache"`
+
+#### DOCUMENTER_INSTRUCTIONS.md Must Include
+
+1. **Author context** — Don Radlauer's explanation of MacODBC as embedded-SQL replacement
+2. **Chunk index** — all chunks with summaries and line ranges
+3. **Recommended documentation order**: API macros first → enums/structs → globals → ODBC_Exec phases → helper functions → ODBC_CONNECT → error handling → pointer validation
+4. **Special documentation needs**: mirroring mechanism, sticky statement lifecycle, SIGSEGV pointer validation, auto-reconnect error conversion
+5. **Cross-references** to per-component MacODBC_MyOperators.c files and GenSql.c
+
+---
+
+## COMPLETED: CH-FATHER-001 ✅
+
+**Status:** ✅ COMPLETE
 
 **Target:** FatherProcess component
 
 **Path:** `source_code/FatherProcess/`
 
-**Files to chunk:**
+**Files chunked:**
 | File | Lines | Purpose |
 |------|-------|---------|
 | FatherProcess.c | ~1973 | Main watchdog daemon |
@@ -54,45 +192,21 @@
 
 **Output:** `CHUNKS/FatherProcess/`
 
+**Strategy:** Function-level chunking with main() sub-chunking (6 sections)
+**Results:** 13 chunks, 2144 lines
+
 ---
 
-## CHUNKING STRATEGY
+## COMPLETED: CH-SHRINK-001 ✅
 
-### For FatherProcess.c (Large File ~1973 lines)
+**Status:** ✅ COMPLETE
 
-**Strategy:** Function-level chunking
+**Target:** ShrinkPharm component
 
-**Target chunk size:** 2000-4000 tokens per chunk
+**Output:** `CHUNKS/ShrinkPharm/`
 
-**Boundaries:**
-1. Function definitions (main, run_system, etc.)
-2. Major comment blocks (`/*===...===*/`)
-3. Logical sections (initialization, main loop, shutdown)
-
-### Functions to Chunk
-
-| Function | Lines | Complexity | Chunk Priority |
-|----------|-------|------------|----------------|
-| main() | 146-1469 | HIGH | Split into sub-chunks |
-| sql_dbparam_into_shm() | 1481-1597 | MEDIUM | Single chunk |
-| SqlGetParamsByName() | 1608-1757 | MEDIUM | Single chunk |
-| run_system() | 1766-1884 | MEDIUM | Single chunk |
-| GetProgParm() | 1893-1926 | LOW | Single chunk |
-| TerminateHandler() | 1937-1972 | LOW | Single chunk |
-
-### main() Sub-chunking
-
-Because main() is ~1300 lines, split into logical sections:
-```
-main_chunk_1: Initialization (lines 146-350)
-main_chunk_2: Table creation and refresh (lines 350-450)
-main_chunk_3: System startup (lines 450-550)
-main_chunk_4: Main watchdog loop - process monitoring (lines 550-800)
-main_chunk_5: Main watchdog loop - child process handling (lines 800-1100)
-main_chunk_6: Main watchdog loop - IPC messages (lines 1100-1200)
-main_chunk_7: Main watchdog loop - instance control (lines 1200-1320)
-main_chunk_8: Shutdown sequence (lines 1320-1469)
-```
+**Strategy:** File-level (small component with 2 functions)
+**Results:** 4 chunks, 600 lines
 
 ---
 

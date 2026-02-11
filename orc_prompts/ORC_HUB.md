@@ -1,6 +1,6 @@
 # ORC HUB - CIDRA Agent Coordination Center
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-11
 **Orchestrator:** Orc
 **Project:** Zacaut_Batei_Merkahat_C (MACCABI Healthcare C Backend)
 **Status:** ACTIVE
@@ -113,6 +113,7 @@ source_code/
 | RES-CONTEXT-001 | Build system context map | ✅ COMPLETE | RESEARCH/*.md |
 | RES-DEEPDIVE-001 | Folder-by-folder deep dive | ⏸️ PAUSED | RESEARCH/*_deepdive.md |
 | RES-SHRINKPHARM-001 | ShrinkPharm deep dive | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
+| RES-MACODBC-001 | MacODBC.h deep dive | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 
 ### CHUNKER (CH) - Stage 0
 
@@ -124,6 +125,7 @@ source_code/
 | CH-PHARM-001 | PharmTcpServer | 📋 PLANNED | - | CHUNKS/PharmTcpServer/ |
 | CH-GENLIB-001 | GenLib | 📋 PLANNED | - | CHUNKS/GenLib/ |
 | CH-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | RES-SHRINKPHARM-001 ✅ | CHUNKS/ShrinkPharm/ |
+| CH-MACODBC-001 | MacODBC.h | ✅ COMPLETE | RES-MACODBC-001 ✅ | CHUNKS/MacODBC/ |
 
 ### DOCUMENTER (DOC) - Stage 1
 
@@ -135,6 +137,7 @@ source_code/
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
 | DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
 | DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
+| DOC-MACODBC-001 | MacODBC.h | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100) |
 
 ### RECOMMENDER (REC) - Stage 2
 
@@ -406,6 +409,102 @@ SECURITY NOTE:
 
 READY FOR: DOC-SHRINK-001
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] RES → CH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: RES-MACODBC-001 COMPLETE
+OUTPUT: RESEARCH/MacODBC_deepdive.md
+
+MacODBC.h exact line count: 4121
+Author: Don Radlauer, December 2019
+Purpose: ODBC infrastructure replacing Informix embedded SQL (ESQL)
+
+KEY ANCHORS (cite these when chunking):
+- File structure: hybrid header/implementation under #ifdef MAIN (two blocks: 168-273 globals, 422-4120 functions)
+- 4 enums: ODBC_DatabaseProvider (104-111), ODBC_CommandType (117-139), tag_bool (145-151), ODBC_ErrorCategory (339-344)
+- 2 structs: ODBC_DB_HEADER (163), ODBC_ColumnParams (164)
+- 25 API wrapper macros at 311-335 (cursor, exec, txn, isolation, error)
+- 11 implemented functions, largest: ODBC_Exec 446-2657 (2212 lines)
+- ODBC_Exec phases: command decode (634-763) → first-call init (780-847) → operation metadata (899-1072) → sticky lifecycle (1086-1231) → SQL construction (1269-1301) → PREPARE/Bind/Execute/Fetch/Commit/Rollback/Close (1341-2640)
+- Mirroring: ODBC_MIRRORING_ENABLED + MAIN_DB/ALT_DB dual-DB support (918, 994-997, 1002, 2023-2034, 2268-2283)
+- Sticky statements: max 120 (ODBC_MAX_STICKY_STATEMENTS), arrays at 225-236, admission at 1145-1159
+- SIGSEGV pointer validation: setjmp/longjmp at 4026-4042, handler at 4086-4095, bind checks at 1524/1560/1595
+- Auto-reconnect: error conversion to DB_CONNECTION_BROKEN at 3938-3959
+- Per-component SQL injection: MacODBC_MyOperators.c included at 2745-2748, MacODBC_MyCustomWhereClauses.c at 2864-2867
+- DB providers: Informix + MS-SQL have runtime logic; DB2/Oracle enum-only
+
+CHUNKING GUIDANCE:
+- ODBC_Exec (2212 lines) MUST be sub-chunked semantically (NOT arbitrary line splits)
+- Use mixed strategy: section-level for header/enums/structs/macros/globals, function-level for implementations
+- Each per-component include injection point (MacODBC_MyOperators.c, MacODBC_MyCustomWhereClauses.c) is a cross-reference boundary
+- Mirroring paths should be tagged in chunks that contain them
+
+SECURITY NOTE (do not copy values into chunks/docs):
+- DB credentials passed to ODBC_CONNECT (username, password) at 3444-3448
+- Env vars MS_SQL_ODBC_USER/MS_SQL_ODBC_PASS sourced in GenSql.c:1088-1091
+- Commented diagnostic with clear-text credential placeholders at 3550
+
+NEXT: Start CH-MACODBC-001 now.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 PRIORITY DISPATCH: CH-MACODBC-001
+PRIORITY: P0 - CLIENT PRIORITY - START NOW
+TARGET: source_code/Include/MacODBC.h (4121 lines)
+RESEARCH: RESEARCH/MacODBC_deepdive.md (RES-MACODBC-001 ✅)
+
+STRATEGY: Mixed section-level + function-level chunking
+SPECIAL: ODBC_Exec (446-2657) must be sub-chunked semantically into ~8 phases
+
+REQUIRED CONTEXT FILES:
+- source_code/Include/MacODBC_MyOperatorIDs.h
+- source_code/Include/GenSql.h
+- source_code/Include/GenSql_ODBC_OperatorIDs.h
+- source_code/Include/GenSql_ODBC_Operators.c
+- source_code/*/MacODBC_MyOperators.c (all components)
+- source_code/*/MacODBC_MyCustomWhereClauses.c (all components)
+- source_code/GenSql/GenSql.c (MAIN_DB/ALT_DB + mirroring config)
+
+OUTPUT: CHUNKS/MacODBC/
+- repository.json, graph.json, analysis.json, run_manifest.json, DOCUMENTER_INSTRUCTIONS.md
+
+PIPELINE: RES-MACODBC-001 ✅ → CH-MACODBC-001 🟡 → DOC-MACODBC-001 ⏸️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] CHUNKER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: CH-MACODBC-001 COMPLETE
+
+RESULTS:
+- Chunks: 25
+- Lines: 4121
+- Files: 1 (MacODBC.h — hybrid header/implementation)
+- Strategy: Mixed section-level (7 header chunks) + function-level (10 helper chunks) + ODBC_Exec sub-chunking (8 phases)
+
+OUTPUT: CHUNKS/MacODBC/
+- repository.json (all 25 chunks with full metadata)
+- graph.json (25 nodes, 24 edges, 3 groups, 5 external dependencies)
+- analysis.json (statistics, complexity assessment, key patterns)
+- run_manifest.json (execution metadata)
+- DOCUMENTER_INSTRUCTIONS.md (handoff with 6-phase documentation order)
+
+KEY FINDINGS:
+- Single dispatcher pattern: 25 API macros → ODBC_Exec (2212 lines, sub-chunked into 8 semantic phases)
+- Database mirroring spans 6 sub-chunks (010c through 010h) — mirror executes BEFORE primary
+- Sticky statement cache: max 120 prepared statements with admission control and prepared-state validation
+- SIGSEGV pointer validation: sigsetjmp/siglongjmp probing of va_arg pointers — highly unusual pattern
+- Auto-reconnect: error conversion to DB_CONNECTION_BROKEN triggers full re-init on next call
+- Include injection: MacODBC_MyOperators.c at line 2747, MacODBC_MyCustomWhereClauses.c at line 2866
+- Provider abstraction: runtime SQL token rewriting bridges Informix and MS-SQL syntax differences
+
+QUALITY:
+- All 4121 lines read across 14 passes; all chunk boundaries verified against source
+- Token range: 120-3700 (18 of 25 in target range; 7 header chunks below 500 — justified by semantic distinctness)
+- Zero chunks above 4000-token maximum
+
+READY FOR: DOC-MACODBC-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Documenter (DOC)
@@ -471,6 +570,56 @@ CODE QUALITY NOTES DOCUMENTED:
 
 READY FOR: Client review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: BLOCKED - WAITING FOR CH-MACODBC-001
+NEXT TASK: DOC-MACODBC-001
+TARGET: MacODBC.h ODBC infrastructure documentation
+DEPENDS: CH-MACODBC-001 (Chunker must complete first)
+CONTEXT: RESEARCH/MacODBC_deepdive.md available now
+REQUIREMENT: 100/100 validation score mandatory
+SCOPE: API macros, globals, enums/structs, function internals (ODBC_Exec phases),
+       mirroring, reconnect, pointer safety, sticky statements, include chain
+NOTE: This is NOT a typical component — it's infrastructure. Documentation must
+      explain both the public API (macros) and the internal implementation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-11] DOCUMENTER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: DOC-MACODBC-001 COMPLETE
+
+RESULTS:
+- Files: 7 documentation files created (Hebrew)
+- Score: 100/100
+- Forbidden words: 0
+- Careful language: 76 occurrences
+- File:line references: 76
+- Source lines verified: 4121 (1 file, 25 chunks)
+- Functions documented: 11
+- API macros documented: 25
+- Consuming components documented: 8
+
+OUTPUT: Documentation/MacODBC/
+- 01_PROGRAM_SPECIFICATION.md
+- 02_SYSTEM_ARCHITECTURE.md
+- 03_TECHNICAL_ANALYSIS.md
+- 04_BUSINESS_LOGIC.md
+- 05_CODE_ARTIFACTS.md
+- README.md
+- VALIDATION_REPORT.md
+
+SPECIAL COVERAGE:
+- ODBC_Exec 8-phase pipeline fully documented
+- Database mirroring mechanism (mirror-first strategy)
+- Sticky statement cache (max 120)
+- SIGSEGV pointer validation (setjmp/longjmp)
+- Auto-reconnect (3 recovery paths)
+- Per-component SQL injection (8 consumers)
+- Security notes (credentials documented by location only)
+
+READY FOR: Client review
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Recommender (REC)
@@ -487,24 +636,27 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** ShrinkPharm pipeline (client priority)
+**Sprint Goal:** MacODBC.h pipeline (client priority — P0) — **✅ COMPLETE**
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
-| P0 | RES-SHRINKPHARM-001 | Researcher | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
-| P1 | CH-SHRINK-001 | Chunker | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
-| P2 | DOC-SHRINK-001 | Documenter | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
-| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after ShrinkPharm |
+| P0 | RES-MACODBC-001 | Researcher | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
+| P0 | CH-MACODBC-001 | Chunker | ✅ COMPLETE | CHUNKS/MacODBC/ |
+| P0 | DOC-MACODBC-001 | Documenter | ✅ COMPLETE | Documentation/MacODBC/ (100/100) |
+| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after MacODBC pipeline |
 
-**Completed This Session:**
+**Completed (all sessions):**
 | Task | Status | Output |
 |------|--------|--------|
 | RES-CONTEXT-001 | ✅ COMPLETE | RESEARCH/*.md |
 | RES-SHRINKPHARM-001 | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
+| RES-MACODBC-001 | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 | CH-FATHER-001 | ✅ COMPLETE | CHUNKS/FatherProcess/ |
 | DOC-FATHER-001 | ✅ COMPLETE | Documentation/FatherProcess/ (100/100) |
 | CH-SHRINK-001 | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
+| CH-MACODBC-001 | ✅ COMPLETE | CHUNKS/MacODBC/ (25 chunks) |
 | DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
+| DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC/ (100/100) |
 
 ---
 
@@ -552,4 +704,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-03 (DOC-SHRINK-001 complete)*
+*Maintained by Orc. Last sync: 2026-02-11 (DOC-MACODBC-001 ✅ COMPLETE — MacODBC pipeline done: RES ✅ → CH ✅ → DOC ✅ 100/100)*

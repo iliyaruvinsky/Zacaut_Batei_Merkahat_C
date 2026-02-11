@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "component": "MacODBC",
+    "file": "source_code/Include/MacODBC.h",
+    "analyzed_at": "2026-02-11T00:00:00Z",
+    "task_id": "CH-MACODBC-001"
+  },
+  "file_statistics": {
+    "total_lines": 4121,
+    "total_chunks": 25,
+    "language": "C",
+    "file_type": "hybrid_header_implementation",
+    "ifdef_main_guard": true,
+    "author": "Don Radlauer",
+    "author_date": "December 2019"
+  },
+  "chunk_distribution": {
+    "header_sections": {
+      "count": 7,
+      "line_range": "1-420",
+      "total_lines": 420,
+      "percentage": "10.2%"
+    },
+    "odbc_exec_sub_chunks": {
+      "count": 8,
+      "line_range": "422-2657",
+      "total_lines": 2236,
+      "percentage": "54.3%"
+    },
+    "helper_functions": {
+      "count": 10,
+      "line_range": "2661-4121",
+      "total_lines": 1461,
+      "percentage": "35.5%"
+    }
+  },
+  "token_statistics": {
+    "total_estimated_tokens": 26260,
+    "min_chunk_tokens": 120,
+    "max_chunk_tokens": 3700,
+    "avg_chunk_tokens": 1050,
+    "chunks_below_500_tokens": 7,
+    "chunks_500_to_2000_tokens": 10,
+    "chunks_2000_to_4000_tokens": 7,
+    "chunks_above_4000_tokens": 0,
+    "below_500_justification": "7 header-section chunks are below the 500-token minimum. These represent semantically distinct sections (includes, constants, enums, structs, macros, error enums, declarations) that cannot be meaningfully merged without losing their individual documentation value. The chunking prompt explicitly defined these as separate chunks."
+  },
+  "complexity_assessment": {
+    "high": {
+      "count": 8,
+      "chunks": [
+        "ch_macodbc_010a_cmd_decode",
+        "ch_macodbc_010d_sticky",
+        "ch_macodbc_010e_sql_construct",
+        "ch_macodbc_010f_bind",
+        "ch_macodbc_010g_execute",
+        "ch_macodbc_010h_txn_close",
+        "ch_macodbc_025_connect",
+        "ch_macodbc_027_errorhandler"
+      ]
+    },
+    "medium": {
+      "count": 7,
+      "chunks": [
+        "ch_macodbc_004_structs_globals",
+        "ch_macodbc_010b_first_call",
+        "ch_macodbc_010c_op_metadata",
+        "ch_macodbc_020_getmainop",
+        "ch_macodbc_021_getwhere",
+        "ch_macodbc_022_customizedb",
+        "ch_macodbc_023_parsecols"
+      ]
+    },
+    "low": {
+      "count": 10,
+      "chunks": [
+        "ch_macodbc_001_header",
+        "ch_macodbc_002_constants",
+        "ch_macodbc_003_enums",
+        "ch_macodbc_005_macros",
+        "ch_macodbc_007_error_enum",
+        "ch_macodbc_006_declarations",
+        "ch_macodbc_024_findforupdate",
+        "ch_macodbc_026_cleanup",
+        "ch_macodbc_028_isvalidptr",
+        "ch_macodbc_029_segfaultcatcher"
+      ]
+    }
+  },
+  "key_patterns_identified": {
+    "hybrid_header_implementation": "Entire file guarded by #ifdef MAIN — globals and all function implementations live in the .h file, compiled once by whichever .c file #defines MAIN before including",
+    "single_dispatcher_pattern": "All 25 public API macros route to a single 2,212-line ODBC_Exec function via ODBC_CommandType enum",
+    "include_injection_pattern": "Per-component switch cases injected via #include at MacODBC.h:2747 (MacODBC_MyOperators.c) and MacODBC.h:2866 (MacODBC_MyCustomWhereClauses.c)",
+    "database_mirroring": "Dual-database execution: primary DB + mirror DB for write operations, controlled by ODBC_MIRRORING_ENABLED global and per-operation CommandIsMirrored flag",
+    "sticky_statement_cache": "Prepared statements cached across calls via StatementPrepared[]/StatementIsSticky[] arrays with ODBC_MAX_STICKY_STATEMENTS=120 limit and admission control",
+    "sigsegv_pointer_validation": "Runtime pointer validation via sigsetjmp/siglongjmp: SIGSEGV handler catches bad pointers during va_arg processing and jumps back to safety",
+    "auto_reconnect": "Connection failures converted to DB_CONNECTION_BROKEN return code; callers retry and ODBC_Exec re-initializes on next call via ODBC_Exec_FirstTimeCalled reset",
+    "provider_abstraction": "SQL token rewriting ({FIRST}/{TOP}, {MODULO}, {TRANSACTION}, {GROUP}) bridges Informix and MS-SQL syntax differences at runtime"
+  },
+  "cross_file_dependencies": {
+    "inbound_includes": [
+      "MacODBC_MyOperatorIDs.h — per-component enum of operation identifiers (included at line 40)",
+      "MacODBC_MyOperators.c — per-component switch cases for SQL_GetMainOperationParameters (included at line 2747)",
+      "MacODBC_MyCustomWhereClauses.c — per-component switch cases for SQL_GetWhereClauseParameters (included at line 2866)"
+    ],
+    "outbound_dependencies": [
+      "GenSql.h — project SQL infrastructure (included at line 39)",
+      "sql.h, sqlext.h — ODBC system headers (lines 21-22)"
+    ],
+    "callers": [
+      "GenSql.c — calls ODBC_CONNECT via INF_CONNECT wrapper",
+      "All component .c files — use the 25 wrapper macros (DeclareCursor, ExecSQL, CommitWork, etc.)"
+    ],
+    "known_component_files": [
+      "source_code/FatherProcess/MacODBC_MyOperators.c",
+      "source_code/FatherProcess/MacODBC_MyCustomWhereClauses.c",
+      "source_code/SqlServer/MacODBC_MyOperators.c",
+      "source_code/SqlServer/MacODBC_MyCustomWhereClauses.c",
+      "source_code/As400UnixServer/MacODBC_MyOperators.c",
+      "source_code/As400UnixServer/MacODBC_MyCustomWhereClauses.c",
+      "source_code/As400UnixClient/MacODBC_MyOperators.c",
+      "source_code/As400UnixClient/MacODBC_MyCustomWhereClauses.c",
+      "source_code/As400UnixDocServer/MacODBC_MyOperators.c",
+      "source_code/As400UnixDocServer/MacODBC_MyCustomWhereClauses.c",
+      "source_code/As400UnixDoc2Server/MacODBC_MyOperators.c",
+      "source_code/As400UnixDoc2Server/MacODBC_MyCustomWhereClauses.c",
+      "source_code/ShrinkPharm/MacODBC_MyOperators.c",
+      "source_code/ShrinkPharm/MacODBC_MyCustomWhereClauses.c",
+      "source_code/GenSql/MacODBC_MyOperators.c"
+    ]
+  },
+  "documentation_priority_notes": [
+    "ODBC_Exec sub-chunks (010a-010h) are the most critical — they contain the core logic and are the hardest to understand",
+    "The include-injection pattern (020_getmainop:2747, 021_getwhere:2866) is the primary integration point between MacODBC and per-component code",
+    "The SIGSEGV pointer validation mechanism (028+029) is highly unusual and needs careful documentation",
+    "The mirroring mechanism spans multiple chunks (010c, 010d, 010e, 010f, 010g, 010h) — documenter should cross-reference",
+    "Auto-reconnect spans error handler (027) and execute phase (010g) — document the full flow"
+  ]
+}

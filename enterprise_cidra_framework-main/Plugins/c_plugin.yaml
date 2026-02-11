@@ -1,0 +1,263 @@
+# CIDRA C/C++ Documentation Plugin
+# Version: 1.0.0
+# Technology: C/C++ (Legacy Systems, UNIX, Embedded)
+
+plugin:
+  name: "C/C++ Documentation Plugin"
+  technology: "C"
+  version: "1.0.0"
+  author: "CIDRA Team"
+  description: "Documentation rules for C/C++ legacy systems (healthcare, process control, UNIX daemons)"
+
+# Supported patterns
+supported_patterns:
+  - "Healthcare system servers"
+  - "UNIX daemons and watchdogs"
+  - "Process supervisors"
+  - "Shared memory applications"
+  - "Database connectivity (ODBC, Informix)"
+  - "Signal handlers"
+  - "IPC (pipes, sockets, semaphores)"
+
+# File patterns to detect C projects
+file_patterns:
+  source_files:
+    - "*.c"
+    - "*.h"
+  project_files:
+    - "Makefile"
+    - "*.vcxproj"
+    - ".cproject"
+  header_locations:
+    - "include/"
+    - "Include/"
+    - "headers/"
+
+# Anti-hallucination rules
+anti_hallucination:
+  rules:
+    - "MUST count actual functions in source file"
+    - "NEVER invent #define macros not in code"
+    - "ALWAYS verify #include statements exist"
+    - "MUST trace function call chains from actual code"
+    - "NEVER assume signal handlers without seeing sigaction/signal"
+    - "ALWAYS cite line numbers for code references"
+    - "MUST verify function signatures (parameters, return types)"
+    - "NEVER invent global variables not declared in code"
+    - "MUST identify all TABLE structures and shared memory usage"
+    - "VERIFY all database operations (SELECT, UPDATE, INSERT)"
+
+  verification_steps:
+    - step: "Count functions"
+      command_windows: "findstr /R /C:\"^[a-zA-Z_].*(.*)\" [FILE] | find /c /v \"\""
+      command_unix: "grep -c '^[a-zA-Z_].*(.*)' [FILE]"
+    - step: "List includes"
+      command: "grep '#include' [FILE]"
+    - step: "Find defines"
+      command: "grep '#define' [FILE]"
+    - step: "List global variables"
+      command: "grep -E '^(static|extern)?\\s*(int|char|void|TABLE|PROC_DATA)' [FILE]"
+    - step: "Count lines"
+      command_windows: "(Get-Content [FILE]).Count"
+      command_unix: "wc -l [FILE]"
+    - step: "Find signal handlers"
+      command: "grep -E 'signal|sigaction|SIGTERM|SIGINT' [FILE]"
+
+# Documentation structure (adapted for C systems)
+documentation:
+  files:
+    - name: "01_PROGRAM_SPECIFICATION.md"
+      sections:
+        - "תיאור התוכנית"
+        - "מבנה קובץ המקור"
+        - "פונקציות ראשיות"
+        - "משתנים גלובליים"
+        - "קבועים (#define)"
+
+    - name: "02_SYSTEM_ARCHITECTURE.md"
+      sections:
+        - "ארכיטקטורת המערכת"
+        - "תרשים זרימה"
+        - "תקשורת בין-תהליכית (IPC)"
+        - "ניהול זיכרון משותף"
+        - "סמפורים ונעילות"
+
+    - name: "03_TECHNICAL_ANALYSIS.md"
+      sections:
+        - "ניתוח טכני מפורט"
+        - "תלויות (#include)"
+        - "פונקציות חיצוניות"
+        - "גישה למסד נתונים"
+        - "טיפול באותות (Signals)"
+
+    - name: "04_BUSINESS_LOGIC.md"
+      sections:
+        - "לוגיקה עסקית"
+        - "תהליכי עבודה"
+        - "טיפול בשגיאות"
+        - "אלגוריתמים עיקריים"
+
+    - name: "05_CODE_ARTIFACTS.md"
+      sections:
+        - "קטעי קוד מרכזיים"
+        - "מבני נתונים (structs)"
+        - "פונקציות קריטיות"
+        - "דוגמאות שימוש"
+
+    - name: "README.md"
+      sections:
+        - "סקירה כללית"
+        - "הוראות הפעלה"
+        - "תלויות"
+        - "קבצים קשורים"
+
+    - name: "VALIDATION_REPORT.md"
+      sections:
+        - "בדיקות שבוצעו"
+        - "ציון איכות"
+        - "ממצאים"
+
+# C-specific patterns to detect
+patterns:
+  function_definition: "^(static\\s+)?(int|void|char\\*?|pid_t|TABLE\\*?)\\s+(\\w+)\\s*\\("
+  macro_definition: "^#define\\s+(\\w+)"
+  include_statement: "^#include\\s+[<\"](.+)[>\"]"
+  struct_definition: "^(typedef\\s+)?struct\\s+(\\w+)"
+  global_variable: "^(static|extern)?\\s*(int|char|TABLE|PROC_DATA|TInstanceControl)"
+  signal_handler: "(sigaction|signal)\\s*\\("
+  fork_exec: "(fork|exec|execv|execvp)\\s*\\("
+  shared_memory: "(shmget|shmat|shmdt|InitFirstExtent|CreateTable)"
+  semaphore: "(semget|semop|CreateSemaphore|DeleteSemaphore)"
+  socket: "(socket|bind|listen|accept|GetSocketMessage)"
+  database: "(SQLMD_connect|SQLMD_disconnect|DeclareCursor|OpenCursor|FetchCursor)"
+
+# Legacy system specific elements
+legacy_system:
+  process_management:
+    - "fork()"
+    - "exec*()"
+    - "waitpid()"
+    - "kill()"
+    - "getpid()"
+    - "getppid()"
+
+  ipc_mechanisms:
+    - "Shared Memory (shm*)"
+    - "Semaphores (sem*)"
+    - "Named Pipes (mkfifo)"
+    - "Sockets"
+    - "Message Queues"
+
+  signal_handling:
+    - "SIGTERM (15) - Graceful shutdown"
+    - "SIGKILL (9) - Hard kill"
+    - "SIGCHLD - Child process status"
+    - "SIGSEGV - Segmentation fault"
+
+  database_patterns:
+    - "ODBC connections"
+    - "Informix (legacy)"
+    - "Cursor operations"
+    - "Prepared statements"
+
+# Healthcare/MACCABI specific
+healthcare_system:
+  subsystems:
+    - "PHARM_SYS - Pharmacy system"
+    - "DOCTOR_SYS - Doctor system"
+    - "DOCTOR_SYS_TCP - Doctor TCP"
+
+  process_types:
+    - "FATHERPROC_TYPE - Watchdog"
+    - "SQLPROC_TYPE - SQL Server"
+    - "AS400TOUNIX_TYPE - AS/400 Bridge"
+
+  shared_memory_tables:
+    - "parm_tablep - Parameters"
+    - "proc_tablep - Processes"
+    - "stat_tablep - Status"
+
+# Validation rules
+validation:
+  required_sections:
+    - "תיאור התוכנית"
+    - "פונקציות ראשיות"
+    - "לוגיקה עסקית"
+    - "קטעי קוד מרכזיים"
+
+  quality_gates:
+    - check: "All functions documented"
+      severity: "error"
+    - check: "All #include verified"
+      severity: "error"
+    - check: "Global variables listed"
+      severity: "warning"
+    - check: "Signal handlers documented"
+      severity: "error"
+    - check: "Line numbers cited"
+      severity: "error"
+
+  min_quality_score: 100
+
+# Chunking strategies for C code
+chunking:
+  strategies:
+    - name: "function_level"
+      description: "One chunk per function"
+      when: "File > 1000 lines"
+
+    - name: "file_level"
+      description: "Entire file as one chunk"
+      when: "File < 500 lines"
+
+    - name: "section_level"
+      description: "Group related functions"
+      when: "File has clear sections (comments)"
+
+  boundaries:
+    - "Function definitions"
+    - "/* === SECTION === */ comments"
+    - "#ifdef blocks"
+    - "Major switch statements"
+
+# IDE integration
+ide_integration:
+  cursor:
+    activation: "@THE_DOCUMENTER_AGENT document c-program [PROGRAM_NAME]"
+
+  claude_code:
+    activation: "Document C program [NAME] following CIDRA standards with C plugin"
+
+  vscode:
+    tasks:
+      - name: "Document C Program"
+        command: "@THE_DOCUMENTER_AGENT document program ${file}"
+
+# Examples
+examples:
+  good:
+    - description: "Correct function count"
+      example: "FatherProcess.c מכיל 12 functions (main, run_system, sql_dbparam_into_shm...)"
+
+    - description: "Verified signal handler"
+      example: "TerminateHandler (שורה 1937) מטפל ב-SIGTERM לכיבוי מסודר"
+
+    - description: "Accurate shared memory"
+      example: "InitFirstExtent (שורה 307) מאתחל SharedSize bytes של זיכרון משותף"
+
+  bad:
+    - description: "Assumed function"
+      example: "כנראה יש פונקציה cleanup() (לא נמצאה בקוד)"
+
+    - description: "Invented signal"
+      example: "מטפל ב-SIGUSR1 (לא קיים בקוד)"
+
+    - description: "Guessed database"
+      example: "מתחבר ל-MySQL (הקוד משתמש ב-ODBC/Informix)"
+
+---
+# Notes for maintainers
+# - This plugin is designed for legacy C systems like MACCABI
+# - Focus on process management, IPC, and database patterns
+# - Update patterns when discovering new legacy code styles
+# - Test with real healthcare systems before releasing
