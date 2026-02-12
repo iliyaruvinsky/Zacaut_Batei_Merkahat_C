@@ -1,6 +1,6 @@
 # ORC HUB - CIDRA Agent Coordination Center
 
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-12
 **Orchestrator:** Orc
 **Project:** Zacaut_Batei_Merkahat_C (MACCABI Healthcare C Backend)
 **Status:** ACTIVE
@@ -137,8 +137,8 @@ source_code/
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
 | DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
 | DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
-| DOC-MACODBC-001 | MacODBC.h | ✅ COMPLETE (Hebrew — superseded) | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, Hebrew) |
-| DOC-MACODBC-002 | MacODBC.h (English) | ✅ COMPLETE | DOC-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, English) |
+| DOC-MACODBC-001 | MacODBC.h (Hebrew) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC_Hebrew/ (100/100, Hebrew) |
+| DOC-MACODBC-002 | MacODBC.h (English) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, English) |
 
 ### RECOMMENDER (REC) - Stage 2
 
@@ -705,11 +705,11 @@ ACTION: None until further notice
 | RES-SHRINKPHARM-001 | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
 | RES-MACODBC-001 | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 | CH-FATHER-001 | ✅ COMPLETE | CHUNKS/FatherProcess/ |
-| DOC-FATHER-001 | ✅ COMPLETE | Documentation/FatherProcess/ (100/100) |
+| DOC-FATHER-001 | ✅ COMPLETE | Documentation/FatherProcess/ + FatherProcess_Hebrew/ (100/100) |
 | CH-SHRINK-001 | ✅ COMPLETE | CHUNKS/ShrinkPharm/ |
 | CH-MACODBC-001 | ✅ COMPLETE | CHUNKS/MacODBC/ (25 chunks) |
-| DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ (100/100) |
-| DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC/ (100/100, Hebrew — superseded) |
+| DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ + ShrinkPharm_Hebrew/ (100/100) |
+| DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC_Hebrew/ (100/100, Hebrew) |
 | DOC-MACODBC-002 | ✅ COMPLETE | Documentation/MacODBC/ (100/100, English) |
 
 ---
@@ -727,8 +727,14 @@ ACTION: None until further notice
 |-----------|-------|---------|
 | `RESEARCH/` | Researcher | Context documentation |
 | `CHUNKS/` | Chunker | Code chunks |
-| `Documentation/` | Documenter | 7-file documentation |
+| `Documentation/{Component}/` | Documenter | 7-file documentation (ENGLISH — default) |
+| `Documentation/{Component}_Hebrew/` | Documenter | 7-file documentation (HEBREW — only if user approves) |
 | `RECOMMENDATIONS/` | Recommender | Modernization plans |
+
+### Language Convention
+- **Default:** English (`Documentation/{Component}/`)
+- **Hebrew:** Only after user approval (`Documentation/{Component}_Hebrew/`)
+- Documenter MUST ask user after English docs are approved: "Would you like me to create a Hebrew version as well?"
 
 ---
 
@@ -758,4 +764,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-11 (DOC-MACODBC-002 ✅ COMPLETE — English re-documentation of MacODBC, 100/100)*
+*Maintained by Orc. Last sync: 2026-02-12 (Language convention updated — English default + Hebrew on user approval; MacODBC_Hebrew/ restored)*
