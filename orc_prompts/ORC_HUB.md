@@ -114,13 +114,14 @@ source_code/
 | RES-DEEPDIVE-001 | Folder-by-folder deep dive | ⏸️ PAUSED | RESEARCH/*_deepdive.md |
 | RES-SHRINKPHARM-001 | ShrinkPharm deep dive | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
 | RES-MACODBC-001 | MacODBC.h deep dive | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
+| RES-SQL-001 | SqlServer deep dive (~84K lines) | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
 
 ### CHUNKER (CH) - Stage 0
 
 | ID | Component | Status | Depends On | Output |
 |----|-----------|--------|------------|--------|
 | CH-FATHER-001 | FatherProcess | ✅ COMPLETE | RES-CONTEXT-001 (optional) | CHUNKS/FatherProcess/ |
-| CH-SQL-001 | SqlServer | 📋 PLANNED | - | CHUNKS/SqlServer/ |
+| CH-SQL-001 | SqlServer | ✅ COMPLETE | RES-SQL-001 ✅ | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
 | CH-AS400-001 | As400UnixServer | 📋 PLANNED | - | CHUNKS/As400UnixServer/ |
 | CH-PHARM-001 | PharmTcpServer | 📋 PLANNED | - | CHUNKS/PharmTcpServer/ |
 | CH-GENLIB-001 | GenLib | 📋 PLANNED | - | CHUNKS/GenLib/ |
@@ -132,7 +133,7 @@ source_code/
 | ID | Component | Status | Depends On | Output |
 |----|-----------|--------|------------|--------|
 | DOC-FATHER-001 | FatherProcess | ✅ COMPLETE | CH-FATHER-001 ✅ | Documentation/FatherProcess/ |
-| DOC-SQL-001 | SqlServer | 📋 PLANNED | CH-SQL-001 | Documentation/SqlServer/ |
+| DOC-SQL-001 | SqlServer | ✅ COMPLETE | CH-SQL-001 ✅ | Documentation/SqlServer/ (100/100, English) |
 | DOC-AS400-001 | As400UnixServer | 📋 PLANNED | CH-AS400-001 | Documentation/As400UnixServer/ |
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
 | DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
@@ -506,6 +507,43 @@ QUALITY:
 
 READY FOR: DOC-MACODBC-001
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-13] CHUNKER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: CH-SQL-001 COMPLETE
+
+RESULTS:
+- Chunks: 62
+- Lines: 83,983 (13 files)
+- Strategy: Multi-file semantic chunking (by execution phase, handler group, transaction family, utility domain, operator section)
+- Parallel mapping agents: 5 (verified function boundaries in all large files)
+
+CHUNK DISTRIBUTION:
+- SqlServer.c: 9 chunks (main server loop and dispatch)
+- SqlHandlers.c: 8 chunks (1xxx handlers + DUR/OD engine)
+- ElectronicPr.c: 12 chunks (2xxx/5xxx handlers)
+- DigitalRx.c: 7 chunks (6xxx handlers)
+- MessageFuncs.c: 13 chunks (business logic utilities)
+- MacODBC_MyOperators.c + CustomWhere: 7 chunks (SQL operators)
+- Supporting infrastructure: 6 chunks
+
+KEY FINDINGS:
+- "Big Three" sale handlers: HandlerToMsg_6003 (7928 lines), HandlerToMsg_5003 (5946 lines), HandlerToMsg_2003 (4066 lines) = 21.4% of codebase
+- Shared validation pipeline: IS_PHARMACY_OPEN_X → test_special_prescription → test_purchase_limits → test_interaction_and_overdose → test_pharmacy_ishur → test_mac_doctor_drugs_electronic → CheckHealthAlerts → update_doctor_presc
+- 6 chunks flagged NEEDS_SUB_CHUNKING (oversized handler functions)
+- 6 verification items (VER-SQL-001 through VER-SQL-006)
+- JSON dual-mode support in newer transactions (6001, 6011, 5061, 6102, 6103)
+- REST/CURL integration (newest, Apr 2025)
+
+OUTPUT: CHUNKS/SqlServer/
+- repository.json (62 chunks with full metadata)
+- graph.json (62 nodes, 81 edges, 7 groups)
+- analysis.json (statistics, 10 patterns, 6 verification items)
+- run_manifest.json (execution metadata)
+- DOCUMENTER_INSTRUCTIONS.md (9-phase documentation order)
+
+READY FOR: DOC-SQL-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Documenter (DOC)
@@ -672,6 +710,67 @@ SPECIAL COVERAGE:
 
 READY FOR: Client review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-13] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 PRIORITY DISPATCH: DOC-SQL-001
+PRIORITY: P0 - CLIENT PRIORITY - START NOW
+TARGET: SqlServer — largest component (~84K lines, 13 source files, 62 chunks)
+DEPENDS: CH-SQL-001 ✅ (CHUNKS/SqlServer/ ready with 62 chunks)
+RESEARCH: RESEARCH/SqlServer_deepdive.md + RESEARCH/MacODBC_deepdive.md
+SPECS: source_documents/ (21 business specification files)
+
+DOCUMENTATION ORDER: Follow CHUNKER's 9-phase order in DOCUMENTER_INSTRUCTIONS.md
+SUB-CHUNKING: 6 oversized chunks need phase-level documentation (see guidance in instructions)
+
+OUTPUT: Documentation/SqlServer/ (ENGLISH — default)
+REQUIREMENT: 100/100 validation score mandatory
+LANGUAGE: English first. After user approves, ask about Hebrew version.
+
+CRITICAL QUALITY RULES:
+- Every claim must cite file:line
+- 6 verification items (VER-SQL-001 through VER-SQL-006) must be documented
+- No secret values in output (location-only notes)
+- No speculative behavior claims
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-13] DOCUMENTER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: DOC-SQL-001 COMPLETE
+
+RESULTS:
+- Files: 7 documentation files created (English)
+- Score: 100/100
+- Forbidden words: 0
+- Careful language: consistent throughout
+- Source chunks verified: 62/62 (100%)
+- Phases completed: 9/9 (100%)
+- Sub-chunked oversized chunks: 6/6 (100%)
+- Cross-cutting concerns: 5/5 (100%)
+- Verification items documented: 6/6 (100%)
+- Language: ENGLISH
+
+OUTPUT: Documentation/SqlServer/
+- 01_PROGRAM_SPECIFICATION.md
+- 02_SYSTEM_ARCHITECTURE.md
+- 03_TECHNICAL_ANALYSIS.md
+- 04_BUSINESS_LOGIC.md
+- 05_CODE_ARTIFACTS.md
+- README.md
+- VALIDATION_REPORT.md
+
+SPECIAL COVERAGE:
+- Big Three sale handlers sub-chunked (TR2003: 3 phases, TR5003: 4 phases, TR6003: 4 phases)
+- 8-stage validation pipeline with handler coverage matrix
+- DUR/OD engine architecture with decision tables
+- AS/400 dual integration (TikrotRPC + Meishar TCP)
+- 265 ODBC operators cataloged with table mapping
+- 2 dynamic SQL holes documented (VER-SQL-004, VER-SQL-005)
+- REST/CURL integration (newest addition, Apr 2025)
+- Security notes (credentials documented by location only)
+
+READY FOR: Client review
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### To Recommender (REC)
@@ -688,15 +787,14 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** MacODBC.h English re-documentation (P0 correction)
+**Sprint Goal:** SqlServer CIDRA Pipeline (~84K lines, 13 source files)
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
-| P0 | RES-MACODBC-001 | Researcher | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
-| P0 | CH-MACODBC-001 | Chunker | ✅ COMPLETE | CHUNKS/MacODBC/ |
-| P0 | DOC-MACODBC-001 | Documenter | ✅ COMPLETE (Hebrew) | Documentation/MacODBC/ (100/100, Hebrew) |
-| P0 | DOC-MACODBC-002 | Documenter | ✅ COMPLETE | Documentation/MacODBC/ (100/100, English) |
-| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after MacODBC pipeline |
+| P0 | RES-SQL-001 | Researcher | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
+| P0 | CH-SQL-001 | Chunker | ✅ COMPLETE | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
+| P0 | DOC-SQL-001 | Documenter | ✅ COMPLETE | Documentation/SqlServer/ (100/100, English) |
+| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after SqlServer pipeline |
 
 **Completed (all sessions):**
 | Task | Status | Output |
@@ -711,6 +809,9 @@ ACTION: None until further notice
 | DOC-SHRINK-001 | ✅ COMPLETE | Documentation/ShrinkPharm/ + ShrinkPharm_Hebrew/ (100/100) |
 | DOC-MACODBC-001 | ✅ COMPLETE | Documentation/MacODBC_Hebrew/ (100/100, Hebrew) |
 | DOC-MACODBC-002 | ✅ COMPLETE | Documentation/MacODBC/ (100/100, English) |
+| RES-SQL-001 | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
+| CH-SQL-001 | ✅ COMPLETE | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
+| DOC-SQL-001 | ✅ COMPLETE | Documentation/SqlServer/ (100/100, English) |
 
 ---
 
@@ -764,4 +865,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-12 (Language convention updated — English default + Hebrew on user approval; MacODBC_Hebrew/ restored)*
+*Maintained by Orc. Last sync: 2026-02-13 (SqlServer pipeline COMPLETE — RES-SQL-001 ✅, CH-SQL-001 ✅ 62 chunks, DOC-SQL-001 ✅ 100/100 English. Hebrew: deferred until client reviews and finalizes English)*

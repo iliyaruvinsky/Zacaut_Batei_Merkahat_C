@@ -1,0 +1,98 @@
+{
+  "task_id": "CH-SQL-001",
+  "agent": "CHUNKER",
+  "component": "SqlServer",
+  "target_files": [
+    "source_code/SqlServer/SqlServer.c",
+    "source_code/SqlServer/SqlHandlers.c",
+    "source_code/SqlServer/ElectronicPr.c",
+    "source_code/SqlServer/DigitalRx.c",
+    "source_code/SqlServer/MessageFuncs.c",
+    "source_code/SqlServer/MacODBC_MyOperators.c",
+    "source_code/SqlServer/MacODBC_MyCustomWhereClauses.c",
+    "source_code/SqlServer/SocketAPI.h",
+    "source_code/SqlServer/SocketAPI.c",
+    "source_code/SqlServer/DebugPrint.c",
+    "source_code/SqlServer/TikrotRPC.c",
+    "source_code/SqlServer/As400UnixMediator.h",
+    "source_code/SqlServer/As400UnixMediator.c"
+  ],
+  "status": "COMPLETED",
+  "started_at": "2026-02-13T00:00:00Z",
+  "completed_at": "2026-02-13T00:00:00Z",
+  "depends_on": "RES-SQL-001",
+  "unblocks": "DOC-SQL-001",
+  "output_directory": "CHUNKS/SqlServer/",
+  "output_files": [
+    {
+      "file": "repository.json",
+      "description": "62 chunk definitions with metadata, summaries, tags, dependencies, calls, cross-references, and complexity ratings across 13 source files",
+      "status": "CREATED"
+    },
+    {
+      "file": "graph.json",
+      "description": "Dependency graph with 62 nodes, 80 edges, 7 groups, and 9 external dependencies",
+      "status": "CREATED"
+    },
+    {
+      "file": "analysis.json",
+      "description": "Codebase statistics, token distribution, complexity assessment, 10 key patterns, 6 verification items, and cross-file dependencies",
+      "status": "CREATED"
+    },
+    {
+      "file": "run_manifest.json",
+      "description": "This file — execution metadata and quality metrics",
+      "status": "CREATED"
+    },
+    {
+      "file": "DOCUMENTER_INSTRUCTIONS.md",
+      "description": "Handoff document for DOC-SQL-001 with recommended documentation order, sub-chunking guidance, and cross-references",
+      "status": "CREATED"
+    }
+  ],
+  "chunking_strategy": {
+    "approach": "multi_file_semantic_chunking",
+    "rationale": "13 source files chunked by semantic boundaries: SqlServer.c by execution phase (9 chunks), SqlHandlers.c by handler/template grouping (8 chunks), ElectronicPr.c by 2xxx/5xxx transaction family (12 chunks), DigitalRx.c by 6xxx transaction family (7 chunks), MessageFuncs.c by utility function domain (13 chunks), MacODBC_MyOperators.c by operator section (6 chunks), supporting files as individual chunks (7 chunks).",
+    "total_chunks": 62,
+    "breakdown": {
+      "main_server_phases": 9,
+      "handler_groups_1xxx": 8,
+      "handler_groups_2xxx_5xxx": 12,
+      "handler_groups_6xxx": 7,
+      "business_logic_domains": 13,
+      "operator_sections": 7,
+      "infrastructure_files": 6
+    }
+  },
+  "quality_metrics": {
+    "total_lines_covered": 83983,
+    "gap_lines": "Inter-function whitespace, comment separators, and file boundaries — no functional code is missed",
+    "token_range": "140-27750 (target: 500-8000)",
+    "chunks_in_target_range": "45 of 62 (72.6%)",
+    "chunks_below_minimum": "7 (all headers or small supporting files — justified by semantic distinctness)",
+    "chunks_above_maximum": "10 (all monolithic handler functions — flagged NEEDS_SUB_CHUNKING where appropriate)",
+    "all_function_boundaries_verified": true,
+    "line_numbers_verified_against_source": true,
+    "verification_items_tagged": 6,
+    "dynamic_sql_operators_identified": 2
+  },
+  "research_inputs_used": [
+    "RESEARCH/SqlServer_deepdive.md — Researcher agent deep dive with file inventory and architecture analysis",
+    "RESEARCH/MacODBC_deepdive.md — MacODBC architecture and include-injection pattern",
+    "RESEARCH/context_summary.md — System architecture overview",
+    "RESEARCH/header_inventory.md — Header file inventory",
+    "RESEARCH/component_profiles.md — Component profiles",
+    "CHUNKS/FatherProcess/repository.json — Schema reference for chunk format",
+    "CHUNKS/MacODBC/repository.json — Schema reference with sub-chunking example",
+    "CHUNKS/MacODBC/graph.json — Edge format reference",
+    "enterprise_cidra_framework-main/Plugins/c_plugin.yaml — C language chunking rules",
+    "enterprise_cidra_framework-main/Agents/THE_CHUNKER_AGENT/agent_specification.md — CIDRA chunker specification"
+  ],
+  "parallel_agents_used": [
+    { "agent_id": "acd83b8", "file": "ElectronicPr.c", "purpose": "Map 40 function definitions across 26161 lines" },
+    { "agent_id": "ab58d59", "file": "DigitalRx.c", "purpose": "Map 8 function definitions across 22955 lines" },
+    { "agent_id": "a309bd0", "file": "MessageFuncs.c", "purpose": "Map 61 function definitions across 13631 lines" },
+    { "agent_id": "a561268", "file": "SqlHandlers.c", "purpose": "Map 27 function definitions across 8458 lines" },
+    { "agent_id": "a8a9b38", "file": "MacODBC_MyOperators.c", "purpose": "Map 265 operator case definitions across 8418 lines" }
+  ]
+}

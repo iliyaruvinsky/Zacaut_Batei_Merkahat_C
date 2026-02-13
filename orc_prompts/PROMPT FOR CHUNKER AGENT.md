@@ -1,8 +1,8 @@
 # PROMPT FOR CHUNKER AGENT (CH)
 
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** 🟡 ACTIVE
+**Status:** ✅ COMPLETE — CH-SQL-001 (SqlServer: 62 chunks, 83,983 lines) | CH-MACODBC-001 ✅ | CH-SHRINK-001 ✅ | CH-FATHER-001 ✅
 
 ---
 
@@ -22,16 +22,29 @@
 
 ## MANDATORY PRE-TASK PROTOCOL
 
-**BEFORE starting ANY chunking task:**
+### STEADY PRE-READING (PERMANENT — applies to ALL tasks)
 
-1. Read ORC_HUB.md for current project state
-2. Read the CIDRA Chunker specification: `enterprise_cidra_framework-main/Agents/THE_CHUNKER_AGENT/agent_specification.md`
-3. Load the C plugin: `enterprise_cidra_framework-main/Plugins/c_plugin.yaml`
-4. Check if Researcher has context available in RESEARCH/
+**BEFORE starting ANY chunking task, ALWAYS read these documents first:**
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | Coordination Hub | `orc_prompts/ORC_HUB.md` | Current project state, task registry, agent statuses, shared resources |
+| 2 | System Context Summary | `RESEARCH/context_summary.md` | System-wide architecture: IPC, shared memory, process hierarchy, DB access patterns |
+| 3 | Header Inventory | `RESEARCH/header_inventory.md` | What every header file in `source_code/Include/` provides |
+| 4 | Component Profiles | `RESEARCH/component_profiles.md` | Overview of all 7+ server components and their roles |
+| 5 | CIDRA Chunker Spec | `enterprise_cidra_framework-main/Agents/THE_CHUNKER_AGENT/agent_specification.md` | Chunker methodology and output format |
+| 6 | C Plugin | `enterprise_cidra_framework-main/Plugins/c_plugin.yaml` | C-language-specific chunking rules |
+
+These documents provide the architectural foundation and methodology. A fresh agent has ZERO context — these files fill that gap.
+
+### THEN follow these steps:
+1. Read any **DYNAMIC PRE-READING** listed in the current task section below
+2. Check if Researcher has additional context in `RESEARCH/`
+3. Review previous chunking outputs for pattern consistency (see completed tasks below)
 
 **After reading, acknowledge:**
 ```
-"I have read the coordination hub and CIDRA specifications. Beginning chunking task [TASK_ID]."
+"I have read the coordination hub, steady pre-reading, and CIDRA specifications. Beginning chunking task [TASK_ID]."
 ```
 
 ---
@@ -171,6 +184,151 @@ CHUNKS/MacODBC/
 3. **Recommended documentation order**: API macros first → enums/structs → globals → ODBC_Exec phases → helper functions → ODBC_CONNECT → error handling → pointer validation
 4. **Special documentation needs**: mirroring mechanism, sticky statement lifecycle, SIGSEGV pointer validation, auto-reconnect error conversion
 5. **Cross-references** to per-component MacODBC_MyOperators.c files and GenSql.c
+
+---
+
+## COMPLETED: CH-SQL-001 ✅
+
+**Status:** ✅ COMPLETE — 62 chunks, 83,983 lines, 13 files, 5 parallel mapping agents
+
+**Target:** SqlServer — the **largest and most complex component** (~84K lines, 13 source files)
+
+**Path:** `source_code/SqlServer/`
+
+**Research:** `RESEARCH/SqlServer_deepdive.md` (RES-SQL-001 ✅) + Merged Research Baseline (below)
+
+### ⚠️ DYNAMIC PRE-READING FOR CH-SQL-001
+
+After completing the steady pre-reading (see MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents:
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | SqlServer Deep Dive | `RESEARCH/SqlServer_deepdive.md` | **Researcher's full analysis** of all 13 files. Contains function inventory, transaction dispatch map, DB table references, cross-references. This is your PRIMARY input for chunking decisions. |
+| 2 | MacODBC Deep Dive | `RESEARCH/MacODBC_deepdive.md` | SqlServer defines `#define MAIN` before `#include <MacODBC.h>` — understanding the ODBC layer is essential for chunking SQL operator definitions and DB access patterns. |
+| 3 | Previous chunking output (FatherProcess) | `CHUNKS/FatherProcess/` | Reference for chunking conventions: repository.json schema, graph.json format, DOCUMENTER_INSTRUCTIONS.md structure. FatherProcess used function-level chunking with main() sub-chunking. |
+| 4 | Previous chunking output (MacODBC) | `CHUNKS/MacODBC/` | Reference for how a LARGE hybrid file was chunked: section-level + function-level with sub-chunking of the central dispatcher. Relevant pattern for SqlServer's large files. |
+| 5 | Key headers | `source_code/Include/MsgHndlr.h`, `source_code/Include/PharmDBMsgs.h`, `source_code/Include/MacODBC_MyOperatorIDs.h` | Transaction framework, wire protocol fields, SQL operator ID enums — needed to understand handler boundaries and chunk semantics. |
+
+---
+
+### MERGED RESEARCH BASELINE (Source of Truth from Researcher Agents A/B/C)
+
+#### Runtime/Control-Flow Spine
+- `SqlServer.c` orchestrates: startup → steady loop → dispatch → accounting → shutdown
+- `SqlHandlers.c` provides generic handler scaffolding and special response paths
+
+#### Business Logic Ownership
+- `ElectronicPr.c` is core for **2xxx** and **5xxx** transaction families
+- `DigitalRx.c` is core for **6xxx** and **610x** transaction families
+- `MessageFuncs.c` holds critical shared rule engines
+
+#### SQL/ODBC Mapping Model
+- Operator IDs in `source_code/Include/MacODBC_MyOperatorIDs.h`
+- Operation SQL mapping in `source_code/SqlServer/MacODBC_MyOperators.c`
+- Generic inherited SQL via `source_code/Include/GenSql_ODBC_Operators.c`
+- Runtime ODBC behavior in `source_code/Include/MacODBC.h` (sticky/mirroring/custom WHERE/convert-not-found logic)
+
+---
+
+### MANDATORY CHUNKING BOUNDARIES
+
+Use **semantic boundaries** — NOT uniform splits. The following boundaries are mandatory:
+
+#### SqlServer.c — 6 semantic zones
+| Zone | Content |
+|------|---------|
+| startup | Init, signal handlers, DB connect, sysparams load, cache loaders |
+| steady loop | Main `while(1)` loop: shared memory update, go-down check, signal handling |
+| dispatch switch | Central `switch` routing ~60+ transaction codes to handlers |
+| post-dispatch accounting | After handler returns: commit/rollback, statistics, sign-of-life |
+| signal/termination | TerminateHandler, ClosedPipeHandler, NihulTikrot enable/disable |
+| cache loaders | LoadTrnPermissions, LoadPrescrSource, init_package_size_array |
+
+#### SqlHandlers.c — by handler + template zones
+| Zone | Content |
+|------|---------|
+| generic wrapper/template | Common handler scaffolding, retry loops, error paths |
+| special file-output paths | Spool handlers (HandlerToSpool_*) |
+| interaction/overdose logic | Drug interaction checking, DUR validation |
+| individual handlers | One chunk per handler function (HandlerToMsg_1001, DownloadDrugList, etc.) |
+
+#### ElectronicPr.c and DigitalRx.c — by transaction family AND phase
+| Phase | Content |
+|-------|---------|
+| pre-gates | Permission checks, version validation, input parsing |
+| per-line pricing/rule checks | Participation calculation, price lookup, quantity validation |
+| compliance checks | 29-G form processing, health alerts, drug interactions |
+| persistence/update/deletion flows | DB writes, status updates, audit logging |
+
+**Sub-chunk very large handlers** (especially HandlerToMsg_6001_6101 and HandlerToMsg_6003) by these phases.
+
+#### MacODBC_MyOperators.c — 4 regions
+| Region | Content |
+|--------|---------|
+| include seam | `#include "GenSql_ODBC_Operators.c"` at line 87 — inherited generic operators |
+| dense TR2xxx region | Electronic prescription operators |
+| dense TR6xxx region | Digital prescription operators |
+| dynamic-SQL holes | Operators with `SQL_CommandText = NULL` (runtime-built SQL) |
+
+#### MessageFuncs.c — by utility function
+One chunk per utility function. Group related functions (e.g., all message-parsing helpers, all field-extraction helpers, all pricing/calculation helpers).
+
+#### Supporting files — single chunk each
+SocketAPI.c, SocketAPI.h, DebugPrint.c, TikrotRPC.c, As400UnixMediator.c, As400UnixMediator.h, MacODBC_MyCustomWhereClauses.c — one chunk per file.
+
+---
+
+### LINKAGE METADATA (MANDATORY in every chunk)
+
+Preserve these relationships in chunk metadata:
+- **handler → helper**: Which MessageFuncs.c utilities each handler calls
+- **helper → operator ID**: Which MacODBC_MyOperatorIDs.h enums each utility uses
+- **operator ID → SQL/table**: Which SQL template and database table each operator accesses
+- **handler → AS/400**: Which handlers call TikrotRPC or As400UnixMediator functions
+
+---
+
+### KNOWN VERIFICATION BACKLOG (Mark in chunks)
+
+These items were flagged `[NEEDS_VERIFICATION]` by the Researcher. Tag relevant chunks:
+- Full 100x business behavior (incomplete spec coverage)
+- Full branch parity depth for 2005/5005
+- Runtime callsites for dynamic SQL operators (`SQL_CommandText = NULL` paths)
+- Actual mirroring activation in deployment/runtime config
+- Reachability of "NO LONGER IN USE" operator paths
+- `ClosedPipeHandler` line with `accept_sock == -1` behavior intent
+
+---
+
+### OUTPUT REQUIREMENTS
+
+#### Directory Structure
+```
+CHUNKS/SqlServer/
+├── repository.json           # All chunks with metadata (semantic boundaries)
+├── graph.json                # Dependency graph (handler→helper→operator→table)
+├── analysis.json             # Codebase statistics
+├── run_manifest.json         # Execution metadata
+└── DOCUMENTER_INSTRUCTIONS.md # Handoff document with narrative order
+```
+
+#### DOCUMENTER_INSTRUCTIONS.md Must Include
+
+1. **Merged research baseline** — Runtime spine, business logic ownership, SQL/ODBC model
+2. **Chunk index** — All chunks with summaries and line ranges
+3. **Recommended documentation order** (as specified by the research baseline):
+   1. Runtime architecture and lifecycle
+   2. Dispatch ownership map (which file implements what)
+   3. Transaction family behavior
+   4. Decision stack (validation → rules → compliance → persistence)
+   5. SQL/operator/table model
+   6. External integrations (AS/400, Tikrot/Meishar)
+   7. Reliability/recovery/signals
+   8. Security/PII notes (location only, redact values)
+4. **Must-document transaction families**: 2001, 2003, 2005, 5003, 5005, 6001/6101, 6003, 6005, 6102, 6103
+5. **Verification backlog** — All `[NEEDS_VERIFICATION]` items from research
+6. **Cross-references** to MacODBC_MyOperators.c, GenSql_ODBC_Operators.c, source_documents/
+7. **Unresolved/dynamic SQL callsite dependencies** — explicit mark for operators with `SQL_CommandText = NULL`
 
 ---
 

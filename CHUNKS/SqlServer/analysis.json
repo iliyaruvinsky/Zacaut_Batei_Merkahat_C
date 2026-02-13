@@ -1,0 +1,194 @@
+{
+  "metadata": {
+    "component": "SqlServer",
+    "analyzed_at": "2026-02-13T00:00:00Z",
+    "task_id": "CH-SQL-001"
+  },
+  "file_statistics": {
+    "total_lines": 83983,
+    "total_chunks": 62,
+    "total_files": 13,
+    "language": "C",
+    "file_breakdown": [
+      { "file": "SqlServer.c", "lines": 2362, "chunks": 9, "role": "Main server loop and dispatch" },
+      { "file": "SqlHandlers.c", "lines": 8458, "chunks": 8, "role": "1xxx transaction handlers + DUR/OD engine" },
+      { "file": "ElectronicPr.c", "lines": 26161, "chunks": 12, "role": "2xxx/5xxx electronic/subsidy handlers" },
+      { "file": "DigitalRx.c", "lines": 22955, "chunks": 7, "role": "6xxx digital prescription handlers" },
+      { "file": "MessageFuncs.c", "lines": 13631, "chunks": 13, "role": "Shared business logic utilities" },
+      { "file": "MacODBC_MyOperators.c", "lines": 8418, "chunks": 6, "role": "ODBC SQL operator definitions" },
+      { "file": "MacODBC_MyCustomWhereClauses.c", "lines": 274, "chunks": 1, "role": "Custom WHERE clause fragments" },
+      { "file": "SocketAPI.h", "lines": 47, "chunks": 1, "role": "TCP socket API header" },
+      { "file": "SocketAPI.c", "lines": 265, "chunks": 1, "role": "TCP socket wrapper implementation" },
+      { "file": "DebugPrint.c", "lines": 105, "chunks": 1, "role": "Debug logging utility" },
+      { "file": "TikrotRPC.c", "lines": 494, "chunks": 1, "role": "DB2 stored procedure RPC" },
+      { "file": "As400UnixMediator.h", "lines": 153, "chunks": 1, "role": "AS/400 TCP client header" },
+      { "file": "As400UnixMediator.c", "lines": 660, "chunks": 1, "role": "AS/400 Meishar TCP client" }
+    ]
+  },
+  "chunk_distribution": {
+    "main_server": { "count": 9, "total_lines": 2362, "percentage": "2.8%" },
+    "handlers_1xxx": { "count": 8, "total_lines": 8458, "percentage": "10.1%" },
+    "handlers_2xxx_5xxx": { "count": 12, "total_lines": 26161, "percentage": "31.1%" },
+    "handlers_6xxx": { "count": 7, "total_lines": 22955, "percentage": "27.3%" },
+    "business_logic": { "count": 13, "total_lines": 13631, "percentage": "16.2%" },
+    "odbc_operators": { "count": 7, "total_lines": 8692, "percentage": "10.3%" },
+    "infrastructure": { "count": 6, "total_lines": 1724, "percentage": "2.1%" }
+  },
+  "token_statistics": {
+    "total_estimated_tokens": 290535,
+    "min_chunk_tokens": 140,
+    "max_chunk_tokens": 27750,
+    "avg_chunk_tokens": 4686,
+    "chunks_below_500_tokens": 7,
+    "chunks_500_to_8000_tokens": 45,
+    "chunks_above_8000_tokens": 10,
+    "below_500_justification": "7 small chunks are headers or supporting file headers (ch_sql_001_globals, ch_sql_050_msgfn_header, ch_sql_070_ops_header, ch_sql_080_socketapi_h, ch_sql_082_debugprint, ch_sql_084_as400med_h, ch_sql_009_cache_loaders) — each represents a semantically distinct section that cannot be meaningfully merged.",
+    "above_8000_justification": "10 chunks exceed 8000 tokens. These are monolithic handler functions (single C function per chunk) that cannot be split at function boundaries. The 6 largest are: ch_sql_042_trn6003 (27750, HandlerToMsg_6003), ch_sql_024_trn5003 (20810, HandlerToMsg_5003), ch_sql_041_trn6001_6101 (17740, HandlerToMsg_6001_6101), ch_sql_071_ops_general (14340, 118 operator cases), ch_sql_022_trn2003 (14230, HandlerToMsg_2003), ch_sql_025_trn5005 (12700, delivery pair). All 6 handler chunks are flagged NEEDS_SUB_CHUNKING for the documenter to split by semantic phases within the function body."
+  },
+  "complexity_assessment": {
+    "very_high": {
+      "count": 14,
+      "chunks": [
+        "ch_sql_015_trn1053_1055",
+        "ch_sql_017_dur_od_engine",
+        "ch_sql_022_trn2003",
+        "ch_sql_023_trn2005",
+        "ch_sql_024_trn5003",
+        "ch_sql_025_trn5005",
+        "ch_sql_041_trn6001_6101",
+        "ch_sql_042_trn6003",
+        "ch_sql_043_trn6005_rt",
+        "ch_sql_044_trn6005_spool",
+        "ch_sql_055_special_presc",
+        "ch_sql_059_health_alerts",
+        "ch_sql_060_doctor_updates"
+      ]
+    },
+    "high": {
+      "count": 18,
+      "chunks": [
+        "ch_sql_003_dbconnect", "ch_sql_004_mainloop", "ch_sql_006_dispatch_switch",
+        "ch_sql_008_signal_handlers", "ch_sql_011_trn1001", "ch_sql_021_trn2001",
+        "ch_sql_045_trn6011", "ch_sql_046_trn6102_6103", "ch_sql_052_tbl_error_infra",
+        "ch_sql_053_pharmacy_auth", "ch_sql_054_drug_interaction", "ch_sql_056_usage_limits",
+        "ch_sql_057_ishur_special", "ch_sql_058_doctor_pricing", "ch_sql_071_ops_general",
+        "ch_sql_083_tikrotrpc", "ch_sql_085_as400med_c"
+      ]
+    },
+    "medium": {
+      "count": 16,
+      "chunks": [
+        "ch_sql_002_startup", "ch_sql_005_dispatch_pre", "ch_sql_007_post_dispatch",
+        "ch_sql_012_trn1011_1014", "ch_sql_013_trn1022_1028", "ch_sql_026_trn2033_6033",
+        "ch_sql_028_update_2070_2084", "ch_sql_029_recon_2086_2101", "ch_sql_031_epr_utils",
+        "ch_sql_061_member_services", "ch_sql_062_rest_integration", "ch_sql_072_ops_tr1xxx",
+        "ch_sql_073_ops_tr2xxx", "ch_sql_075_ops_tr6xxx", "ch_sql_081_socketapi_c",
+        "ch_sql_086_customwhere"
+      ]
+    },
+    "low": {
+      "count": 14,
+      "chunks": [
+        "ch_sql_001_globals", "ch_sql_009_cache_loaders", "ch_sql_010_sqlhdl_header",
+        "ch_sql_014_trn1043_1051", "ch_sql_016_trn1080_wrappers", "ch_sql_020_epr_header",
+        "ch_sql_027_reftbl_2060_2068", "ch_sql_030_reftbl_5051_5061", "ch_sql_040_drx_header",
+        "ch_sql_050_msgfn_header", "ch_sql_051_msg_parsing", "ch_sql_070_ops_header",
+        "ch_sql_074_ops_tr5xxx", "ch_sql_080_socketapi_h", "ch_sql_082_debugprint",
+        "ch_sql_084_as400med_h"
+      ]
+    }
+  },
+  "key_patterns_identified": {
+    "central_dispatch_pattern": "SqlServer.c contains a single MakeAndSendReturnMessage() function with a switch(MsgIndex) routing ~60+ transaction codes to handler functions across 3 files (SqlHandlers.c, ElectronicPr.c, DigitalRx.c)",
+    "generic_handler_template": "Many handlers use a GENERIC_HandlerToMsg_XXXX pattern with thin realtime/spool wrappers. Examples: GenHandlerToMsg_1001, GENERIC_HandlerToMsg_1022_6022, GENERIC_HandlerToMsg_1053, GENERIC_HandlerToMsg_2033_6033",
+    "realtime_spool_pairs": "Sale/delivery transactions have paired handlers: one for realtime processing (HandlerToMsg_XXXX) and one for deferred/batch processing (HandlerToSpool_XXXX). The spool variant adds duplicate detection and recovery logic",
+    "validation_pipeline": "Core sale handlers (2003, 5003, 6003) share a common validation pipeline: IS_PHARMACY_OPEN_X → test_special_prescription → test_purchase_limits → test_interaction_and_overdose → test_pharmacy_ishur → test_mac_doctor_drugs_electronic → CheckHealthAlerts → update_doctor_presc",
+    "include_injection_pattern": "MacODBC_MyOperators.c is injected at MacODBC.h:2747 and MacODBC_MyCustomWhereClauses.c at MacODBC.h:2866 via #include directives inside switch statements",
+    "shared_operator_pattern": "Some operators are shared across transaction families using naming convention: TR2003_5003_READ_doctor_presc (shared by TR2003 and TR5003), TR2005_5005spool_READ_members (shared by spool variants)",
+    "hourly_cache_refresh": "Main loop refreshes sysparams, package sizes, error severities, transaction permissions, and prescription sources on hourly intervals",
+    "as400_dual_integration": "Two distinct AS/400 integration paths: TikrotRPC.c (DB2 stored procedure via ODBC for Nihul Tikrot) and As400UnixMediator.c (TCP socket client for Meishar eligibility/sale records)",
+    "json_dual_mode": "Newer transactions (6001, 6011, 5061, 6102, 6103) support JSON request/response alongside legacy binary message format via cJSON library",
+    "sigsegv_passthrough": "TerminateHandler in SqlServer.c passes SIGSEGV through to MacODBC's pointer validation mechanism via siglongjmp, rather than treating it as fatal"
+  },
+  "verification_backlog": [
+    {
+      "id": "VER-SQL-001",
+      "chunk": "ch_sql_008_signal_handlers",
+      "file": "SqlServer.c",
+      "line": 1940,
+      "description": "accept_sock == -1 appears to be a comparison (==) instead of assignment (=) in ClosedPipeHandler. If confirmed, this is a bug causing socket resource leak on SIGPIPE.",
+      "severity": "high"
+    },
+    {
+      "id": "VER-SQL-002",
+      "chunk": "ch_sql_082_debugprint",
+      "file": "DebugPrint.c",
+      "line": "~50",
+      "description": "vsprintf() into char[10000] with no bounds checking. Potential buffer overflow if format string output exceeds 10000 characters.",
+      "severity": "medium"
+    },
+    {
+      "id": "VER-SQL-003",
+      "chunk": "ch_sql_083_tikrotrpc",
+      "file": "TikrotRPC.c",
+      "line": "~200-300",
+      "description": "Uses deprecated ODBC 2.x APIs (SQLAllocEnv, SQLAllocConnect, SQLAllocStmt) instead of ODBC 3.x SQLAllocHandle. Config file path /pharm/bin/NihulTikrot.cfg is hardcoded.",
+      "severity": "low"
+    },
+    {
+      "id": "VER-SQL-004",
+      "chunk": "ch_sql_071_ops_general",
+      "file": "MacODBC_MyOperators.c",
+      "line": 4182,
+      "description": "Dynamic SQL hole: CheckForInteractionIshur_READ_IshurCount has SQL_CommandText=NULL. SQL is built at runtime by the calling function CheckForInteractionIshur in MessageFuncs.c.",
+      "severity": "info"
+    },
+    {
+      "id": "VER-SQL-005",
+      "chunk": "ch_sql_073_ops_tr2xxx",
+      "file": "MacODBC_MyOperators.c",
+      "line": 5820,
+      "description": "Dynamic SQL hole: TR2088_prescription_drugs_cur has SQL_CommandText=NULL. SQL is generated dynamically at runtime by HandlerToMsg_2088.",
+      "severity": "info"
+    },
+    {
+      "id": "VER-SQL-006",
+      "chunk": "ch_sql_081_socketapi_c",
+      "file": "SocketAPI.c",
+      "line": "~230",
+      "description": "GetAddress() uses deprecated gethostbyname() which is not thread-safe. Modern replacement is getaddrinfo().",
+      "severity": "low"
+    }
+  ],
+  "cross_file_dependencies": {
+    "inbound_includes": [
+      "MacODBC.h — ODBC infrastructure header, compiled into SqlServer via #define MAIN",
+      "MsgHndlr.h — Transaction framework header, ~70+ globals via #define MAIN",
+      "PharmacyErrors.h — Error code definitions",
+      "MacODBC_MyOperatorIDs.h — Operator ID enums (hundreds of entries)",
+      "GenSql_ODBC_Operators.c — Shared GenSql operators injected at MyOperators.c:87",
+      "MessageFuncs.h — Utility function prototypes",
+      "DBFields.h — Database field definitions",
+      "cJSON — JSON parsing library (external)",
+      "libcurl — HTTP client library (external)"
+    ],
+    "outbound_dependencies": [
+      "FatherProcess — parent supervisor (spawns SqlServer, manages shared memory)",
+      "AS/400 Meishar — external TCP service for eligibility/sale (port 9400)",
+      "AS/400 DB2 — external stored procedure RKPGMPRD.TIKROT for Nihul Tikrot",
+      "REST services — member ID translation and eligibility without card"
+    ],
+    "sibling_components_using_macodbc": [
+      "FatherProcess", "ShrinkPharm", "As400UnixServer", "As400UnixClient",
+      "As400UnixDocServer", "As400UnixDoc2Server", "GenSql"
+    ]
+  },
+  "documentation_priority_notes": [
+    "The 3 core sale handlers (2003, 5003, 6003) are the most critical — they contain the primary business logic and call into all validation functions. Total: ~18,000 lines.",
+    "The validation pipeline in MessageFuncs.c (chunks 053-061) is called by all sale handlers and represents the shared business rules engine.",
+    "The DUR/OD engine (ch_sql_017) + drug interaction checking (ch_sql_054) form a safety-critical subsystem for drug-drug interaction and overdose detection.",
+    "The include-injection pattern connecting MacODBC_MyOperators.c (ch_sql_070-075) to MacODBC.h is the key integration point — document the full chain from operator ID → SQL definition → ODBC_Exec execution.",
+    "AS/400 integration (ch_sql_083 + ch_sql_085) represents external system dependencies with distinct failure modes and recovery patterns.",
+    "The 6 chunks flagged NEEDS_SUB_CHUNKING should be prioritized for phase-level documentation to make the business logic comprehensible."
+  ]
+}

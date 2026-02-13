@@ -1,8 +1,8 @@
 # PROMPT FOR RESEARCHER AGENT (RES)
 
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** 🔵 ACTIVE
+**Status:** ✅ COMPLETE — RES-SQL-001 (SqlServer deep dive) | Merged baseline delivered
 
 ---
 
@@ -22,16 +22,28 @@
 
 ## MANDATORY PRE-TASK PROTOCOL
 
-**BEFORE starting ANY research task:**
+### STEADY PRE-READING (PERMANENT — applies to ALL tasks)
 
-1. Read ORC_HUB.md for current project state
-2. Check if other agents need your findings
+**BEFORE starting ANY research task, ALWAYS read these documents first:**
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | Coordination Hub | `orc_prompts/ORC_HUB.md` | Current project state, task registry, agent statuses, shared resources |
+| 2 | System Context Summary | `RESEARCH/context_summary.md` | System-wide architecture: IPC, shared memory, process hierarchy, DB access patterns |
+| 3 | Header Inventory | `RESEARCH/header_inventory.md` | What every header file in `source_code/Include/` provides |
+| 4 | Component Profiles | `RESEARCH/component_profiles.md` | Overview of all 7+ server components and their roles |
+
+These 4 documents provide the architectural foundation for understanding ANY component in the system. A fresh agent has ZERO context — these files fill that gap.
+
+### THEN follow these steps:
+1. Check if other agents need your findings (see ORC_HUB task registry)
+2. Read any **DYNAMIC PRE-READING** listed in the current task section below
 3. Plan your investigation approach
 4. Document your methodology
 
 **After reading, acknowledge:**
 ```
-"I have read the coordination hub. Beginning research task [TASK_ID]."
+"I have read the coordination hub and steady pre-reading documents. Beginning research task [TASK_ID]."
 ```
 
 ---
@@ -639,6 +651,399 @@ Create: `RESEARCH/MacODBC_deepdive.md`
    - Any surprising findings
    - Any open questions
 3. Notify Orc: `RES-MACODBC-001 COMPLETE`
+
+---
+
+## COMPLETED: RES-SQL-001 ✅
+
+**Status:** ✅ COMPLETE — Merged baseline from Agents A/B/C delivered to Orc
+
+**Goal:** Deep-dive research on SqlServer — the **largest and most complex component** in the entire system
+
+**Priority:** P0 — Client priority. SqlServer is the central transaction handler for the MACCABI pharmacy backend. It processes ~60+ transaction codes across 13 source files (~84,000 lines total).
+
+**Target:** `source_code/SqlServer/` (13 files)
+
+**Context:** SqlServer is the primary server process responsible for handling ALL pharmacy transaction types — from shift management (1xxx), to electronic prescription reference tables (2xxx), to Nihul Tikrot subsidy operations (5xxx), to digital prescription operations (6xxx). It communicates with pharmacy terminals via a wire protocol where each transaction has a request (odd code) and response (even code, usually +1).
+
+---
+
+## RES-SQL-001: SqlServer DEEP-DIVE RESEARCH
+
+### ⚠️ DYNAMIC PRE-READING FOR RES-SQL-001 (after steady pre-reading)
+
+After completing the steady pre-reading (see MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents before touching any source file in `source_code/SqlServer/`:
+
+#### Step A — MacODBC Infrastructure (CRITICAL)
+| Document | Path | Why |
+|----------|------|-----|
+| MacODBC Deep Dive | `RESEARCH/MacODBC_deepdive.md` | **SqlServer.c defines `#define MAIN` before `#include <MacODBC.h>`** — it is THE compilation unit that instantiates all ODBC functions, globals, and the central ODBC_Exec dispatcher. Without understanding this, you cannot understand any SQL operation in SqlServer. |
+
+#### Step B — Key Headers Used by SqlServer
+Read these **source headers** that define the transaction framework:
+| Header | Path | Why |
+|--------|------|-----|
+| MsgHndlr.h | `source_code/Include/MsgHndlr.h` | **THE transaction framework**: message structures, PRESCR_SOURCE, PHARM_TRN_PERMISSIONS, ALL global variables (under `#ifdef MAIN`), prescription data types, DUR interaction structs, member/drug record types. This is ~1000+ lines and defines the entire pharmacy data model. |
+| PharmDBMsgs.h | `source_code/Include/PharmDBMsgs.h` | Wire protocol field definitions — transaction request/response message layouts |
+| MacODBC_MyOperatorIDs.h | `source_code/Include/MacODBC_MyOperatorIDs.h` | Enum of ALL SQL operator IDs used in MacODBC_MyOperators.c (hundreds of operators). Each operator maps to a SQL query. |
+| MessageFuncs.h | `source_code/Include/MessageFuncs.h` | Function prototypes for MessageFuncs.c + key macros (dentist drug tests, participation codes) |
+| DBFields.h | `source_code/Include/DBFields.h` | Database field name/type mapping |
+| PharmacyErrors.h | `source_code/Include/PharmacyErrors.h` | Error code definitions used throughout all handlers |
+| TikrotRPC.h | `source_code/Include/TikrotRPC.h` | Tikrot (Nihul Tikrot) subsidy RPC definitions + **contains credentials (note location only, redact values)** |
+| GenSql.h | `source_code/Include/GenSql.h` | GenSql framework: TableTab[], cursor macros, DB initialization |
+
+#### Step C — Existing Partial Research
+| Document | Path | Why |
+|----------|------|-----|
+| Existing SqlServer deep dive (partial) | `RESEARCH/SqlServer_deepdive.md` | **A previous Researcher already started this file** (dated 2026-02-02). It has exact file inventory (22 files including build files = 84,407 lines) and analysis of the 6 smaller files (supporting files). **EXTEND this file — do NOT start from scratch.** The large files (SqlServer.c, SqlHandlers.c, ElectronicPr.c, DigitalRx.c, MessageFuncs.c, MacODBC_MyOperators.c) are marked as "not yet deep-read" and need your analysis. |
+
+#### Step D — Business Context (Transaction Specifications)
+The `source_documents/` folder contains **21 specification files** (Hebrew, mostly .docx + 1 .xlsx + 1 .pdf) that define the wire protocol for each transaction. These are the "why" behind the code. **You do NOT need to read all 21 files now** — but you MUST be aware they exist and reference them when analyzing corresponding handlers. The Orc has already mapped specs to handlers in the table below.
+
+**After completing steady + dynamic pre-reading, acknowledge:**
+```
+"I have completed all pre-reading. Key context loaded:
+- System architecture from RESEARCH/*.md (steady)
+- MacODBC infrastructure from RESEARCH/MacODBC_deepdive.md
+- Transaction framework from MsgHndlr.h
+- SQL operator IDs from MacODBC_MyOperatorIDs.h
+- Existing partial research from RESEARCH/SqlServer_deepdive.md
+Beginning deep-read of SqlServer source files."
+```
+
+---
+
+### Why This Matters
+
+SqlServer is the **backbone of the pharmacy backend**. Every pharmacy terminal communicates through it. It routes ~60+ transaction codes to handler functions spread across 4 main source files, uses shared message utilities, and interfaces with both MS-SQL databases and AS/400 mainframes. Understanding this component is prerequisite for accurate documentation.
+
+### File Inventory (verified from previous session)
+
+| File | Lines | Role |
+|------|-------|------|
+| ElectronicPr.c | 26,161 | Electronic prescription handlers (TR 2xxx) |
+| DigitalRx.c | 22,955 | Digital prescription handlers (TR 6xxx) |
+| MessageFuncs.c | 13,631 | Shared message handling utilities |
+| MacODBC_MyOperators.c | 8,418 | ODBC SQL operators for SqlServer |
+| SqlHandlers.c | 8,458 | Core pharmacy handlers (TR 1xxx + misc) |
+| SqlServer.c | 2,362 | Main entry, init, dispatch switch |
+| As400UnixMediator.c | 660 | AS/400 RPC bridge |
+| TikrotRPC.c | 494 | Tikrot (subsidy) RPC calls to AS/400 |
+| MacODBC_MyCustomWhereClauses.c | 274 | Custom SQL WHERE clauses |
+| SocketAPI.c | 265 | Socket wrapper |
+| As400UnixMediator.h | 153 | AS/400 mediator header |
+| DebugPrint.c | 105 | Debug logging |
+| SocketAPI.h | 47 | Socket header |
+| **TOTAL** | **~83,983** | |
+
+**IMPORTANT:** This is the largest component by far. Read files in sections (500-700 lines at a time for large files). Budget your analysis carefully.
+
+### Business Context — Transaction Specifications
+
+The `source_documents/` folder contains **21 specification files** describing the wire protocol for each transaction. These specs define the request/response field layouts. Key mappings:
+
+| Transaction | Spec File | Handler Function | Source File |
+|-------------|-----------|-----------------|-------------|
+| 1001/1002 | טרנזקציה 1001-1002.docx | HandlerToMsg_1001, HandlerToSpool_1001 | SqlHandlers.c |
+| 1011/1012 | טרנזקציה 1011-1012.docx | DownloadDrugList | SqlHandlers.c |
+| 1013/1042 | טרנזקציה 1013-1042.docx | HandlerToMsg_1013, HandlerToSpool_1013 | SqlHandlers.c |
+| 1014/1015 | טרנזקציה 1014-1015.docx | HandlerToMsg_1014 | SqlHandlers.c |
+| 1043/1044 | טרנזקציה 1043-1044.docx | HandlerToMsg_1043 | SqlHandlers.c |
+| 2064/2065 | טרנזקציה 2064-2065.docx | HandlerToMsg_2064 | ElectronicPr.c |
+| 2074/2075 | טרנזקציה 2074-2075.docx | HandlerToMsg_2074 | ElectronicPr.c |
+| 2078/2079 | טרנזקציה 2078-2079.docx | HandlerToMsg_2078 | ElectronicPr.c |
+| 2080/2081 | טרנזקציה 2080-2081.docx | HandlerToMsg_2080 | ElectronicPr.c |
+| 2082/2083 | טרנזקציה 2082-טבלת הערות.pdf | HandlerToMsg_2082 | ElectronicPr.c |
+| 2084/2085 | טרנזקציה 2084-2085.docx | HandlerToMsg_2084 | ElectronicPr.c |
+| 2092/2093 | טרנזקציה 2092-2093.docx | HandlerToMsg_2070_2092 | ElectronicPr.c |
+| 2094/2095 | טרנזקציה 2094-2095.docx | DownloadDrugList | SqlHandlers.c |
+| 6001/6002 | טרנזקציה 6001-6002.docx | HandlerToMsg_6001_6101 | DigitalRx.c |
+| 6003/6004 | טרנזקציה 6003-6004.docx | HandlerToMsg_6003 | DigitalRx.c |
+| 6005/6006 | טרנזקציה 6005-6006.docx | HandlerToMsg_6005, HandlerToSpool_6005 | DigitalRx.c |
+| 6022/6023 | טרנזקציה 6022-6023.docx | HandlerToMsg_1022_6022 | SqlHandlers.c |
+| 6033/6034 | טרנזקציה 6033-6034.docx | HandlerToMsg_2033_6033 | SqlHandlers.c |
+
+**Additional transactions in code WITHOUT specs:** 1022, 1026, 1028, 1047, 1049, 1051, 1053, 1055, 1080, 2001, 2003, 2005, 2033, 2060, 2062, 2066, 2068, 2070, 2072, 2076, 2086, 2088, 2090, 2096, 2101, 5003, 5005, 5051, 5053, 5055, 5057, 5059, 5061, 5090, 6011, 6102, 6103
+
+**Excel business logic:** `source_documents/טבלת לוגיקה-חנות וירטואלית-17.12.24.xlsx` — 3 tabs: (1) Virtual pharmacy eligibility logic (29 reason codes), (2) System parameters (6 params), (3) Usage instruction fields (#48-#63). These map to TR 6001/6101 response fields #67-#78 in DigitalRx.c.
+
+### Research Objectives
+
+#### 1. SqlServer.c — Main Entry & Dispatch (2,362 lines)
+
+This is the architectural backbone. Document:
+
+- **main() function** — initialization sequence, signal handlers, connections
+- **Central dispatch switch** (lines ~1286-1687) — EVERY case label with:
+  - Transaction code
+  - Handler function called
+  - Source file where handler lives
+  - Brief description of what the transaction does
+- **Initialization functions** — DB connection setup, shared memory attachment, socket setup
+- **Signal handlers** — TerminateHandler, any others
+- **Global variables** and configuration
+
+#### 2. SqlHandlers.c — Core Pharmacy Handlers (8,458 lines)
+
+Document ALL handler functions for the 1xxx transaction series:
+
+- **HandlerToMsg_1001** / **HandlerToSpool_1001** — Open shift
+- **DownloadDrugList** — Item table download (handles both 1011 and 2094)
+- **HandlerToMsg_1013** / **HandlerToSpool_1013** — Close shift
+- **HandlerToMsg_1014** — Maccabi price list update
+- **HandlerToMsg_1043** — Error table download
+- **HandlerToMsg_1022_6022** — Inventory operations
+- **HandlerToMsg_2033_6033** — Pharmacist approval
+- ALL other handler functions in this file
+
+For each function:
+- Exact start/end line numbers
+- Function signature
+- Transaction code(s) it handles
+- Database tables accessed
+- Wire protocol fields parsed/built
+- AS/400 calls (if any)
+
+#### 3. ElectronicPr.c — Electronic Prescription Handlers (26,161 lines)
+
+This is the **largest single file**. Document ALL handler functions for 2xxx transactions:
+
+- **HandlerToMsg_2064** — Units of measure table
+- **HandlerToMsg_2074** — Item procedures/protocols
+- **HandlerToMsg_2078** — Promotions (MaccabiCare)
+- **HandlerToMsg_2080** — Gadgets (item-service mapping)
+- **HandlerToMsg_2082** — Drug notes table
+- **HandlerToMsg_2084** — Item-drug notes mapping
+- **HandlerToMsg_2070_2092** — Generic groups (shared handler)
+- ALL other handler functions (2060, 2062, 2066, 2068, 2072, 2076, 2086, 2088, 2090, 2096, 2101)
+
+For each function: same detail as SqlHandlers.c above.
+
+#### 4. DigitalRx.c — Digital Prescription Handlers (22,955 lines)
+
+Document ALL handler functions for 6xxx transactions:
+
+- **HandlerToMsg_6001_6101** — Prescription request (THE BIG ONE — includes virtual store logic)
+  - This handler implements the virtual pharmacy eligibility logic from the Excel spreadsheet
+  - Fields #67-#78 in the response correspond to the virtual store reason codes
+- **HandlerToMsg_6003** — Dispensing request
+- **HandlerToMsg_6005** / **HandlerToSpool_6005** — Dispensing report
+- **HandlerToMsg_6011** — (identify from code)
+- **HandlerToMsg_6102** — (identify from code)
+- **HandlerToMsg_6103** — (identify from code)
+
+For each function: same detail as above.
+
+#### 5. MessageFuncs.c — Shared Message Utilities (13,631 lines)
+
+Document:
+- ALL utility functions (message parsing, field extraction, buffer management)
+- Wire protocol helpers (how messages are structured: header, body, fields)
+- Shared data structures used across handlers
+- Error handling utilities
+- Logging/debug functions
+
+#### 6. MacODBC_MyOperators.c — SQL Operators (8,418 lines)
+
+**IMPORTANT:** This file `#include "GenSql_ODBC_Operators.c"` at line 87 — meaning the GenSql shared operators are compiled into it. Also read `source_code/Include/GenSql_ODBC_Operators.c` and `source_code/Include/GenSql_ODBC_OperatorIDs.h` for the full operator picture.
+
+Document:
+- ALL SQL operator definitions (SQL_GetMainOperationParameters cases)
+- Database tables referenced (from SQL queries)
+- SQL query patterns (SELECT, INSERT, UPDATE, DELETE)
+- Relationship to MacODBC.h macro API
+- Which operators are SqlServer-specific vs. GenSql shared
+
+#### 7. Supporting Files
+
+- **MacODBC_MyCustomWhereClauses.c** (274 lines) — Custom WHERE clause builders
+- **TikrotRPC.c** (494 lines) — Tikrot (subsidy/threshold) RPC calls to AS/400
+- **As400UnixMediator.c** (660 lines) + **As400UnixMediator.h** (153 lines) — AS/400 communication bridge
+- **SocketAPI.c** (265 lines) + **SocketAPI.h** (47 lines) — Socket wrapper
+- **DebugPrint.c** (105 lines) — Debug logging
+
+For each: file:line inventory of all functions, purpose, dependencies.
+
+### Reading Strategy
+
+Given the massive size (~84K lines), use this prioritized reading order:
+
+```
+Phase 1: SqlServer.c (2,362 lines) — Read fully. Get the architecture.
+Phase 2: SqlHandlers.c (8,458 lines) — Read in 500-line passes.
+Phase 3: ElectronicPr.c (26,161 lines) — Read in 600-line passes. Focus on function boundaries.
+Phase 4: DigitalRx.c (22,955 lines) — Read in 600-line passes. Focus on function boundaries.
+Phase 5: MessageFuncs.c (13,631 lines) — Read in 600-line passes.
+Phase 6: MacODBC_MyOperators.c (8,418 lines) — Read in 500-line passes.
+Phase 7: All supporting files (1,998 lines total) — Read fully.
+```
+
+For the large files (ElectronicPr.c, DigitalRx.c, MessageFuncs.c), focus on:
+1. Function boundaries (start/end lines) — identify ALL functions first
+2. Function signatures and purpose
+3. Database table references
+4. Transaction code references
+5. Key business logic patterns
+
+### Output
+
+Create: `RESEARCH/SqlServer_deepdive.md`
+
+```markdown
+# SqlServer — Deep Dive
+
+## Overview
+[What this component does, its role in the MACCABI pharmacy system]
+
+## File Inventory
+| File | Lines | Purpose |
+|------|-------|---------|
+(exact counts verified)
+
+## Architecture
+### Main Entry Point (SqlServer.c)
+- Initialization sequence
+- Signal handlers
+- Dispatch mechanism
+
+### Transaction Dispatch Map
+| Code | Handler | File:Line | Description |
+|------|---------|-----------|-------------|
+(EVERY transaction code with exact handler location)
+
+## Transaction Handler Analysis
+
+### 1xxx — Core Pharmacy Operations
+#### HandlerToMsg_1001 (SqlHandlers.c:N-M)
+- Purpose: Open shift
+- Request fields: [list]
+- Response fields: [list]
+- DB tables: [list]
+- SQL operations: [list]
+
+(repeat for each 1xxx handler)
+
+### 2xxx — Electronic Prescription Reference Tables
+(same format for each 2xxx handler)
+
+### 5xxx — Nihul Tikrot (Subsidy) Operations
+(same format)
+
+### 6xxx — Digital Prescription Operations
+(same format, with special attention to 6001/6101 virtual store logic)
+
+## Message Handling (MessageFuncs.c)
+### Utility Functions
+| Function | File:Line | Purpose |
+|----------|-----------|---------|
+(list all)
+
+### Wire Protocol Structure
+- Header format
+- Field encoding
+- Message types
+
+## SQL Operator Definitions (MacODBC_MyOperators.c)
+### Database Tables
+| Table | Operations | Referenced By |
+|-------|-----------|---------------|
+(list all tables with SQL operations)
+
+### Operator Inventory
+| Operator ID | SQL Template | Tables | Type |
+|-------------|-------------|--------|------|
+(list all operators)
+
+## AS/400 Integration
+### TikrotRPC.c
+- Functions and RPC calls
+- Transaction codes handled
+
+### As400UnixMediator
+- Communication mechanism
+- Functions provided
+
+## Supporting Infrastructure
+### SocketAPI
+- Functions provided
+- Usage patterns
+
+### DebugPrint
+- Logging mechanism
+
+## Dependencies
+### Headers Included
+| Header | Provides | Used By |
+|--------|----------|---------|
+(list all #include directives)
+
+### External Components
+- GenLib functions used
+- GenSql functions used
+- MacODBC.h API calls
+
+## Cross-References
+### Business Context (source_documents/)
+| Transaction | Spec Document | Handler | Verified Match |
+|-------------|--------------|---------|----------------|
+(correlate specs with code)
+
+### Virtual Store Logic (Excel → Code mapping)
+- Reason codes → DigitalRx.c fields
+- System parameters → configuration
+- Usage instruction fields → TR 6002 response fields #48-#63
+
+## Global Variables
+| Variable | Type | File:Line | Purpose |
+|----------|------|-----------|---------|
+(list all globals)
+
+## Security Notes
+- [Credential handling — location only, redact values]
+- [Input validation patterns]
+
+## Open Questions
+- [Anything unclear after research]
+```
+
+### Quality Gates
+
+- [ ] All 13 files read completely (every line accounted for)
+- [ ] Exact line counts verified for each file
+- [ ] ALL functions listed with exact file:line citations
+- [ ] ALL transaction codes mapped to handlers with exact line numbers
+- [ ] Database tables identified from SQL operators
+- [ ] Wire protocol patterns documented
+- [ ] AS/400 integration documented
+- [ ] Cross-references to source_documents verified
+- [ ] Virtual store logic (Excel) mapped to code
+- [ ] Dependencies mapped (includes, GenLib, GenSql, MacODBC)
+- [ ] Global variables inventoried
+- [ ] Security-sensitive locations noted (values redacted)
+- [ ] Zero forbidden words without verification
+- [ ] Every claim has file:line citation
+
+### Anti-Hallucination Rules (CRITICAL)
+
+1. **DO NOT GUESS** line numbers or function counts. Read the code.
+2. **DO NOT ASSUME** handler behavior from transaction names. Read the implementation.
+3. **DO NOT ESTIMATE** counts. Verify with actual reading.
+4. **DO NOT SKIP** any file or section. All 13 files must be read.
+5. **IF UNCERTAIN**, mark as `[NEEDS VERIFICATION]`.
+6. **VERIFY AFTER WRITING** — Read back the output file to confirm accuracy.
+7. **BUDGET CAREFULLY** — With ~84K lines, focus on function boundaries and key logic. Don't try to document every local variable.
+
+### On Completion
+
+1. Update this file (PROMPT FOR RESEARCHER AGENT.md) with status update
+2. Include in status update:
+   - Exact line count per file (verified)
+   - Count of handler functions found
+   - Count of transaction codes mapped
+   - Count of database tables identified
+   - Any surprising findings
+   - Any open questions
+3. Notify Orc: `RES-SQL-001 COMPLETE`
 
 ---
 

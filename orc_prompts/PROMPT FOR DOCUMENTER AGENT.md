@@ -1,8 +1,8 @@
 # PROMPT FOR DOCUMENTER AGENT (DOC)
 
-**Last Updated:** 2026-02-12
+**Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** ✅ COMPLETE (DOC-MACODBC-002 — English re-documentation) | Language rules updated
+**Status:** ✅ COMPLETE — DOC-SQL-001 (SqlServer documentation, 7 files, 100/100, English) | Language rules active
 
 ---
 
@@ -22,17 +22,29 @@
 
 ## MANDATORY PRE-TASK PROTOCOL
 
-**BEFORE starting ANY documentation task:**
+### STEADY PRE-READING (PERMANENT — applies to ALL tasks)
 
-1. Read ORC_HUB.md for current project state
-2. Read CIDRA Documenter specification: `enterprise_cidra_framework-main/Agents/THE_DOCUMENTER_AGENT/agent_specification.md`
-3. Load the C plugin: `enterprise_cidra_framework-main/Plugins/c_plugin.yaml`
-4. Read Chunker output: `CHUNKS/{component}/DOCUMENTER_INSTRUCTIONS.md`
-5. Read Researcher output: `RESEARCH/context_summary.md` (if available)
+**BEFORE starting ANY documentation task, ALWAYS read these documents first:**
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | Coordination Hub | `orc_prompts/ORC_HUB.md` | Current project state, task registry, agent statuses, shared resources |
+| 2 | System Context Summary | `RESEARCH/context_summary.md` | System-wide architecture: IPC, shared memory, process hierarchy, DB access patterns |
+| 3 | Header Inventory | `RESEARCH/header_inventory.md` | What every header file in `source_code/Include/` provides |
+| 4 | Component Profiles | `RESEARCH/component_profiles.md` | Overview of all 7+ server components and their roles |
+| 5 | CIDRA Documenter Spec | `enterprise_cidra_framework-main/Agents/THE_DOCUMENTER_AGENT/agent_specification.md` | Documenter methodology, 7-file structure, validation framework |
+| 6 | C Plugin | `enterprise_cidra_framework-main/Plugins/c_plugin.yaml` | C-language-specific documentation rules |
+
+These documents provide the architectural foundation and methodology. A fresh agent has ZERO context — these files fill that gap.
+
+### THEN follow these steps:
+1. Read any **DYNAMIC PRE-READING** listed in the current task section below
+2. Read Chunker output: `CHUNKS/{component}/DOCUMENTER_INSTRUCTIONS.md`
+3. Review previous documentation outputs for pattern consistency (see completed tasks in STATUS UPDATES below)
 
 **After reading, acknowledge:**
 ```
-"I have read the coordination hub, CIDRA specifications, and chunk data. Beginning documentation task [TASK_ID]."
+"I have read the coordination hub, steady pre-reading, CIDRA specifications, and chunk data. Beginning documentation task [TASK_ID]."
 ```
 
 ---
@@ -127,6 +139,191 @@ DOC-MACODBC-001 was produced in Hebrew by mistake. This task produces the correc
 7. Achieve 100/100 validation score
 
 **Quality requirement:** 100/100 validation score mandatory. All claims must cite exact file:line references. ALL content in English.
+
+---
+
+## COMPLETED: DOC-SQL-001 ✅
+
+**Status:** ✅ COMPLETE — 7 files, 100/100, 62/62 chunks documented, 9/9 phases, 6/6 VER items, English
+
+**Target:** SqlServer — the **largest and most complex component** (~84K lines, 13 source files, 62 chunks, ~60+ transaction handlers)
+
+**Output:** `Documentation/SqlServer/` (English — default)
+
+### ⚠️ DYNAMIC PRE-READING FOR DOC-SQL-001
+
+After completing the steady pre-reading (see MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents:
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | **Chunker Instructions** | `CHUNKS/SqlServer/DOCUMENTER_INSTRUCTIONS.md` | **PRIMARY ROADMAP**: 9-phase documentation order, sub-chunking guidance for 6 oversized chunks, 5 cross-cutting documentation needs. **START HERE after pre-reading.** |
+| 2 | Chunker Repository | `CHUNKS/SqlServer/repository.json` | All 62 chunks with metadata: line ranges, summaries, tags, dependencies, calls, cross-references, complexity ratings. |
+| 3 | Chunker Graph | `CHUNKS/SqlServer/graph.json` | Call graph: 62 nodes, 81 edges, 7 groups, 9 external dependencies. Use for tracing handler→helper→operator→table chains. |
+| 4 | Chunker Analysis | `CHUNKS/SqlServer/analysis.json` | Statistics, 10 key patterns, 6 verification items, complexity assessment, cross-file dependencies. |
+| 5 | SqlServer Deep Dive | `RESEARCH/SqlServer_deepdive.md` | **Researcher's full analysis**: function inventory, transaction dispatch map, DB table references, global variables, cross-references to business specs. |
+| 6 | MacODBC Deep Dive | `RESEARCH/MacODBC_deepdive.md` | SqlServer defines `#define MAIN` before `#include <MacODBC.h>` — it IS the compilation unit that instantiates all ODBC functions. Documentation MUST explain the ODBC layer. |
+| 7 | Business Specs | `source_documents/` (21 files) | Transaction specification documents (Hebrew .docx/.xlsx/.pdf) defining wire protocol. Cross-reference in 04_BUSINESS_LOGIC.md. |
+| 8 | Previous documentation (FatherProcess) | `Documentation/FatherProcess/` | Reference for 7-file structure, citation style, careful language patterns. |
+| 9 | Previous documentation (MacODBC) | `Documentation/MacODBC/` | Reference for documenting complex internals: macros, enums, globals, dispatcher phases. |
+
+### MERGED RESEARCH BASELINE (Source of Truth from Researcher Agents A/B/C)
+
+#### Runtime/Control-Flow Spine
+- `SqlServer.c` orchestrates: startup → steady loop → dispatch → accounting → shutdown
+- `SqlHandlers.c` provides generic handler scaffolding and special response paths
+
+#### Business Logic Ownership
+- `ElectronicPr.c` is core for **2xxx** and **5xxx** transaction families
+- `DigitalRx.c` is core for **6xxx** and **610x** transaction families
+- `MessageFuncs.c` holds critical shared rule engines (61 utility functions)
+
+#### SQL/ODBC Mapping Model
+- Operator IDs in `source_code/Include/MacODBC_MyOperatorIDs.h`
+- Operation SQL mapping in `source_code/SqlServer/MacODBC_MyOperators.c` (265 operator cases)
+- Generic inherited SQL via `source_code/Include/GenSql_ODBC_Operators.c`
+- Runtime ODBC behavior in `source_code/Include/MacODBC.h` (sticky/mirroring/custom WHERE/convert-not-found logic)
+
+---
+
+### CHUNKER KEY FINDINGS (incorporate into documentation)
+
+#### The "Big Three" Sale Handlers
+These three functions together represent **21.4% of the entire codebase** and share a common validation pipeline:
+
+| Handler | File | Lines | Tokens | Transaction |
+|---------|------|-------|--------|-------------|
+| HandlerToMsg_5003 | ElectronicPr.c | 5,946 | 20,810 | Nihul Tikrot subsidy sale |
+| HandlerToMsg_6003 | DigitalRx.c | 7,928 | 27,750 | Digital prescription sale |
+| HandlerToMsg_2003 | ElectronicPr.c | 4,066 | 14,230 | Electronic prescription sale |
+
+#### Shared Validation Pipeline (called by all three)
+```
+IS_PHARMACY_OPEN_X()           → Pharmacy authorization
+test_special_prescription()     → Special/controlled substance validation
+test_purchase_limits()          → Purchase limit rules (9 methods)
+test_interaction_and_overdose() → Drug-drug interaction + overdose detection
+test_pharmacy_ishur()           → Pharmacy-level authorization
+test_mac_doctor_drugs_electronic() → Doctor-drug participation/pricing
+CheckHealthAlerts()             → Health alert rules engine (in-memory cache)
+update_doctor_presc()           → Doctor prescription table updates
+```
+
+#### Generic Handler Template Pattern
+Many handlers use `GENERIC_HandlerToMsg_XXXX` with thin realtime/spool wrappers:
+- `GenHandlerToMsg_1001` + HandlerToMsg_1001 / HandlerToSpool_1001
+- `GENERIC_HandlerToMsg_1022_6022` + wrappers
+- `GENERIC_HandlerToMsg_1053` + wrappers
+- `GENERIC_HandlerToMsg_2033_6033` + wrappers
+
+#### AS/400 Dual Integration
+1. **TikrotRPC.c**: DB2 stored procedure `RKPGMPRD.TIKROT` (ODBC 2.x, retry-with-recursion, 3-sec timeout)
+2. **As400UnixMediator.c**: TCP socket to Meishar system (port 9400, 180-sec error suppression, 23:00-01:00 maintenance)
+
+#### JSON Dual-Mode Support
+Newer transactions support both JSON and legacy binary: TR6001/6101, TR6011, TR6102, TR6103, TR5061
+
+#### REST/CURL Integration (newest — Apr 2025)
+6 functions in MessageFuncs.c (ch_sql_062) replacing legacy database lookups
+
+---
+
+### DOCUMENTATION ORDER (9 Phases from Chunker)
+
+Follow this Chunker-prescribed order. See `DOCUMENTER_INSTRUCTIONS.md` for full chunk-level detail.
+
+| Phase | Focus | Key Chunks | Doc File |
+|-------|-------|-----------|----------|
+| 1 | System Architecture | ch_sql_001 through ch_sql_007 (9 chunks) | 02_SYSTEM_ARCHITECTURE.md |
+| 2 | Shared Business Logic | ch_sql_051 through ch_sql_062 (13 chunks) | 03_TECHNICAL_ANALYSIS.md, 04_BUSINESS_LOGIC.md |
+| 3 | Core Sale Handlers ("Big Three") | ch_sql_022, ch_sql_024, ch_sql_042 | 04_BUSINESS_LOGIC.md |
+| 4 | Delivery Handlers | ch_sql_023, ch_sql_025, ch_sql_043, ch_sql_044 | 04_BUSINESS_LOGIC.md |
+| 5 | Request + History Handlers | ch_sql_021, ch_sql_041, ch_sql_045, ch_sql_046 | 04_BUSINESS_LOGIC.md |
+| 6 | 1xxx Pharmacy Management | ch_sql_011 through ch_sql_016 | 04_BUSINESS_LOGIC.md |
+| 7 | Specialized Systems (DUR/OD, Ishur, ref tables) | ch_sql_017, ch_sql_015, ch_sql_026 through ch_sql_030 | 03_TECHNICAL_ANALYSIS.md |
+| 8 | ODBC Operators | ch_sql_070 through ch_sql_075, ch_sql_086 | 05_CODE_ARTIFACTS.md |
+| 9 | Infrastructure + Remaining | ch_sql_080 through ch_sql_085, ch_sql_008, ch_sql_009, ch_sql_031 | 02_SYSTEM_ARCHITECTURE.md, 05_CODE_ARTIFACTS.md |
+
+### 6 OVERSIZED CHUNKS — SUB-CHUNKING REQUIRED
+
+These chunks exceed the token target and need **phase-level documentation** (not monolithic). The Chunker provided recommended sub-phases for each:
+
+| Chunk | Handler | Lines | Tokens | Sub-Phases |
+|-------|---------|-------|--------|------------|
+| ch_sql_042 | HandlerToMsg_6003 | 7,928 | 27,750 | 4 phases: input parsing → pricing loop → DUR/limits → DB writes |
+| ch_sql_024 | HandlerToMsg_5003 | 5,946 | 20,810 | 4 phases: input parsing → pricing/subsidy → DUR/alerts → DB writes |
+| ch_sql_041 | HandlerToMsg_6001_6101 | 5,067 | 17,740 | 4 phases: input/member → cursor traversal → special testing → output |
+| ch_sql_071 | General Operators | 4,097 | 14,340 | 4 phases: health/pharmacy → DML → read → test/dynamic |
+| ch_sql_022 | HandlerToMsg_2003 | 4,066 | 14,230 | 3 phases: input/validation → pricing → DB writes |
+| ch_sql_025 | HandlerToMsg_5005 | 3,629 | 12,700 | (delivery pair — realtime + spool) |
+
+See `DOCUMENTER_INSTRUCTIONS.md` for exact line range guidance for each sub-phase.
+
+### 5 CROSS-CUTTING DOCUMENTATION NEEDS
+
+These topics span multiple chunks — document them as coherent narratives:
+
+1. **Validation Pipeline** (spans ch_sql_053→055→056→017→057→058→059→060): Document the complete flow for core sale handlers with error severity escalation model
+2. **AS/400 Integration** (spans ch_sql_083 + ch_sql_084/085): Two distinct paths — DB2 stored procedure vs. TCP socket — with different failure modes
+3. **ODBC Operator Integration** (spans ch_sql_070-075 + ch_sql_086): Full chain: handler → ExecSQL macro → operator ID → SQL template → ODBC_Exec. Highlight 2 dynamic-SQL holes
+4. **Signal Handler Architecture** (spans ch_sql_002 + ch_sql_008): Installation vs. implementation, SIGSEGV passthrough to MacODBC pointer validation
+5. **REST Service Integration** (spans ch_sql_061 + ch_sql_062): Newest addition (Apr 2025), CURL-based client replacing legacy lookups
+
+### REQUIRED NARRATIVE ORDER (7 documentation files)
+
+| # | Topic | Primary File | Content |
+|---|-------|-------------|---------|
+| 1 | Runtime architecture and lifecycle | 02_SYSTEM_ARCHITECTURE.md | Startup → steady loop → dispatch → accounting → shutdown. Signal handlers. Process model within FatherProcess hierarchy. JSON dual-mode preamble. |
+| 2 | Dispatch ownership map | 01_PROGRAM_SPECIFICATION.md | Which file implements what. Transaction code → handler → source file mapping. Generic handler template pattern. |
+| 3 | Transaction family behavior | 04_BUSINESS_LOGIC.md | The "Big Three" sale handlers, delivery handlers, request handlers, 1xxx management. Cross-reference source_documents/ specs. |
+| 4 | Decision stack (validation pipeline) | 03_TECHNICAL_ANALYSIS.md | IS_PHARMACY_OPEN_X → test_special_prescription → test_purchase_limits → test_interaction_and_overdose → ... → update_doctor_presc. Error severity escalation. |
+| 5 | SQL/operator/table model | 05_CODE_ARTIFACTS.md | 265 operator cases across 6 sections. Operator ID → SQL template → table mapping. 2 dynamic SQL holes. Include-injection pattern. |
+| 6 | External integrations | 04_BUSINESS_LOGIC.md | TikrotRPC (DB2), As400UnixMediator (TCP/Meishar), REST/CURL services. Two AS/400 paths with different failure modes. |
+| 7 | Reliability/recovery/signals | 03_TECHNICAL_ANALYSIS.md | SIGTERM/SIGPIPE/SIGSEGV handling, auto-reconnect, deadlock priority, conflict retries, hourly cache refresh. |
+| 8 | Security/PII notes | VALIDATION_REPORT.md | Credential locations (redact values), VER-SQL-001 through VER-SQL-006, dynamic SQL risk, deprecated API warnings. |
+
+### MUST-DOCUMENT TRANSACTION FAMILIES
+
+| Family | Transactions | Handler File | Priority |
+|--------|-------------|-------------|----------|
+| Core pharmacy (1xxx) | 1001, 1011, 1013, 1014, 1043, 1022, 1028, 1047, 1049, 1051, 1053, 1055, 1080 | SqlHandlers.c | P1 |
+| Electronic prescription (2xxx) | 2001, 2003, 2005, 2033, 2060-2096, 2101 | ElectronicPr.c | P1 |
+| Nihul Tikrot (5xxx) | 5003, 5005, 5051-5061, 5090 | ElectronicPr.c | P1 |
+| Digital prescription (6xxx) | 6001/6101, 6003, 6005, 6011, 6102, 6103 | DigitalRx.c | P0 |
+| Inventory/approval (shared) | 1022/6022, 2033/6033 | SqlHandlers.c | P1 |
+
+### VERIFICATION BACKLOG (6 items — MUST document in VALIDATION_REPORT.md)
+
+| ID | Chunk | File:Line | Description | Severity |
+|----|-------|-----------|-------------|----------|
+| VER-SQL-001 | ch_sql_008 | SqlServer.c:1940 | `accept_sock == -1` comparison instead of assignment — possible socket leak | HIGH |
+| VER-SQL-002 | ch_sql_082 | DebugPrint.c:~50 | `vsprintf()` into `char[10000]` without bounds checking | MEDIUM |
+| VER-SQL-003 | ch_sql_083 | TikrotRPC.c:~200-300 | Deprecated ODBC 2.x APIs; hardcoded config path | LOW |
+| VER-SQL-004 | ch_sql_071 | MacODBC_MyOperators.c:4182 | Dynamic SQL: `SQL_CommandText=NULL` for interaction ishur | INFO |
+| VER-SQL-005 | ch_sql_073 | MacODBC_MyOperators.c:5820 | Dynamic SQL: `SQL_CommandText=NULL` for TR2088 | INFO |
+| VER-SQL-006 | ch_sql_081 | SocketAPI.c:~230 | Deprecated `gethostbyname()` — not thread-safe | LOW |
+
+### DOC-SQL-001 Special Considerations
+
+SqlServer documentation is fundamentally different from previous components:
+- **Scale**: ~84K lines vs. 500-4000 for previous components. 62 chunks. The 7-file structure must handle this volume.
+- **Transaction-centric**: The primary organizational unit is the **transaction handler**, not the file.
+- **"Big Three" dominance**: 3 sale handlers = 21.4% of codebase. Document by phase, not as monolithic functions.
+- **Business context available**: 21 specification documents in `source_documents/` map directly to handler functions. 04_BUSINESS_LOGIC.md should cross-reference specs with code.
+- **Wire protocol**: Each handler parses a binary request and builds a binary response. Document the field layouts.
+- **JSON dual-mode**: Newer transactions (6001, 6011, 5061, 6102, 6103) support both JSON and legacy binary via cJSON.
+- **Virtual store logic**: HandlerToMsg_6001_6101 implements virtual pharmacy eligibility rules from the Excel spreadsheet. Document reason codes and system parameters.
+- **REST integration**: Newest feature (Apr 2025) — CURL-based REST client in MessageFuncs.c replacing legacy DB lookups.
+- **Evidence appendix**: Attach/reference the Researcher and Chunker agents' outputs as traceability.
+
+**LANGUAGE RULE REMINDER**: English by default. After user approves English, ask about Hebrew. See LANGUAGE RULE section above.
+
+### NON-NEGOTIABLE QUALITY RULES
+
+- Every concrete claim must be **citation-backed** (file:line)
+- Separate verified facts from `[NEEDS_VERIFICATION]`
+- No secret values in output (location-only notes allowed)
+- No speculative behavior claims
+- 100/100 validation score mandatory
 
 ---
 
