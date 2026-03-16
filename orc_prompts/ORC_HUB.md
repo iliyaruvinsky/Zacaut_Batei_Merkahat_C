@@ -115,6 +115,7 @@ source_code/
 | RES-SHRINKPHARM-001 | ShrinkPharm deep dive | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
 | RES-MACODBC-001 | MacODBC.h deep dive | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 | RES-SQL-001 | SqlServer deep dive (~84K lines) | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
+| RES-GENLIB-001 | GenLib deep dive (~10K lines) | 🔵 ACTIVE | RESEARCH/GenLib_deepdive.md |
 
 ### CHUNKER (CH) - Stage 0
 
@@ -124,7 +125,7 @@ source_code/
 | CH-SQL-001 | SqlServer | ✅ COMPLETE | RES-SQL-001 ✅ | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
 | CH-AS400-001 | As400UnixServer | 📋 PLANNED | - | CHUNKS/As400UnixServer/ |
 | CH-PHARM-001 | PharmTcpServer | 📋 PLANNED | - | CHUNKS/PharmTcpServer/ |
-| CH-GENLIB-001 | GenLib | 📋 PLANNED | - | CHUNKS/GenLib/ |
+| CH-GENLIB-001 | GenLib | 📋 PLANNED | RES-GENLIB-001 | CHUNKS/GenLib/ |
 | CH-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | RES-SHRINKPHARM-001 ✅ | CHUNKS/ShrinkPharm/ |
 | CH-MACODBC-001 | MacODBC.h | ✅ COMPLETE | RES-MACODBC-001 ✅ | CHUNKS/MacODBC/ |
 
@@ -136,7 +137,7 @@ source_code/
 | DOC-SQL-001 | SqlServer | ✅ COMPLETE | CH-SQL-001 ✅ | Documentation/SqlServer/ (100/100, English) |
 | DOC-AS400-001 | As400UnixServer | 📋 PLANNED | CH-AS400-001 | Documentation/As400UnixServer/ |
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
-| DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ |
+| DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ (English) |
 | DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
 | DOC-MACODBC-001 | MacODBC.h (Hebrew) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC_Hebrew/ (100/100, Hebrew) |
 | DOC-MACODBC-002 | MacODBC.h (English) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, English) |
@@ -288,6 +289,33 @@ RESEARCH OBJECTIVES:
 
 OUTPUT: RESEARCH/ShrinkPharm_deepdive.md
 PIPELINE: RES-SHRINKPHARM-001 → CH-SHRINK-001 → DOC-SHRINK-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[2026-02-13] ORC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 PRIORITY DISPATCH: RES-GENLIB-001
+PRIORITY: P0 - CLIENT REQUEST - START NOW
+
+TARGET: source_code/GenLib/ (~10,258 lines, 6 source files)
+PURPOSE: Foundation library — IPC, shared memory, semaphores, process lifecycle
+CRITICAL: Every server component depends on GenLib (InitSonProcess, sockets, etc.)
+
+FILE INVENTORY:
+- SharedMemory.cpp: 4,774 lines (C++ shared memory — NOTE: unusual C++ in C codebase)
+- Memory.c: 2,195 lines (process lifecycle, InitSonProcess, shared memory)
+- Sockets.c: 1,758 lines (Unix-domain socket IPC, "named pipes")
+- GeneralError.c: 770 lines (error handling utilities)
+- Semaphores.c: 734 lines (System V semaphore operations)
+- GxxPersonality.c: 27 lines (platform stub)
+
+KEY HEADERS (all files include Global.h; Memory.c also includes GenSql.h):
+- source_code/Include/Global.h
+- source_code/Include/GenSql.h
+- source_code/Include/CCGlobal.h (SharedMemory.cpp)
+- source_code/Include/MsgHndlr.h (SharedMemory.cpp)
+
+OUTPUT: RESEARCH/GenLib_deepdive.md
+PIPELINE: RES-GENLIB-001 → CH-GENLIB-001 → DOC-GENLIB-001
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -787,14 +815,14 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** SqlServer CIDRA Pipeline (~84K lines, 13 source files)
+**Sprint Goal:** GenLib CIDRA Pipeline (~10K lines, 6 source files — Foundation Library)
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
-| P0 | RES-SQL-001 | Researcher | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
-| P0 | CH-SQL-001 | Chunker | ✅ COMPLETE | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
-| P0 | DOC-SQL-001 | Documenter | ✅ COMPLETE | Documentation/SqlServer/ (100/100, English) |
-| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after SqlServer pipeline |
+| P0 | RES-GENLIB-001 | Researcher | 🔵 ACTIVE | RESEARCH/GenLib_deepdive.md |
+| P0 | CH-GENLIB-001 | Chunker | 📋 PLANNED (depends on RES-GENLIB-001) | CHUNKS/GenLib/ |
+| P0 | DOC-GENLIB-001 | Documenter | 📋 PLANNED (depends on CH-GENLIB-001) | Documentation/GenLib/ |
+| -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after GenLib pipeline |
 
 **Completed (all sessions):**
 | Task | Status | Output |
@@ -865,4 +893,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-13 (SqlServer pipeline COMPLETE — RES-SQL-001 ✅, CH-SQL-001 ✅ 62 chunks, DOC-SQL-001 ✅ 100/100 English. Hebrew: deferred until client reviews and finalizes English)*
+*Maintained by Orc. Last sync: 2026-02-15 (GenLib pipeline ACTIVE — RES-GENLIB-001 🔵, CH-GENLIB-001 📋, DOC-GENLIB-001 📋. SqlServer pipeline COMPLETE. Hebrew: deferred until client reviews English)*

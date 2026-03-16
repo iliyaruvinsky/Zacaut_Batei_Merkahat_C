@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** ✅ COMPLETE — DOC-SQL-001 (SqlServer documentation, 7 files, 100/100, English) | Language rules active
+**Status:** 📋 PLANNED — DOC-GENLIB-001 (GenLib, depends on CH-GENLIB-001) | Previous: DOC-SQL-001 ✅ | Language rules active
 
 ---
 
@@ -316,6 +316,54 @@ SqlServer documentation is fundamentally different from previous components:
 - **Evidence appendix**: Attach/reference the Researcher and Chunker agents' outputs as traceability.
 
 **LANGUAGE RULE REMINDER**: English by default. After user approves English, ask about Hebrew. See LANGUAGE RULE section above.
+
+---
+
+## 📋 UPCOMING TASK: DOC-GENLIB-001
+
+**Status:** 📋 PLANNED — Depends on CH-GENLIB-001 (Chunker)
+
+**Target:** GenLib — the **foundation library** (~10K lines, 6 source files). Unlike previous components (which are server processes), GenLib is a **shared library** linked by every server.
+
+**Output:** `Documentation/GenLib/` (English — default)
+
+### ⚠️ DYNAMIC PRE-READING FOR DOC-GENLIB-001
+
+After completing the steady pre-reading (see MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents:
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | Chunker Instructions | `CHUNKS/GenLib/DOCUMENTER_INSTRUCTIONS.md` | **PRIMARY ROADMAP**: documentation order, key findings, cross-references. |
+| 2 | Chunker Repository | `CHUNKS/GenLib/repository.json` | All chunks with metadata. |
+| 3 | Chunker Graph | `CHUNKS/GenLib/graph.json` | Call graph and dependencies. |
+| 4 | GenLib Deep Dive | `RESEARCH/GenLib_deepdive.md` | **Researcher's full analysis**: function inventory, process lifecycle, IPC socket API, shared memory layout. |
+| 5 | MacODBC Deep Dive | `RESEARCH/MacODBC_deepdive.md` | GenLib's Memory.c includes GenSql.h; understand the ODBC layer context. |
+| 6 | Previous documentation (FatherProcess) | `Documentation/FatherProcess/` | FatherProcess creates the infrastructure that GenLib sons attach to — closely related. Reference for conventions. |
+| 7 | Previous documentation (SqlServer) | `Documentation/SqlServer/` | SqlServer is the primary consumer of GenLib — cross-reference InitSonProcess, socket IPC, etc. |
+
+### DOC-GENLIB-001 Special Considerations
+
+GenLib documentation is fundamentally different from previous components:
+- **Library, not a server**: No main(), no dispatch loop. The organizational unit is the **API function**, not the handler.
+- **Foundation dependency**: Every server component depends on GenLib. Documentation must explain the API contract for consumers.
+- **C/C++ mixed**: SharedMemory.cpp is C++ in a C codebase — document this boundary.
+- **Cross-system**: GenLib functions appear in FatherProcess (creation side) and all server processes (consumer side). Document both perspectives.
+- **Process lifecycle**: InitSonProcess() is THE most called function system-wide. Give it detailed treatment.
+- **IPC protocol**: The socket message-passing system is the backbone of inter-process communication. Document the wire protocol.
+
+### REQUIRED NARRATIVE ORDER FOR LIBRARY DOCUMENTATION
+
+| # | Topic | Primary File | Content |
+|---|-------|-------------|---------|
+| 1 | Library overview and API surface | 01_PROGRAM_SPECIFICATION.md | What GenLib provides, file inventory, public API listing, consumer map |
+| 2 | Process lifecycle architecture | 02_SYSTEM_ARCHITECTURE.md | InitSonProcess sequence, shared memory attachment, process registration, FatherProcess relationship |
+| 3 | IPC and socket system | 03_TECHNICAL_ANALYSIS.md | Socket creation, message passing (FILE_MESG/DATA_MESG), select multiplexing, named pipe conventions |
+| 4 | Shared memory and semaphores | 04_BUSINESS_LOGIC.md | Table management, extent allocation, semaphore locking patterns, C/C++ split rationale |
+| 5 | Function catalog and code patterns | 05_CODE_ARTIFACTS.md | Complete function inventory with signatures, parameters, return values, usage examples from consumers |
+| 6 | Error handling and reliability | 03_TECHNICAL_ANALYSIS.md | Error reporting, logging, recovery patterns |
+| 7 | Security and deployment notes | VALIDATION_REPORT.md | Any credential handling, shared memory permissions, verification items |
+
+**LANGUAGE RULE**: English by default. After user approval, ask about Hebrew.
 
 ### NON-NEGOTIABLE QUALITY RULES
 

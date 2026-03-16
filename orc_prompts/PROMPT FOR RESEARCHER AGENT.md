@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** ✅ COMPLETE — RES-SQL-001 (SqlServer deep dive) | Merged baseline delivered
+**Status:** 🔵 ACTIVE — RES-GENLIB-001 (GenLib deep dive) | Previous: RES-SQL-001 ✅, RES-MACODBC-001 ✅, RES-SHRINKPHARM-001 ✅
 
 ---
 
@@ -1490,6 +1490,210 @@ Open questions:
 
 Notify Orc: RES-MACODBC-001 COMPLETE
 ```
+
+---
+
+## 🚨 CURRENT TASK: RES-GENLIB-001
+
+**Status:** 🔵 ACTIVE
+**Goal:** Deep-dive research on GenLib — the **foundation library** that every server component depends on
+**Priority:** P0 — Client priority. GenLib provides the IPC, shared memory, semaphore, and process registration infrastructure used by ALL components.
+**Target:** `source_code/GenLib/`
+**Output:** `RESEARCH/GenLib_deepdive.md`
+
+### ⚠️ DYNAMIC PRE-READING FOR RES-GENLIB-001
+
+After completing the steady pre-reading (MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents:
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | MacODBC Deep Dive | `RESEARCH/MacODBC_deepdive.md` | GenLib's Memory.c includes GenSql.h; understand the ODBC layer context |
+| 2 | Global.h header | `source_code/Include/Global.h` | **ALL GenLib files include this** — it defines the shared data types, constants, process types, system-wide macros. This is the foundation header. |
+| 3 | GenSql.h header | `source_code/Include/GenSql.h` | Memory.c includes this — shared memory table schema, TableTab[] definitions |
+| 4 | CCGlobal.h header | `source_code/Include/CCGlobal.h` | SharedMemory.cpp includes this — C++ global definitions |
+| 5 | MsgHndlr.h header | `source_code/Include/MsgHndlr.h` | SharedMemory.cpp includes this — message handler framework, process types |
+
+### Why GenLib Matters
+
+GenLib is the **shared foundation library** linked by every server component in the MACCABI Healthcare C Backend. It provides:
+- **Process lifecycle** — `InitSonProcess()`, `AddCurrProc()`, `DelCurrProc()` (used by SqlServer, As400UnixServer, PharmTcpServer, etc.)
+- **IPC via Unix-domain sockets** — `ListenSocketNamed()`, `ConnectSocketNamed()`, `GetSocketMessage()`, `SendSocketMessage()` (the "named pipe" system)
+- **Shared memory management** — process table, semaphore-protected access
+- **System V semaphores** — `CreateSemaphore()`, semaphore-based locking
+- **Error handling** — centralized error reporting and logging
+
+Understanding GenLib is a prerequisite for understanding how ANY server component boots up, communicates, and manages shared state.
+
+### File Inventory (verified)
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| SharedMemory.cpp | 4,774 | C++ shared memory implementation (largest file) |
+| Memory.c | 2,195 | Shared memory, IPC, process registration |
+| Sockets.c | 1,758 | Unix-domain socket IPC ("named pipes") |
+| GeneralError.c | 770 | Error handling and logging utilities |
+| Semaphores.c | 734 | System V semaphore operations |
+| GxxPersonality.c | 27 | Personality/platform stub |
+| Makefile | ~30 | Build configuration |
+| **TOTAL** | **~10,258** | Foundation library (6 source files) |
+
+**Note:** SharedMemory.cpp is a C++ file — unusual in this primarily C codebase. Investigate why and document the C/C++ boundary.
+
+### Research Objectives
+
+#### 1. Process Lifecycle (Memory.c — CRITICAL)
+- `InitSonProcess()` — THE function every server calls at startup. Document exact sequence: what it opens, attaches, registers.
+- `AddCurrProc()` / `DelCurrProc()` — process table registration/deregistration
+- Shared memory attachment and process table structure
+- How FatherProcess creates the infrastructure that sons attach to
+- Cross-reference with FatherProcess boot sequence (see `RESEARCH/context_summary.md`)
+
+#### 2. IPC Socket System (Sockets.c — CRITICAL)
+- `ListenSocketNamed()` / `ConnectSocketNamed()` — Unix-domain socket creation
+- `GetSocketMessage()` / `SendSocketMessage()` — the message-passing API
+- `FILE_MESG` vs `DATA_MESG` message types
+- `GetCurrNamedPipe()` — socket naming convention
+- Select-based multiplexing and timeout patterns
+- How server components use these sockets to communicate with FatherProcess
+
+#### 3. Shared Memory (SharedMemory.cpp + Memory.c)
+- What data lives in shared memory (process tables, configuration, etc.)
+- `InitFirstExtent()` / `CreateTable()` — how FatherProcess initializes shared memory
+- Semaphore-protected access patterns
+- C++ vs C implementation split — why SharedMemory.cpp exists alongside Memory.c
+- Shared memory segment sizing and layout
+
+#### 4. Semaphore Operations (Semaphores.c)
+- `CreateSemaphore()` — initialization by FatherProcess
+- Lock/unlock patterns used by child processes
+- Semaphore numbering and what each semaphore protects
+- Deadlock prevention strategies (if any)
+
+#### 5. Error Handling (GeneralError.c)
+- Error reporting functions and their signatures
+- Logging destinations (file? syslog? shared memory?)
+- Error severity levels
+- How other components invoke error handling
+
+#### 6. Build System (Makefile)
+- Compilation flags and linking
+- What library (.a or .so) is produced
+- Dependencies on other source_code/ folders
+
+#### 7. Cross-References (CRITICAL for downstream agents)
+- Which functions from GenLib are called by which components
+- The complete bootstrap sequence: FatherProcess creates → sons attach via InitSonProcess → sockets opened → ready
+- How SqlServer's main loop depends on GenLib socket functions
+- Relationship between GenLib's Memory.c and GenSql's GenSql.c (both deal with shared memory tables)
+
+### Reading Strategy
+
+| Phase | Files | Focus |
+|-------|-------|-------|
+| 1 | Memory.c (2,195 lines) | Process lifecycle, InitSonProcess, shared memory attachment |
+| 2 | Sockets.c (1,758 lines) | IPC socket system, message passing |
+| 3 | SharedMemory.cpp (4,774 lines) | C++ shared memory, table management |
+| 4 | Semaphores.c (734 lines) | Semaphore creation and locking |
+| 5 | GeneralError.c (770 lines) | Error handling utilities |
+| 6 | GxxPersonality.c (27 lines) + Makefile | Platform stub + build |
+
+### Output Format
+
+Create `RESEARCH/GenLib_deepdive.md` with this structure:
+
+```markdown
+# GenLib - Deep Dive Research
+
+## Overview
+[What GenLib provides to the system — from code analysis]
+
+## File Inventory
+| File | Lines | Purpose |
+|------|-------|---------|
+(exact counts verified)
+
+## Process Lifecycle (Memory.c)
+### InitSonProcess() — The Universal Bootstrap
+[Step-by-step sequence with file:line citations]
+
+### AddCurrProc() / DelCurrProc()
+[Process table management]
+
+### Shared Memory Attachment
+[How child processes connect to FatherProcess's shared memory]
+
+## IPC Socket System (Sockets.c)
+### Socket Creation and Naming
+[ListenSocketNamed, ConnectSocketNamed, GetCurrNamedPipe]
+
+### Message Passing
+[GetSocketMessage, SendSocketMessage, FILE_MESG vs DATA_MESG]
+
+### Select-Based Multiplexing
+[Timeout patterns, connection management]
+
+## Shared Memory Management (SharedMemory.cpp + Memory.c)
+### C++ vs C Split
+[Why two files, what each handles]
+
+### Table Management
+[InitFirstExtent, CreateTable, table structure]
+
+### Semaphore-Protected Access
+[How shared memory regions are locked]
+
+## Semaphore Operations (Semaphores.c)
+### CreateSemaphore
+[Initialization sequence]
+
+### Lock/Unlock Patterns
+[Which semaphores protect what]
+
+## Error Handling (GeneralError.c)
+### Error Functions
+[Function inventory with file:line]
+
+### Logging Destinations
+[Where errors go]
+
+## Cross-References
+### Who Calls What (GenLib → Components)
+| Function | Called By | Context |
+|----------|----------|---------|
+
+### Bootstrap Sequence
+FatherProcess creates → GenLib provides → Sons attach
+
+## Security Notes
+[Credentials — location only, redact values]
+
+## Verification Backlog
+[Any items needing further investigation]
+
+## Open Questions
+[Unclear sections]
+```
+
+### Quality Gates
+
+- [ ] All 6 source files read completely
+- [ ] Exact line counts verified (~10,258 total)
+- [ ] ALL functions listed with file:line citations
+- [ ] InitSonProcess sequence fully documented step-by-step
+- [ ] IPC socket API fully documented (all public functions)
+- [ ] Shared memory layout documented
+- [ ] Semaphore usage patterns documented
+- [ ] Cross-references to FatherProcess, SqlServer, and other consumers identified
+- [ ] C++ vs C boundary explained
+- [ ] No secret values in output
+
+### Anti-Hallucination Rules
+
+- Every claim must cite `file:line`
+- Use "appears to", "according to code at", "based on [reference]"
+- Do NOT invent functions or parameters not found in code
+- If uncertain, mark as `[NEEDS_VERIFICATION]`
+- Count exactly — do not estimate line counts or function counts
 
 ---
 

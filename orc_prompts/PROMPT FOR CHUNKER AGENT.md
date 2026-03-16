@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-13
 **Updated By:** Orc
-**Status:** ✅ COMPLETE — CH-SQL-001 (SqlServer: 62 chunks, 83,983 lines) | CH-MACODBC-001 ✅ | CH-SHRINK-001 ✅ | CH-FATHER-001 ✅
+**Status:** 📋 PLANNED — CH-GENLIB-001 (GenLib, depends on RES-GENLIB-001) | Previous: CH-SQL-001 ✅, CH-MACODBC-001 ✅, CH-SHRINK-001 ✅, CH-FATHER-001 ✅
 
 ---
 
@@ -553,6 +553,44 @@ SECURITY NOTE:
 
 HANDOFF: Ready for DOC-SHRINK-001
 ```
+
+---
+
+## 📋 UPCOMING TASK: CH-GENLIB-001
+
+**Status:** 📋 PLANNED — Depends on RES-GENLIB-001 (Researcher)
+
+**Target:** GenLib — the **foundation library** (~10,258 lines, 6 source files)
+
+**Path:** `source_code/GenLib/`
+
+**Output:** `CHUNKS/GenLib/`
+
+### ⚠️ DYNAMIC PRE-READING FOR CH-GENLIB-001
+
+After completing the steady pre-reading (see MANDATORY PRE-TASK PROTOCOL above), read these **task-specific** documents:
+
+| # | Document | Path | Why |
+|---|----------|------|-----|
+| 1 | GenLib Deep Dive | `RESEARCH/GenLib_deepdive.md` | **Researcher's full analysis**: function inventory, process lifecycle, IPC socket API, shared memory layout, cross-references. PRIMARY input for chunking decisions. |
+| 2 | Previous chunking output (FatherProcess) | `CHUNKS/FatherProcess/` | GenLib and FatherProcess are tightly coupled — FatherProcess creates what GenLib attaches to. Reference for chunking conventions. |
+| 3 | Previous chunking output (SqlServer) | `CHUNKS/SqlServer/` | SqlServer uses GenLib's IPC extensively. Reference for large-file semantic chunking patterns. |
+| 4 | Key headers | `source_code/Include/Global.h`, `source_code/Include/GenSql.h`, `source_code/Include/MsgHndlr.h` | Core headers that GenLib includes — define data types, process types, shared memory structures. |
+
+### CHUNKING GUIDANCE FOR GENLIB
+
+GenLib is a **library** (not a server process) — it has no main() or dispatch loop. Chunk by **functional domain**:
+
+| File | Lines | Recommended Strategy |
+|------|-------|---------------------|
+| SharedMemory.cpp | 4,774 | By functional group: table management, extent management, memory allocation, C++ wrappers |
+| Memory.c | 2,195 | By API domain: process lifecycle (InitSonProcess), shared memory attachment, process table management |
+| Sockets.c | 1,758 | By API domain: socket creation, message passing (get/send), select multiplexing, named pipe naming |
+| GeneralError.c | 770 | By function group or single chunk (if semantically coherent) |
+| Semaphores.c | 734 | By operation type: create, lock, unlock, cleanup |
+| GxxPersonality.c | 27 | Single chunk |
+
+**Important:** Note the C++ file (SharedMemory.cpp) — this is unusual in the codebase. Document the C/C++ boundary.
 
 ---
 
