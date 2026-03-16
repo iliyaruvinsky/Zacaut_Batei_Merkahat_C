@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "component": "GenLib",
+    "generated_at": "2026-03-16T10:00:00Z",
+    "total_nodes": 25,
+    "total_edges": 68
+  },
+  "nodes": [
+    {"id": "ch_genlib_001_mem_header_alloc", "type": "function_group", "file": "Memory.c", "section": "memory_allocation"},
+    {"id": "ch_genlib_002_mem_string_utils", "type": "function_group", "file": "Memory.c", "section": "string_utilities"},
+    {"id": "ch_genlib_003_mem_env", "type": "function_group", "file": "Memory.c", "section": "environment"},
+    {"id": "ch_genlib_004_mem_process_lifecycle", "type": "function_group", "file": "Memory.c", "section": "process_lifecycle"},
+    {"id": "ch_genlib_005_mem_broadcast_alarm", "type": "function_group", "file": "Memory.c", "section": "broadcast"},
+    {"id": "ch_genlib_006_mem_cmdline_lookup", "type": "function_group", "file": "Memory.c", "section": "command_line_lookup"},
+    {"id": "ch_genlib_007_mem_run_server", "type": "function", "file": "Memory.c", "section": "process_spawning"},
+    {"id": "ch_genlib_008_mem_system_utils", "type": "function_group", "file": "Memory.c", "section": "system_utilities"},
+    {"id": "ch_genlib_009_mem_hebrew", "type": "function_group", "file": "Memory.c", "section": "hebrew_encoding"},
+    {"id": "ch_genlib_010_mem_date_math", "type": "function_group", "file": "Memory.c", "section": "date_utilities"},
+    {"id": "ch_genlib_011_sock_header_named", "type": "function_group", "file": "Sockets.c", "section": "named_sockets"},
+    {"id": "ch_genlib_012_sock_tcp", "type": "function_group", "file": "Sockets.c", "section": "tcp_sockets"},
+    {"id": "ch_genlib_013_sock_accept_close", "type": "function_group", "file": "Sockets.c", "section": "socket_lifecycle"},
+    {"id": "ch_genlib_014_sock_readwrite", "type": "function_group", "file": "Sockets.c", "section": "message_framing"},
+    {"id": "ch_genlib_015_sock_lowlevel_io", "type": "function_group", "file": "Sockets.c", "section": "low_level_io"},
+    {"id": "ch_genlib_016_sock_multiplex_ipc", "type": "function_group", "file": "Sockets.c", "section": "multiplexing_ipc"},
+    {"id": "ch_genlib_017_shm_header_macros", "type": "declarations", "file": "SharedMemory.cpp", "section": "header_macros"},
+    {"id": "ch_genlib_018_shm_extent_mgmt", "type": "function_group", "file": "SharedMemory.cpp", "section": "extent_management"},
+    {"id": "ch_genlib_019_shm_table_crud", "type": "function_group", "file": "SharedMemory.cpp", "section": "table_crud"},
+    {"id": "ch_genlib_020_shm_row_ops", "type": "function_group", "file": "SharedMemory.cpp", "section": "row_operations"},
+    {"id": "ch_genlib_021_shm_proc_stats", "type": "function_group", "file": "SharedMemory.cpp", "section": "proc_stats"},
+    {"id": "ch_genlib_022_shm_params_sql", "type": "function_group", "file": "SharedMemory.cpp", "section": "param_sql_server"},
+    {"id": "ch_genlib_023_shm_misc_ops", "type": "function_group", "file": "SharedMemory.cpp", "section": "misc_operations"},
+    {"id": "ch_genlib_024_semaphores", "type": "file_complete", "file": "Semaphores.c", "section": "semaphores"},
+    {"id": "ch_genlib_025_gerr_gxx_makefile", "type": "file_group", "file": "GeneralError.c+GxxPersonality.c+Makefile", "section": "error_logging_build"}
+  ],
+  "edges": [
+    {"from": "ch_genlib_001_mem_header_alloc", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "MemAllocExit->GerrLogExit, MemReallocExit->GerrLogReturn"},
+    {"from": "ch_genlib_003_mem_env", "to": "ch_genlib_001_mem_header_alloc", "type": "calls", "detail": "InitEnv->MemAllocReturn, HashEnv->MemReallocReturn"},
+    {"from": "ch_genlib_003_mem_env", "to": "ch_genlib_002_mem_string_utils", "type": "calls", "detail": "HashEnv->ListMatch"},
+    {"from": "ch_genlib_003_mem_env", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "HashEnv->GerrLogReturn"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_003_mem_env", "type": "calls", "detail": "InitSonProcess->InitEnv,HashEnv"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "InitSonProcess->OpenSemaphore, ExitSonProcess->CloseSemaphore"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_018_shm_extent_mgmt", "type": "calls", "detail": "InitSonProcess->OpenFirstExtent, ExitSonProcess->DetachAllExtents"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_002_mem_string_utils", "type": "calls", "detail": "InitSonProcess->GetCurrProgName"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_022_shm_params_sql", "type": "calls", "detail": "InitSonProcess->ShmGetParamsByName"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_016_sock_multiplex_ipc", "type": "calls", "detail": "InitSonProcess->GetCurrNamedPipe"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_011_sock_header_named", "type": "calls", "detail": "InitSonProcess->ListenSocketNamed"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_021_shm_proc_stats", "type": "calls", "detail": "InitSonProcess->AddCurrProc"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_023_shm_misc_ops", "type": "calls", "detail": "InitSonProcess->AddToSonsCount"},
+    {"from": "ch_genlib_004_mem_process_lifecycle", "to": "ch_genlib_013_sock_accept_close", "type": "calls", "detail": "ExitSonProcess->DisposeSockets"},
+    {"from": "ch_genlib_005_mem_broadcast_alarm", "to": "ch_genlib_011_sock_header_named", "type": "calls", "detail": "BroadcastSonProcs->ConnectSocketNamed"},
+    {"from": "ch_genlib_005_mem_broadcast_alarm", "to": "ch_genlib_014_sock_readwrite", "type": "calls", "detail": "BroadcastSonProcs->WriteSocket"},
+    {"from": "ch_genlib_005_mem_broadcast_alarm", "to": "ch_genlib_013_sock_accept_close", "type": "calls", "detail": "BroadcastSonProcs->CloseSocket"},
+    {"from": "ch_genlib_005_mem_broadcast_alarm", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "BroadcastSonProcs->ActItems,RewindTable,GetItem"},
+    {"from": "ch_genlib_006_mem_cmdline_lookup", "to": "ch_genlib_019_shm_table_crud", "type": "calls", "detail": "GetFatherNamedPipe->OpenTable,CloseTable"},
+    {"from": "ch_genlib_006_mem_cmdline_lookup", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "GetFatherNamedPipe->ActItems,GetItem"},
+    {"from": "ch_genlib_007_mem_run_server", "to": "ch_genlib_001_mem_header_alloc", "type": "calls", "detail": "Run_server->MemAllocReturn"},
+    {"from": "ch_genlib_007_mem_run_server", "to": "ch_genlib_019_shm_table_crud", "type": "calls", "detail": "Run_server->OpenTable,CloseTable"},
+    {"from": "ch_genlib_007_mem_run_server", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "Run_server->ActItems,GetItem"},
+    {"from": "ch_genlib_007_mem_run_server", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "Run_server->GerrLogMini,GerrLogExit"},
+    {"from": "ch_genlib_008_mem_system_utils", "to": "ch_genlib_023_shm_misc_ops", "type": "calls", "detail": "ToGoDown->get_sys_status"},
+    {"from": "ch_genlib_008_mem_system_utils", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "run_cmd->GerrLogReturn"},
+    {"from": "ch_genlib_009_mem_hebrew", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "EncodeHebrew->GerrLogMini"},
+    {"from": "ch_genlib_014_sock_readwrite", "to": "ch_genlib_015_sock_lowlevel_io", "type": "calls", "detail": "ReadSocket->read_socket_data,get_header_details; WriteSocket->write_socket_data,set_header_details"},
+    {"from": "ch_genlib_016_sock_multiplex_ipc", "to": "ch_genlib_013_sock_accept_close", "type": "calls", "detail": "GetSocketMessage->AcceptConnection,CloseSocket"},
+    {"from": "ch_genlib_016_sock_multiplex_ipc", "to": "ch_genlib_014_sock_readwrite", "type": "calls", "detail": "GetSocketMessage->ReadSocket"},
+    {"from": "ch_genlib_016_sock_multiplex_ipc", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "->GerrLogReturn"},
+    {"from": "ch_genlib_018_shm_extent_mgmt", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "InitFirstExtent->WaitForResource,ReleaseResource"},
+    {"from": "ch_genlib_018_shm_extent_mgmt", "to": "ch_genlib_001_mem_header_alloc", "type": "calls", "detail": "->MemAllocReturn,MemReallocReturn"},
+    {"from": "ch_genlib_018_shm_extent_mgmt", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "->GerrLogReturn,GerrLogMini"},
+    {"from": "ch_genlib_019_shm_table_crud", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "CreateTable/AddItem/DeleteItem->WaitForResource,ReleaseResource"},
+    {"from": "ch_genlib_019_shm_table_crud", "to": "ch_genlib_017_shm_header_macros", "type": "uses_macros", "detail": "GET_ABS_ADDR, GET_FREE_EXTENT, CHECK_TAB_PTR, RETURN"},
+    {"from": "ch_genlib_019_shm_table_crud", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "->GerrLogReturn,GerrLogMini"},
+    {"from": "ch_genlib_020_shm_row_ops", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "ActItems/RewindTable->WaitForResource,ReleaseResource"},
+    {"from": "ch_genlib_020_shm_row_ops", "to": "ch_genlib_017_shm_header_macros", "type": "uses_macros", "detail": "GET_ABS_ADDR, CHECK_TAB_PTR, VALIDITY_CHECK, ATTACH_ALL, RETURN"},
+    {"from": "ch_genlib_021_shm_proc_stats", "to": "ch_genlib_019_shm_table_crud", "type": "calls", "detail": "AddCurrProc->OpenTable,AddItem,CloseTable"},
+    {"from": "ch_genlib_021_shm_proc_stats", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "UpdateTimeStat->ActItems"},
+    {"from": "ch_genlib_022_shm_params_sql", "to": "ch_genlib_019_shm_table_crud", "type": "calls", "detail": "->OpenTable,CloseTable"},
+    {"from": "ch_genlib_022_shm_params_sql", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "->ActItems,GetItem"},
+    {"from": "ch_genlib_022_shm_params_sql", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "LockSqlServer->WaitForResource via RETURN macro"},
+    {"from": "ch_genlib_023_shm_misc_ops", "to": "ch_genlib_019_shm_table_crud", "type": "calls", "detail": "->OpenTable,CloseTable"},
+    {"from": "ch_genlib_023_shm_misc_ops", "to": "ch_genlib_020_shm_row_ops", "type": "calls", "detail": "->ActItems,GetItem,SetItem,RewindTable"},
+    {"from": "ch_genlib_023_shm_misc_ops", "to": "ch_genlib_024_semaphores", "type": "calls", "detail": "AddToSonsCount/set_sys_status->WaitForResource,ReleaseResource"},
+    {"from": "ch_genlib_024_semaphores", "to": "ch_genlib_025_gerr_gxx_makefile", "type": "calls", "detail": "->GerrLogReturn"}
+  ],
+  "groups": {
+    "Memory.c": {
+      "chunks": ["ch_genlib_001_mem_header_alloc", "ch_genlib_002_mem_string_utils", "ch_genlib_003_mem_env", "ch_genlib_004_mem_process_lifecycle", "ch_genlib_005_mem_broadcast_alarm", "ch_genlib_006_mem_cmdline_lookup", "ch_genlib_007_mem_run_server", "ch_genlib_008_mem_system_utils", "ch_genlib_009_mem_hebrew", "ch_genlib_010_mem_date_math"],
+      "description": "Process lifecycle, utilities, Hebrew encoding, date arithmetic"
+    },
+    "Sockets.c": {
+      "chunks": ["ch_genlib_011_sock_header_named", "ch_genlib_012_sock_tcp", "ch_genlib_013_sock_accept_close", "ch_genlib_014_sock_readwrite", "ch_genlib_015_sock_lowlevel_io", "ch_genlib_016_sock_multiplex_ipc"],
+      "description": "Unix-domain and TCP socket IPC system"
+    },
+    "SharedMemory.cpp": {
+      "chunks": ["ch_genlib_017_shm_header_macros", "ch_genlib_018_shm_extent_mgmt", "ch_genlib_019_shm_table_crud", "ch_genlib_020_shm_row_ops", "ch_genlib_021_shm_proc_stats", "ch_genlib_022_shm_params_sql", "ch_genlib_023_shm_misc_ops"],
+      "description": "Shared memory table engine with extent management"
+    },
+    "Semaphores.c": {
+      "chunks": ["ch_genlib_024_semaphores"],
+      "description": "System V semaphore mutual exclusion"
+    },
+    "Support": {
+      "chunks": ["ch_genlib_025_gerr_gxx_makefile"],
+      "description": "Error logging, debug helper, build configuration"
+    }
+  },
+  "external_dependencies": {
+    "consuming_components": {
+      "FatherProcess": {
+        "calls": ["CreateSemaphore", "DeleteSemaphore", "InitFirstExtent", "KillAllExtents", "CreateTable", "OpenTable", "CloseTable", "AddItem", "DeleteTable", "ActItems", "RewindTable", "GetItem", "AddCurrProc", "GetSonsCount", "AddToSonsCount", "Run_server", "BroadcastSonProcs", "ListenSocketNamed", "GetSocketMessage", "DisposeSockets", "InitEnv", "HashEnv", "GetCurrNamedPipe", "GerrLogMini", "set_sys_status", "get_sys_status"]
+      },
+      "SqlServer": {
+        "calls": ["InitSonProcess", "ExitSonProcess", "GetSocketMessage", "ReadSocket", "WriteSocket", "UpdateTimeStat", "UpdateShmParams", "UpdateLastAccessTime", "ToGoDown", "GerrLogMini", "GerrLogReturn"]
+      },
+      "As400UnixServer": {
+        "calls": ["InitSonProcess", "ExitSonProcess", "GetSocketMessage", "GetInterProcMesg", "SetInterProcMesg", "GetFreeSqlServer", "SetFreeSqlServer", "ConnectSocketNamed", "WriteSocket", "ReadSocket"]
+      },
+      "PharmTcpServer": {
+        "calls": ["InitSonProcess", "ExitSonProcess", "OpenTable", "CloseTable", "ActItems", "GetSocketMessage", "GerrLogMini"]
+      },
+      "PharmWebServer": {
+        "calls": ["InitSonProcess", "ExitSonProcess", "OpenTable", "CloseTable", "ActItems", "GerrLogMini"]
+      }
+    },
+    "system_libraries": {
+      "ipc": ["shmget", "shmat", "shmdt", "shmctl", "semget", "semctl", "semop"],
+      "sockets": ["socket", "bind", "listen", "connect", "accept", "close", "select", "read", "write", "getpeername", "inet_ntoa", "gethostbyname", "setsockopt"],
+      "process": ["fork", "execv", "exit", "_exit", "setuid", "getpid", "getppid", "plock", "mlockall"],
+      "signals": ["sigaction", "alarm"],
+      "filesystem": ["open", "close", "read", "write", "unlink", "fopen", "fclose", "popen", "pclose", "umask", "system"],
+      "time": ["time", "localtime", "mktime", "gettimeofday", "usleep"],
+      "memory": ["malloc", "realloc", "free", "memcpy", "memset"]
+    },
+    "external_globals": {
+      "from_Global_h": ["CurrNamedPipe", "CurrProgName", "NamedPipeSocket", "NamedpDir", "BinDir", "LogDir", "LogFile", "MacUid", "ReadTimeout", "WriteTimeout", "SharedSize", "LockPagesMode", "GoDownCheckInterval", "SharedMemUpdateInterval", "NAMEDP_PREFIX", "state", "len"],
+      "from_GenSql": ["TableTab[]", "EnvTabPar", "SonProcParams", "PcMessages[]", "PharmMessages[]", "DoctorMessages[]"]
+    }
+  }
+}

@@ -115,7 +115,7 @@ source_code/
 | RES-SHRINKPHARM-001 | ShrinkPharm deep dive | ✅ COMPLETE | RESEARCH/ShrinkPharm_deepdive.md |
 | RES-MACODBC-001 | MacODBC.h deep dive | ✅ COMPLETE | RESEARCH/MacODBC_deepdive.md |
 | RES-SQL-001 | SqlServer deep dive (~84K lines) | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
-| RES-GENLIB-001 | GenLib deep dive (~10K lines) | 🔵 ACTIVE | RESEARCH/GenLib_deepdive.md |
+| RES-GENLIB-001 | GenLib deep dive (~10K lines) | ✅ COMPLETE | RESEARCH/GenLib_deepdive.md |
 
 ### CHUNKER (CH) - Stage 0
 
@@ -125,7 +125,7 @@ source_code/
 | CH-SQL-001 | SqlServer | ✅ COMPLETE | RES-SQL-001 ✅ | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
 | CH-AS400-001 | As400UnixServer | 📋 PLANNED | - | CHUNKS/As400UnixServer/ |
 | CH-PHARM-001 | PharmTcpServer | 📋 PLANNED | - | CHUNKS/PharmTcpServer/ |
-| CH-GENLIB-001 | GenLib | 📋 PLANNED | RES-GENLIB-001 | CHUNKS/GenLib/ |
+| CH-GENLIB-001 | GenLib | ✅ COMPLETE | RES-GENLIB-001 ✅ | CHUNKS/GenLib/ (25 chunks, 10,316 lines) |
 | CH-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | RES-SHRINKPHARM-001 ✅ | CHUNKS/ShrinkPharm/ |
 | CH-MACODBC-001 | MacODBC.h | ✅ COMPLETE | RES-MACODBC-001 ✅ | CHUNKS/MacODBC/ |
 
@@ -137,7 +137,7 @@ source_code/
 | DOC-SQL-001 | SqlServer | ✅ COMPLETE | CH-SQL-001 ✅ | Documentation/SqlServer/ (100/100, English) |
 | DOC-AS400-001 | As400UnixServer | 📋 PLANNED | CH-AS400-001 | Documentation/As400UnixServer/ |
 | DOC-PHARM-001 | PharmTcpServer | 📋 PLANNED | CH-PHARM-001 | Documentation/PharmTcpServer/ |
-| DOC-GENLIB-001 | GenLib | 📋 PLANNED | CH-GENLIB-001 | Documentation/GenLib/ (English) |
+| DOC-GENLIB-001 | GenLib | ✅ COMPLETE | CH-GENLIB-001 ✅ | Documentation/GenLib/ (100/100, English) |
 | DOC-SHRINK-001 | ShrinkPharm | ✅ COMPLETE | CH-SHRINK-001 ✅ | Documentation/ShrinkPharm/ (100/100) |
 | DOC-MACODBC-001 | MacODBC.h (Hebrew) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC_Hebrew/ (100/100, Hebrew) |
 | DOC-MACODBC-002 | MacODBC.h (English) | ✅ COMPLETE | CH-MACODBC-001 ✅ | Documentation/MacODBC/ (100/100, English) |
@@ -815,13 +815,13 @@ ACTION: None until further notice
 
 ## ACTIVE SPRINT
 
-**Sprint Goal:** GenLib CIDRA Pipeline (~10K lines, 6 source files — Foundation Library)
+**Sprint Goal:** GenLib CIDRA Pipeline — COMPLETE
 
 | Priority | Task | Owner | Status | Target |
 |----------|------|-------|--------|--------|
-| P0 | RES-GENLIB-001 | Researcher | 🔵 ACTIVE | RESEARCH/GenLib_deepdive.md |
-| P0 | CH-GENLIB-001 | Chunker | 📋 PLANNED (depends on RES-GENLIB-001) | CHUNKS/GenLib/ |
-| P0 | DOC-GENLIB-001 | Documenter | 📋 PLANNED (depends on CH-GENLIB-001) | Documentation/GenLib/ |
+| P0 | RES-GENLIB-001 | Researcher | ✅ COMPLETE | RESEARCH/GenLib_deepdive.md (114 functions) |
+| P0 | CH-GENLIB-001 | Chunker | ✅ COMPLETE | CHUNKS/GenLib/ (25 chunks, 10,316 lines) |
+| P0 | DOC-GENLIB-001 | Documenter | ✅ COMPLETE | Documentation/GenLib/ (100/100, English) |
 | -- | RES-DEEPDIVE-001 | Researcher | ⏸️ PAUSED | Resume after GenLib pipeline |
 
 **Completed (all sessions):**
@@ -840,6 +840,9 @@ ACTION: None until further notice
 | RES-SQL-001 | ✅ COMPLETE | RESEARCH/SqlServer_deepdive.md + Merged Baseline |
 | CH-SQL-001 | ✅ COMPLETE | CHUNKS/SqlServer/ (62 chunks, 83,983 lines) |
 | DOC-SQL-001 | ✅ COMPLETE | Documentation/SqlServer/ (100/100, English) |
+| RES-GENLIB-001 | ✅ COMPLETE | RESEARCH/GenLib_deepdive.md (114 functions) |
+| CH-GENLIB-001 | ✅ COMPLETE | CHUNKS/GenLib/ (25 chunks, 10,316 lines) |
+| DOC-GENLIB-001 | ✅ COMPLETE | Documentation/GenLib/ (100/100, English) |
 
 ---
 
@@ -893,4 +896,4 @@ ACTION: None until further notice
 
 ---
 
-*Maintained by Orc. Last sync: 2026-02-15 (GenLib pipeline ACTIVE — RES-GENLIB-001 🔵, CH-GENLIB-001 📋, DOC-GENLIB-001 📋. SqlServer pipeline COMPLETE. Hebrew: deferred until client reviews English)*
+*Maintained by Orc. Last sync: 2026-03-16 (GenLib pipeline COMPLETE — RES-GENLIB-001 ✅, CH-GENLIB-001 ✅ 25 chunks, DOC-GENLIB-001 ✅ 100/100 English)*

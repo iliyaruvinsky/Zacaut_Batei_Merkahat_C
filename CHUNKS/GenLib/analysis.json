@@ -1,0 +1,197 @@
+{
+  "metadata": {
+    "component": "GenLib",
+    "analyzed_at": "2026-03-16T10:00:00Z",
+    "analyzer": "CIDRA Chunker v1.0.0"
+  },
+  "file_statistics": {
+    "total_files": 7,
+    "total_lines": 10316,
+    "files": [
+      {
+        "file": "SharedMemory.cpp",
+        "lines": 4774,
+        "functions": 46,
+        "complexity": "high",
+        "purpose": "Shared memory multi-extent table engine with doubly-linked-list rows"
+      },
+      {
+        "file": "Memory.c",
+        "lines": 2196,
+        "functions": 31,
+        "complexity": "high",
+        "purpose": "Process lifecycle (InitSonProcess/ExitSonProcess), utilities, Hebrew encoding, date arithmetic"
+      },
+      {
+        "file": "Sockets.c",
+        "lines": 1759,
+        "functions": 17,
+        "complexity": "high",
+        "purpose": "Unix-domain socket IPC, TCP sockets, message framing protocol"
+      },
+      {
+        "file": "GeneralError.c",
+        "lines": 770,
+        "functions": 13,
+        "complexity": "medium",
+        "purpose": "Error handling and logging with doom-loop protection"
+      },
+      {
+        "file": "Semaphores.c",
+        "lines": 734,
+        "functions": 6,
+        "complexity": "high",
+        "purpose": "System V semaphore operations with re-entrant locking"
+      },
+      {
+        "file": "GxxPersonality.c",
+        "lines": 27,
+        "functions": 1,
+        "complexity": "low",
+        "purpose": "C++ personality stub and Prn() debug helper"
+      },
+      {
+        "file": "Makefile",
+        "lines": 55,
+        "functions": 0,
+        "complexity": "low",
+        "purpose": "Build libgenlib.a static archive from 6 source files"
+      }
+    ]
+  },
+  "function_inventory": {
+    "total_functions": 114,
+    "by_file": {
+      "Memory.c": 31,
+      "SharedMemory.cpp": 46,
+      "Sockets.c": 17,
+      "GeneralError.c": 13,
+      "Semaphores.c": 6,
+      "GxxPersonality.c": 1
+    }
+  },
+  "chunking_statistics": {
+    "total_chunks": 25,
+    "by_file": {
+      "Memory.c": 10,
+      "Sockets.c": 6,
+      "SharedMemory.cpp": 7,
+      "Semaphores.c": 1,
+      "GeneralError.c_GxxPersonality.c_Makefile": 1
+    },
+    "token_distribution": {
+      "min_tokens": 700,
+      "max_tokens": 7800,
+      "avg_tokens": 3080,
+      "within_target_range": 25,
+      "below_500": 0,
+      "above_8000": 0
+    },
+    "type_distribution": {
+      "function_group": 20,
+      "function": 1,
+      "declarations": 1,
+      "file_complete": 1,
+      "file_group": 1
+    }
+  },
+  "key_patterns": {
+    "concurrency_model": {
+      "description": "Single system semaphore protects ALL shared memory access. Re-entrant via sem_busy_flg counter.",
+      "locations": ["Semaphores.c:L487-L734", "SharedMemory.cpp:L104 (RETURN macro)"]
+    },
+    "ipc_architecture": {
+      "description": "AF_UNIX/SOCK_STREAM sockets called 'named pipes'. MESSAGE_HEADER framing with ASCII type+length fields. FILE_MESG for large data (via temp files), DATA_MESG for inline data.",
+      "locations": ["Sockets.c:L89-L207 (ListenSocketNamed)", "Sockets.c:L1196-L1239 (header protocol)", "Sockets.c:L1516-L1756 (inter-process messaging)"]
+    },
+    "shared_memory_engine": {
+      "description": "Multi-extent System V shm with MASTER_SHM_HEADER, EXTENT_HEADER chains, TABLE_HEADER doubly-linked list of named tables, TABLE_ROW doubly-linked rows with free chain for reuse.",
+      "locations": ["SharedMemory.cpp:L288-L508 (InitFirstExtent)", "SharedMemory.cpp:L1291-L1491 (CreateTable)", "SharedMemory.cpp:L1700-L1928 (AddItem)", "SharedMemory.cpp:L2417-L2502 (ActItems)"]
+    },
+    "process_bootstrap": {
+      "description": "InitSonProcess is the 13-step child process bootstrap called by all server components.",
+      "locations": ["Memory.c:L552-L612"]
+    },
+    "error_macro_system": {
+      "description": "RETURN_ON_ERR, ABORT_ON_ERR, CONT_ON_ERR macros with GerrId (source,line) and GerrStr (errno,strerror) expansion.",
+      "locations": ["GeneralError.c (functions)", "Global.h (macro definitions, not in repo)"]
+    },
+    "doom_loop_protection": {
+      "description": "GerrLogReturn and GerrLogToFileName include 250ms usleep() after logging to prevent rapid-fire error disk filling.",
+      "locations": ["GeneralError.c:L226-L233", "GeneralError.c:L429-L430"]
+    }
+  },
+  "verification_backlog": [
+    {
+      "id": "VB-GL-01",
+      "item": "Defines.mak and Rules.mak contents",
+      "notes": "Referenced by Makefile:L4,L27 but not present in repository. Needed to verify CC, COMP_OPTS, AR values."
+    },
+    {
+      "id": "VB-GL-02",
+      "item": "EnvTabPar definition",
+      "notes": "Referenced at Memory.c:L462. Global array of EnvTab structs defined elsewhere (likely Global.h or component source). Determines required environment variables."
+    },
+    {
+      "id": "VB-GL-03",
+      "item": "SonProcParams definition",
+      "notes": "Referenced at Memory.c:L575 and SharedMemory.cpp:L4007. ParamTab array defining per-component shm parameters. Defined per-component."
+    },
+    {
+      "id": "VB-GL-04",
+      "item": "MESSAGE_HEADER struct layout",
+      "notes": "Defined in Global.h. messageType and messageLen are ASCII string fields parsed with atoi(). Exact field sizes determine wire protocol."
+    },
+    {
+      "id": "VB-GL-05",
+      "item": "PcMessages[] array",
+      "notes": "Used in BroadcastSonProcs at Memory.c:L797-L798. Determines broadcast-able shutdown/control messages."
+    },
+    {
+      "id": "VB-GL-06",
+      "item": "FILE_MESG temp file cleanup",
+      "notes": "SetInterProcMesg creates temp files in NamedpDir (Sockets.c:L1650-L1670). No cleanup mechanism observed in GenLib."
+    },
+    {
+      "id": "VB-GL-07",
+      "item": "Thread safety",
+      "notes": "All static variables (ConnTab, ExtentChain, sem_busy_flg) are not thread-safe. System appears purely multi-process."
+    },
+    {
+      "id": "VB-GL-08",
+      "item": "SharedMemory.cpp GetProc function",
+      "notes": "GetProc at SharedMemory.cpp:L2829 searches by pid. Confirm whether it uses ActItems internally or direct iteration."
+    }
+  ],
+  "complexity_assessment": {
+    "overall": "high",
+    "factors": [
+      "10,316 lines across 7 files with 114 functions",
+      "Complex shared memory table engine with extent chaining and doubly-linked rows",
+      "Three IPC mechanisms: shared memory, semaphores, Unix-domain sockets",
+      "Tightly coupled concurrency model (single semaphore for all shm access)",
+      "Mixed C/C++ compilation (SharedMemory.cpp is the only C++ file)",
+      "Hebrew encoding with byte-level manipulation and RTL text handling",
+      "FILE_MESG/DATA_MESG dual messaging pattern",
+      "Foundation library linked by every component - changes have system-wide impact"
+    ]
+  },
+  "security_notes": [
+    {
+      "location": "SharedMemory.cpp:L80-L81",
+      "description": "Hard-coded shared memory key ShmKey1 = 0x000abcde"
+    },
+    {
+      "location": "Semaphores.c:L92",
+      "description": "Hard-coded semaphore key SemKey1 = 0x000abcde (same value as ShmKey1)"
+    },
+    {
+      "location": "SharedMemory.cpp:L76-L77, Semaphores.c:L59",
+      "description": "File mode 0777 for semaphore and shared memory - any user on system can access"
+    },
+    {
+      "location": "Memory.c:L592-L595",
+      "description": "setuid() call using MacUid from environment - drops to unprivileged user"
+    }
+  ]
+}

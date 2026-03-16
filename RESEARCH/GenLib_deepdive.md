@@ -1,310 +1,637 @@
-# GenLib (source_code/GenLib) — Deep Dive (RES-DEEPDIVE-001)
+# GenLib Deep-Dive Research Document
 
-**Generated:** 2026-02-02  
-**Scope:** `source_code/GenLib/` (read every file in folder)  
-
-## File inventory (exact)
-
-Total files: **15** (exact). Total lines across folder: **10,604** (exact).
-
-| File | Lines (exact) | Role / notes |
-|------|--------------:|--------------|
-| `source_code/GenLib/Memory.c` | 2196 | Process bootstrap + shared resources access (semaphore/shm) + process spawning helpers (details below). |
-| `source_code/GenLib/Sockets.c` | 1758 | IPC socket layer (Unix-domain “named pipes” + message framing) (details below). |
-| `source_code/GenLib/SharedMemory.cpp` | 4774 | Shared-memory table engine implementation (extents, table ops) (details below). |
-| `source_code/GenLib/GeneralError.c` | 770 | Standard error logging/exit/return helpers (details below). |
-| `source_code/GenLib/Semaphores.c` | 734 | Semaphore wrappers/utilities (details below). |
-| `source_code/GenLib/GxxPersonality.c` | 27 | Debug-print helper; contains a disabled `__gxx_personality_v0` stub (details below). |
-| `source_code/GenLib/Makefile` | 54 | Builds `libgenlib.a` from GenLib sources. |
-| `source_code/GenLib/GenLib.vcxproj` | 84 | Visual Studio project file referencing GenLib sources. |
-| `source_code/GenLib/GenLib.vcxproj.filters` | 42 | Visual Studio filter mapping. |
-| `source_code/GenLib/GenLib.vcxproj.vspscc` | 10 | Visual Studio source-control metadata. |
-| `source_code/GenLib/GenLib.vcxproj.user` | 3 | Visual Studio per-user settings (empty project stub). |
-| `source_code/GenLib/.project` | 27 | Eclipse CDT project metadata. |
-| `source_code/GenLib/.cproject` | 80 | Eclipse CDT toolchain/build-target configuration. |
-| `source_code/GenLib/.cdtproject` | 33 | Eclipse CDT path entries + make targets. |
-| `source_code/GenLib/.settings/language.settings.xml` | 12 | Eclipse language settings providers config. |
-
-## Build + IDE configuration artifacts
-
-### Makefile (Unix build)
-
-- Produces static library target `libgenlib.a` from sources `GeneralError.c`, `Memory.c`, `Semaphores.c`, `Sockets.c`, `SharedMemory.cpp`, `GxxPersonality.c` (`source_code/GenLib/Makefile:L16-L25`).
-- Uses `../Util/Defines.mak` and `../Util/Rules.mak` for shared build flags/rules (`source_code/GenLib/Makefile:L4-L5`, `source_code/GenLib/Makefile:L27-L28`).
-
-### Visual Studio project (Windows build metadata)
-
-- Declares `Debug|Win32` and `Release|Win32`, `CharacterSet=MultiByte`, toolset `v143` (`source_code/GenLib/GenLib.vcxproj:L3-L11`, `source_code/GenLib/GenLib.vcxproj:L24-L36`).
-- Lists GenLib compilation units: `GeneralError.c`, `GxxPersonality.c`, `Memory.c`, `Semaphores.c`, `SharedMemory.cpp`, `Sockets.c` (`source_code/GenLib/GenLib.vcxproj:L70-L80`).
-
-### Eclipse CDT project metadata (Unix/Linux toolchain)
-
-- Eclipse CDT project is named `GenLib` and uses CDT managed build natures (`source_code/GenLib/.project:L2-L26`).
-- Toolchain includes ELF binary parser and GNU Make build targets, with build targets `All`→`make all` and `Clean`→`make clean` (`source_code/GenLib/.cproject:L8-L14`, `source_code/GenLib/.cproject:L60-L78`).
-- CDT make targets list `all` and `clean` (`source_code/GenLib/.cdtproject:L16-L30`).
-
-## Code deep dive
-
-### `GxxPersonality.c` (27 lines) — debug printing helper
-
-- Includes `../Include/Global.h` and defines `Prn(char *frm, ...)` which prints `{pid, ppid}` + formatted message to stdout and flushes (`source_code/GenLib/GxxPersonality.c:L2-L4`, `source_code/GenLib/GxxPersonality.c:L12-L26`).
-- Contains a disabled (compiled out via `#if 0`) stub for `__gxx_personality_v0` (commented out) (`source_code/GenLib/GxxPersonality.c:L5-L10`).
-
-### `GeneralError.c` (770 lines) — error handling/logging
-
-**Purpose:** Standard error logging helpers. The code uses two formatted layouts: a “sleeker” message layout (`ErrorFmt`) and a titled message layout (`TitleFmt`) (`source_code/GenLib/GeneralError.c:L46-L77`).
-
-**Primary dependency:** `Global.h` for system globals/constants (`source_code/GenLib/GeneralError.c:L24-L28`).
-
-#### Function inventory (all functions in file)
-
-| Function | File:Line | Summary |
-|----------|-----------|---------|
-| `GerrLogExit` | `source_code/GenLib/GeneralError.c:L92-L156` | Format an error string with `vsprintf`, write using `ErrorFmt`, close log file, then terminate process (`exit` / `_exit`). |
-| `GerrLogReturn` | `source_code/GenLib/GeneralError.c:L165-L237` | Same as `GerrLogExit` but returns; also sleeps 250ms to prevent disk-filling “doom loop” logs (`usleep(250000)`). |
-| `GerrLogMini` | `source_code/GenLib/GeneralError.c:L248-L277` | Minimal log line with time + DB timestamp (no big header). |
-| `GerrLogAddBlankLines` | `source_code/GenLib/GeneralError.c:L288-L303` | Append N blank lines to the log. |
-| `GerrLogFnameMini` | `source_code/GenLib/GeneralError.c:L314-L344` | Minimal log line to a specified file. |
-| `GerrLogFnameClear` | `source_code/GenLib/GeneralError.c:L355-L371` | Truncate/clear a specified file with a timestamp line. |
-| `GerrLogToFileName` | `source_code/GenLib/GeneralError.c:L382-L433` | Full `ErrorFmt` message written to a specified file; includes 250ms “doom loop” delay. |
-| `GmsgLogExit` | `source_code/GenLib/GeneralError.c:L445-L512` | “Titled” message (`TitleFmt`) then exit. |
-| `GmsgLogReturn` | `source_code/GenLib/GeneralError.c:L521-L585` | “Titled” message (`TitleFmt`) then return. |
-| `open_log_file` | `source_code/GenLib/GeneralError.c:L594-L661` | Resolve log target: returns `stderr` if `LogDir`/`LogFile` not set; otherwise opens `LogDir/LogFile` in append mode. |
-| `close_log_file` | `source_code/GenLib/GeneralError.c:L670-L684` | Flushes; closes file unless it is `stderr`. |
-| `open_other_file` | `source_code/GenLib/GeneralError.c:L695-L740` | Open arbitrary file under `LogDir`; attempts to create missing directories (via `create_log_directory`). |
-| `create_log_directory` | `source_code/GenLib/GeneralError.c:L746-L770` | Builds parent directory and runs `mkdir -m777 -p <dir>` via `system()`. |
-
-#### Key behaviors (with citations)
-
-- **Log routing**: if either `LogDir[0]` or `LogFile[0]` is empty, `open_log_file()` returns `stderr` instead of opening a file (`source_code/GenLib/GeneralError.c:L633-L635`).
-- **Timestamps**: both `GerrLogExit/Return` and the titled variants use `GetDbTimestamp()` (not `ctime`) in output (`source_code/GenLib/GeneralError.c:L137-L139`, `source_code/GenLib/GeneralError.c:L492-L496`).
-- **Anti “doom loop” throttling**: `GerrLogReturn` sleeps 250ms before returning (`source_code/GenLib/GeneralError.c:L226-L234`). Same delay exists in `GerrLogToFileName` (`source_code/GenLib/GeneralError.c:L423-L431`).
-
-#### Security / robustness notes (code-level)
-
-- **Unbounded formatting**: several functions use `vsprintf()` into buffers without size limits (`source_code/GenLib/GeneralError.c:L115-L117`, `source_code/GenLib/GeneralError.c:L186-L189`). This is a classic overflow risk unless `buf` is guaranteed large enough.
-- **Command execution**: `create_log_directory()` uses `system("mkdir -m777 -p ...")` where the path is derived from the filename (`source_code/GenLib/GeneralError.c:L763-L769`). If the filename/path is attacker-controlled, this is command-injection risk.
+**Research ID**: RES-GENLIB-001
+**Date**: 2026-03-16
+**Status**: Complete
+**Researcher**: Claude (RES agent)
 
 ---
 
-### `Semaphores.c` (734 lines) — semaphore helpers (System V / “BSD_SEM” path)
+## 1. Overview
 
-**Purpose:** Library routines for semaphore usage (“should be only with this library routines”) (`source_code/GenLib/Semaphores.c:L12-L16`).
+GenLib is the **shared foundation library** (`libgenlib.a`) linked by every server component in the MACCABI pharmacy/doctor backend system. It provides:
 
-**Implementation selection:** The file defines XENIX/POSIX/BSD semaphore backends and chooses `SEMAPHORES = BSD_SEM` (`source_code/GenLib/Semaphores.c:L41-L49`). In practice, the “BSD” backend uses System V APIs `semget/semctl/semop` (`source_code/GenLib/Semaphores.c:L146-L162`, `source_code/GenLib/Semaphores.c:L580-L591`).
+- **Process lifecycle management** -- child process bootstrap (`InitSonProcess`), process spawning (`Run_server`), and shutdown (`ExitSonProcess`)
+- **IPC via Unix-domain sockets** -- called "named pipes" in the codebase, using `AF_UNIX`/`SOCK_STREAM`; plus TCP/IP socket support
+- **Shared memory management** -- System V shared memory extents with an in-memory table engine (doubly-linked-list rows, extent chaining)
+- **System V semaphore operations** -- mutual exclusion for shared memory access
+- **Error handling and logging** -- variadic log functions writing to per-process log files
+- **Utility functions** -- memory allocation wrappers, string manipulation, Hebrew encoding conversions, date arithmetic
 
-#### Key globals / parameters
-
-- **Semaphore mode**: `SemMode = 0777` (`source_code/GenLib/Semaphores.c:L59-L60`).
-- **Key**: `SemKey1 = 0x000abcde` (`source_code/GenLib/Semaphores.c:L92-L93`).
-- **Local re-entrancy (“pushable”)**: `sem_busy_flg` supports nested `WaitForResource()` calls in-process (`source_code/GenLib/Semaphores.c:L97-L98`, `source_code/GenLib/Semaphores.c:L508-L513`).
-- **Semop operations**: W/P and WNB/PNB `struct sembuf` templates include `SEM_UNDO` (and optional `IPC_NOWAIT`) (`source_code/GenLib/Semaphores.c:L86-L90`).
-
-#### Function inventory (all functions in file)
-
-| Function | File:Line | Summary |
-|----------|-----------|---------|
-| `CreateSemaphore` | `source_code/GenLib/Semaphores.c:L109-L168` | Create + initialize semaphore (Father process). Uses `semget(SemKey1,1, SemMode|IPC_CREAT)` then `semctl(...SETVAL,1)` (`source_code/GenLib/Semaphores.c:L146-L162`). |
-| `DeleteSemaphore` | `source_code/GenLib/Semaphores.c:L181-L264` | Remove semaphore (System V `IPC_RMID`) (`source_code/GenLib/Semaphores.c:L232-L238`). |
-| `OpenSemaphore` | `source_code/GenLib/Semaphores.c:L275-L393` | Open existing semaphore via `semget(SemKey1,1, IPC_CREAT)` (“changed ... Linux”) (`source_code/GenLib/Semaphores.c:L368-L373`). |
-| `CloseSemaphore` | `source_code/GenLib/Semaphores.c:L404-L477` | Logical “close” (resets local `sem_num` / `sem_p`); does not `IPC_RMID`. |
-| `WaitForResource` | `source_code/GenLib/Semaphores.c:L487-L616` | Acquire lock. If already held locally, increments `sem_busy_flg` and returns (`source_code/GenLib/Semaphores.c:L508-L513`). Otherwise uses `semop(...,&W,1)` (`source_code/GenLib/Semaphores.c:L586-L591`) and sets `sem_busy_flg=1` (`source_code/GenLib/Semaphores.c:L612-L613`). |
-| `ReleaseResource` | `source_code/GenLib/Semaphores.c:L625-L734` | Release lock. Supports nested release via decrementing `sem_busy_flg` (`source_code/GenLib/Semaphores.c:L645-L650`); otherwise uses `semop(...,&P,1)` (`source_code/GenLib/Semaphores.c:L704-L710`) and sets `sem_busy_flg=0` (`source_code/GenLib/Semaphores.c:L730-L732`). |
+According to the Makefile at `source_code/GenLib/Makefile:L24`, the build target is `libgenlib.a` (a static archive library).
 
 ---
 
-### `Sockets.c` (1758 lines) — IPC sockets + message framing
+## 2. File Inventory (Verified Line Counts)
 
-**Purpose:** “communication sockets handling” library (`source_code/GenLib/Sockets.c:L12-L16`).
+| File | Lines | Purpose (from file header) |
+|---|---:|---|
+| `SharedMemory.cpp` | 4,775 | "library routines for shared memory handling" (`SharedMemory.cpp:L12-L17`) |
+| `Memory.c` | 2,196 | "Library routines for handling memory buffers" (`Memory.c:L12-L16`) |
+| `Sockets.c` | 1,759 | "library routines for communication sockets handling" (`Sockets.c:L12-L17`) |
+| `GeneralError.c` | 770 | "library routines for error handling" (`GeneralError.c:L12-L16`) |
+| `Semaphores.c` | 734 | "Library routines for handling semaphores" (`Semaphores.c:L12-L16`) |
+| `GxxPersonality.c` | 27 | C++ personality stub + `Prn()` debug helper (`GxxPersonality.c:L1-L27`) |
+| `Makefile` | 55 | Build configuration for `libgenlib.a` (`Makefile:L1-L55`) |
+| **Total** | **10,316** | |
 
-**Primary dependency:** `Global.h` (`source_code/GenLib/Sockets.c:L24-L24`).
-
-#### Named “pipes” are Unix-domain stream sockets
-
-- `ListenSocketNamed()` creates `AF_UNIX/SOCK_STREAM` sockets and `bind()`s to the supplied pathname (`source_code/GenLib/Sockets.c:L110-L115`, `source_code/GenLib/Sockets.c:L154-L166`), then `listen()`s (`source_code/GenLib/Sockets.c:L184-L189`) and saves the listening FD into global `NamedPipeSocket` (`source_code/GenLib/Sockets.c:L203-L205`).
-- `ConnectSocketNamed()` creates `AF_UNIX/SOCK_STREAM` and `connect()`s to the remote named socket (`source_code/GenLib/Sockets.c:L237-L242`, `source_code/GenLib/Sockets.c:L266-L272`).
-
-#### Internet (TCP) sockets
-
-- `ListenSocketUnnamed()` is `AF_INET/SOCK_STREAM`, sets `SO_REUSEADDR` + `SO_KEEPALIVE`, binds `INADDR_ANY:port`, and listens (`source_code/GenLib/Sockets.c:L339-L352`, `source_code/GenLib/Sockets.c:L361-L420`, `source_code/GenLib/Sockets.c:L433-L472`).
-- `ConnectSocketUnnamed()` connects to a remote `AF_INET` socket (`source_code/GenLib/Sockets.c:L511-L546`).
-
-#### Message framing model
-
-1) **Socket header + payload**: read/write uses a `MESSAGE_HEADER` (from `Global.h`) and stores numeric fields as ASCII strings, parsed by `atoi()` (`source_code/GenLib/Sockets.c:L1196-L1234`) and produced by `sprintf()` (`source_code/GenLib/Sockets.c:L1273-L1282`).
-
-2) **Inter-process payload modes**: `MESG_HEADER` in this file defines `(length, mesg_type)` (`source_code/GenLib/Sockets.c:L38-L43`) supporting:
-- `FILE_MESG`: payload is a filename; receiver opens and reads file content (`source_code/GenLib/Sockets.c:L1543-L1567`, `source_code/GenLib/Sockets.c:L1583-L1586`).
-- `DATA_MESG`: payload is copied directly from buffer (`source_code/GenLib/Sockets.c:L1588-L1597`).
-
-#### Function inventory (all functions in file)
-
-| Function | File:Line | Summary |
-|----------|-----------|---------|
-| `ListenSocketNamed` | `source_code/GenLib/Sockets.c:L89-L207` | Create + bind + listen on `AF_UNIX/SOCK_STREAM` named socket; sets `NamedPipeSocket`. |
-| `ConnectSocketNamed` | `source_code/GenLib/Sockets.c:L217-L303` | Connect to named `AF_UNIX` socket; treats `EINTR` specially (`source_code/GenLib/Sockets.c:L274-L283`). |
-| `ListenSocketUnnamed` | `source_code/GenLib/Sockets.c:L318-L481` | Bind/listen TCP socket; uses `SO_REUSEADDR`, `SO_KEEPALIVE`. |
-| `ConnectSocketUnnamed` | `source_code/GenLib/Sockets.c:L489-L572` | Connect TCP socket; returns `CONNECT_ERR` on failure. |
-| `AcceptConnection` | `source_code/GenLib/Sockets.c:L583-L626` | Wrapper around `accept()`. |
-| `CloseSocket` | `source_code/GenLib/Sockets.c:L634-L648` | Closes socket; refuses “weird” FDs `< 3` (`source_code/GenLib/Sockets.c:L639-L644`). |
-| `DisposeSockets` | `source_code/GenLib/Sockets.c:L656-L677` | Unlink current named-socket pathname `CurrNamedPipe` if set. |
-| `ReadSocket` | `source_code/GenLib/Sockets.c:L686-L812` | Read framed message; discard extra bytes if message doesn’t fit provided buffer (`source_code/GenLib/Sockets.c:L744-L810`). |
-| `WriteSocket` | `source_code/GenLib/Sockets.c:L820-L862` | Write framed message (header + payload). |
-| `WriteSocketHead` | `source_code/GenLib/Sockets.c:L870-L941` | Write framed message with one-byte “status” prefix (`source_code/GenLib/Sockets.c:L887-L917`). |
-| `read_socket_data` | `source_code/GenLib/Sockets.c:L948-L1070` | Low-level receive loop with `select()` timeout based on `ReadTimeout` (`source_code/GenLib/Sockets.c:L974-L1009`). |
-| `write_socket_data` | `source_code/GenLib/Sockets.c:L1078-L1188` | Low-level send loop with `select()` timeout based on `WriteTimeout` (`source_code/GenLib/Sockets.c:L1102-L1134`). |
-| `get_header_details` (static) | `source_code/GenLib/Sockets.c:L1196-L1239` | Read and parse `MESSAGE_HEADER` to `{type,len}` via `atoi()`. |
-| `set_header_details` | `source_code/GenLib/Sockets.c:L1248-L1299` | Build and send `MESSAGE_HEADER` with `sprintf()`. |
-| `GetPeerAddr` | `source_code/GenLib/Sockets.c:L1307-L1368` | Return peer IPv4 address as dotted string (`inet_ntoa`). |
-| `GetCurrNamedPipe` | `source_code/GenLib/Sockets.c:L1376-L1388` | Create per-process unique path `NamedpDir/NAMEDP_PREFIX<pid>_<time>` (`source_code/GenLib/Sockets.c:L1380-L1387`). |
-| `GetSocketMessage` | `source_code/GenLib/Sockets.c:L1396-L1510` | Wait for a connection request on `NamedPipeSocket`, accept, then `ReadSocket()` (`source_code/GenLib/Sockets.c:L1472-L1489`). |
-| `GetInterProcMesg` | `source_code/GenLib/Sockets.c:L1516-L1615` | Decode `MESG_HEADER` + payload; FILE vs DATA mode. |
-| `SetInterProcMesg` | `source_code/GenLib/Sockets.c:L1622-L1756` | Build `MESG_HEADER` + payload; in `FILE_MESG` mode writes data to a timestamped file under `NamedpDir` (`source_code/GenLib/Sockets.c:L1652-L1670`). |
+**Note on the C/C++ split**: `SharedMemory.cpp` is the only C++ file. Based on code at `SharedMemory.cpp:L27`, it uses `#pragma GCC diagnostic ignored "-Wwrite-strings"` to suppress C++ string-literal warnings. The likely rationale is that the shared memory table engine uses C++ features (or was compiled as C++ for compatibility reasons), while the rest of the library remains plain C. The file uses `extern "C"` for the `OpenTable` function (`SharedMemory.cpp:L1501`) to maintain C linkage for callers.
 
 ---
 
-### `Memory.c` (2196 lines) — process bootstrap + utilities + spawning helpers
+## 3. Complete Function Inventory
 
-Despite the filename, this unit is also the **child-process bootstrap** layer and contains multiple utility routines used across the system.
+### 3.1 Memory.c -- Process Lifecycle, Utilities, Hebrew Encoding
 
-**Primary dependencies:**
-- `Global.h` (always) (`source_code/GenLib/Memory.c:L23-L28`)
-- `GenSql.h` (Linux only; included “to avoid compiler warnings”) (`source_code/GenLib/Memory.c:L23-L26`)
+| Function | Line | Purpose |
+|---|---:|---|
+| `MemAllocExit()` | 57 | `malloc()` wrapper; calls `GerrLogExit` on failure |
+| `MemReallocExit()` | 88 | `realloc()` wrapper; calls `GerrLogReturn` on failure |
+| `MemAllocReturn()` | 121 | `malloc()` wrapper; logs and returns NULL on failure |
+| `MemReallocReturn()` | 151 | `realloc()` wrapper; logs and returns NULL on failure |
+| `MemFree()` | 181 | `free()` wrapper with NULL-pointer guard |
+| `ListMatch()` | 200 | Find exact string match in NULL-terminated string list |
+| `ListNMatch()` | 251 | Find prefix match in NULL-terminated string list |
+| `StringToupper()` | 302 | In-place uppercase conversion |
+| `BufConvert()` | 322 | Byte-reversal of a buffer |
+| `GetCurrProgName()` | 353 | Extract filename from a path (strips directory) |
+| `InitEnv()` | 389 | Initialize hash-based environment variable buffers |
+| `HashEnv()` | 441 | Read environment variables via `EnvTabPar` and cache them |
+| **`InitSonProcess()`** | **552** | **Main child-process bootstrap routine** |
+| `ExitSonProcess()` | 625 | Clean shutdown: dispose sockets, detach shm, close semaphore, `exit()` |
+| `BroadcastSonProcs()` | 664 | Broadcast a message to all child processes via socket IPC |
+| `alarm_handler()` | 830 | No-op SIGALRM handler (used to break out of blocking syscalls) |
+| `GetCommonPars()` | 848 | Parse `-r` (retries) from command-line arguments |
+| `GetFatherNamedPipe()` | 910 | Look up FatherProcess named pipe path from `PROC_TABLE` |
+| `TssCanGoDown()` | 957 | Check if a subsystem can safely shut down (no active workers) |
+| **`Run_server()`** | **1023** | **Fork+exec a child process** with arguments from shm params |
+| `GetSystemLoad()` | 1261 | Run `sar` and parse CPU load percentage |
+| `my_nap()` | 1309 | Sleep for milliseconds using `select()` on empty fd_set |
+| `run_cmd()` | 1331 | Execute shell command via `popen()`, read output with alarm timeout |
+| `GetWord()` | 1403 | Extract next whitespace-delimited word from string |
+| `ToGoDown()` | 1433 | Check if system/subsystem status is `GOING_DOWN` |
+| `buf_reverse()` | 1471 | Reverse bytes in a buffer (used by Hebrew text processing) |
+| `fix_char()` | 1493 | Swap parentheses `(` <-> `)` for RTL text |
+| `EncodeHebrew()` | 1526 | Flexible Hebrew encoding converter (Win-1255 to DOS or UTF-8). Added 26Nov2025. |
+| `WinHebToDosHeb()` | 1630 | Convert Windows-1255 Hebrew text to DOS Hebrew (code page 862) |
+| `WinHebToUTF8()` | 1735 | Convert Windows-1255 Hebrew text to UTF-8 |
+| `GetMonsDif()` | 1917 | Calculate difference in completed months between two YYYYMMDD dates |
+| `GetDaysDiff()` | 1969 | Calculate difference in days between two YYYYMMDD dates |
+| `AddDays()` | 2008 | Add N days to a YYYYMMDD date |
+| `AddMonths()` | 2043 | Add N months to a YYYYMMDD date |
+| `AddSeconds()` | 2104 | Add N seconds to a time value |
+| `ConvertUnitAmount()` | 2134 | Convert medication amounts between units (mcg/MIU/g to mg) |
+| `ParseISODateTime()` | 2168 | Parse ISO 8601 datetime to YYYYMMDD + HHMMSS integers. Added 2025-04-22 by Marianna. |
 
-#### Function inventory (all functions in file)
+### 3.2 Sockets.c -- IPC Socket System
 
-| Function | File:Line | Summary |
-|----------|-----------|---------|
-| `MemAllocExit` | `source_code/GenLib/Memory.c:L57-L79` | `malloc()` wrapper; logs+exits on allocation failure (`source_code/GenLib/Memory.c:L66-L75`). |
-| `MemReallocExit` | `source_code/GenLib/Memory.c:L88-L112` | `realloc()` wrapper; logs on failure. |
-| `MemAllocReturn` | `source_code/GenLib/Memory.c:L121-L142` | `malloc()` wrapper; logs and returns `NULL` on failure. |
-| `MemReallocReturn` | `source_code/GenLib/Memory.c:L151-L173` | `realloc()` wrapper; logs and returns `NULL` on failure. |
-| `MemFree` | `source_code/GenLib/Memory.c:L181-L193` | `free()` wrapper with null-pointer warning (`source_code/GenLib/Memory.c:L185-L190`). |
-| `ListMatch` | `source_code/GenLib/Memory.c:L200-L243` | Find exact string match in `char**` list; returns index or -1. |
-| `ListNMatch` | `source_code/GenLib/Memory.c:L251-L295` | Find prefix match (`strncmp`) in `char**` list; returns index or -1. |
-| `StringToupper` | `source_code/GenLib/Memory.c:L302-L316` | Uppercase a string in place. |
-| `BufConvert` | `source_code/GenLib/Memory.c:L322-L347` | Reverse a buffer in place (swap ends). |
-| `GetCurrProgName` | `source_code/GenLib/Memory.c:L353-L380` | Extract filename from path (splits on `/`) (`source_code/GenLib/Memory.c:L369-L380`). |
-| `InitEnv` | `source_code/GenLib/Memory.c:L389-L432` | Allocate environment hash arrays `EnvNames/EnvValues` (`source_code/GenLib/Memory.c:L399-L412`). |
-| `HashEnv` | `source_code/GenLib/Memory.c:L441-L538` | Populate `EnvTabPar[*].param_value` from cached hash or `getenv()`; logs missing vars (`source_code/GenLib/Memory.c:L484-L525`). |
-| `InitSonProcess` | `source_code/GenLib/Memory.c:L552-L612` | Child-process bootstrap: env hash → open semaphore → attach shm → load params → create listen socket (named pipe) → register in PROC table (`source_code/GenLib/Memory.c:L559-L611`). |
-| `ExitSonProcess` | `source_code/GenLib/Memory.c:L625-L655` | Cleanup (unlink named socket, detach shm, close semaphore) and exit (`source_code/GenLib/Memory.c:L633-L654`). |
-| `BroadcastSonProcs` | `source_code/GenLib/Memory.c:L664-L821` | Father helper: iterate PROC table, connect to each child’s named socket, send shutdown message (`WriteSocket`) with alarm-based connect timeout (`source_code/GenLib/Memory.c:L773-L800`). |
-| `alarm_handler` | `source_code/GenLib/Memory.c:L830-L839` | SIGALRM handler used to break out of blocking syscalls (no-op body). |
-| `GetCommonPars` | `source_code/GenLib/Memory.c:L848-L903` | Parses common `-r` retry option from argv. |
-| `GetFatherNamedPipe` | `source_code/GenLib/Memory.c:L910-L950` | Find FatherProcess record in `PROC_TABLE` and return its `named_pipe` (`source_code/GenLib/Memory.c:L930-L946`). |
-| `TssCanGoDown` | `source_code/GenLib/Memory.c:L957-L1009` | Periodically checks if system can shut down by scanning proc table for workers (`source_code/GenLib/Memory.c:L968-L1008`). |
-| `Run_server` | `source_code/GenLib/Memory.c:L1023-L1252` | Fork+exec child process using proc-table record + arguments from `PARM_TABLE`; logs startup; sets `DOCTOR_SYS` env var for doctor processes (`source_code/GenLib/Memory.c:L1050-L1173`, `source_code/GenLib/Memory.c:L1186-L1236`). |
-| `GetSystemLoad` | `source_code/GenLib/Memory.c:L1261-L1302` | Executes `sar <interval>` via `popen` and parses load (shell-command dependency). |
-| `my_nap` | `source_code/GenLib/Memory.c:L1309-L1324` | Sleep helper implemented with `select()` timeout (`source_code/GenLib/Memory.c:L1314-L1324`). |
-| `run_cmd` | `source_code/GenLib/Memory.c:L1331-L1396` | Run command via `popen`, collect output lines into `answer` buffer, with SIGALRM timeout (`source_code/GenLib/Memory.c:L1336-L1394`). |
-| `GetWord` | `source_code/GenLib/Memory.c:L1403-L1424` | Extract next whitespace-delimited word from a string. |
-| `ToGoDown` | `source_code/GenLib/Memory.c:L1433-L1461` | Uses `get_sys_status()` to decide whether system or subsystem is “GOING_DOWN” (`source_code/GenLib/Memory.c:L1449-L1459`). |
-| `buf_reverse` | `source_code/GenLib/Memory.c:L1471-L1485` | Reverse buffer using temp copy (renamed “for accuracy”) (`source_code/GenLib/Memory.c:L1464-L1485`). |
-| `fix_char` | `source_code/GenLib/Memory.c:L1493-L1510` | Swap parentheses for Hebrew-directionality handling (`source_code/GenLib/Memory.c:L1495-L1510`). |
-| `EncodeHebrew` | `source_code/GenLib/Memory.c:L1526-L1621` | Convert Hebrew strings between Win-1255, DOS, UTF-8 (limited input support) (`source_code/GenLib/Memory.c:L1542-L1576`, `source_code/GenLib/Memory.c:L1584-L1616`). |
-| `WinHebToDosHeb` | `source_code/GenLib/Memory.c:L1630-L1729` | Reverse Hebrew runs + convert Win-1255 Hebrew byte range to DOS Hebrew (`source_code/GenLib/Memory.c:L1672-L1728`). |
-| `WinHebToUTF8` | `source_code/GenLib/Memory.c:L1735-L1906` | Translate Win-1255 bytes to UTF-8 using an internal translation table and dynamic output buffer (`source_code/GenLib/Memory.c:L1844-L1857`, `source_code/GenLib/Memory.c:L1871-L1905`). |
-| `GetMonsDif` | `source_code/GenLib/Memory.c:L1917-L1955` | Month-difference between two `YYYYMMDD` dates, with end-of-month adjustments (`source_code/GenLib/Memory.c:L1941-L1952`). |
-| `GetDaysDiff` | `source_code/GenLib/Memory.c:L1969-L1996` | Day-difference between `YYYYMMDD` dates using `mktime()` (`source_code/GenLib/Memory.c:L1983-L1995`). |
-| `AddDays` | `source_code/GenLib/Memory.c:L2008-L2034` | Add days to `YYYYMMDD` date; note “effective range” comment (`source_code/GenLib/Memory.c:L2000-L2034`). |
-| `AddMonths` | `source_code/GenLib/Memory.c:L2043-L2092` | Add months to `YYYYMMDD` date with month-length correction (`source_code/GenLib/Memory.c:L2062-L2092`). |
-| `AddSeconds` | `source_code/GenLib/Memory.c:L2104-L2122` | Add seconds to a time value via `mktime()` (`source_code/GenLib/Memory.c:L2114-L2121`). |
-| `ConvertUnitAmount` | `source_code/GenLib/Memory.c:L2134-L2156` | Convert MIU/mcg→mg and g→mg; leave other units as-is (`source_code/GenLib/Memory.c:L2138-L2155`). |
-| `ParseISODateTime` | `source_code/GenLib/Memory.c:L2168-L2196` | Parse `YYYY-MM-DDThh:mm:ss` into `YYYYMMDD` and `HHMMSS` with range checks (`source_code/GenLib/Memory.c:L2172-L2194`). |
+| Function | Line | Purpose |
+|---|---:|---|
+| **`ListenSocketNamed()`** | **89** | Create, bind, and listen on `AF_UNIX`/`SOCK_STREAM` socket |
+| **`ConnectSocketNamed()`** | **217** | Create `AF_UNIX` socket and connect to named path |
+| `ListenSocketUnnamed()` | 318 | Create, bind, and listen on `AF_INET`/`SOCK_STREAM` (TCP) socket |
+| `ConnectSocketUnnamed()` | 489 | Create `AF_INET` socket and connect to remote address:port |
+| `AcceptConnection()` | 583 | Accept incoming connection on a listen socket |
+| `CloseSocket()` | 634 | Close a socket (guards against closing fd < 3) |
+| `DisposeSockets()` | 656 | `unlink()` the named pipe file and clean up |
+| **`ReadSocket()`** | **686** | Read a framed message: header then payload, with overflow handling |
+| **`WriteSocket()`** | **820** | Write a framed message: header then payload |
+| `WriteSocketHead()` | 870 | Write message with a status byte prepended to payload |
+| `read_socket_data()` | 948 | Low-level read loop with `select()` timeout (`ReadTimeout`) |
+| `write_socket_data()` | 1078 | Low-level write loop with `select()` timeout (`WriteTimeout`) |
+| `get_header_details()` | 1196 | Read `MESSAGE_HEADER` struct and parse type/length (static) |
+| `set_header_details()` | 1248 | Format and send `MESSAGE_HEADER` struct |
+| `GetPeerAddr()` | 1307 | Get dotted-decimal peer address of a connected socket |
+| **`GetCurrNamedPipe()`** | **1376** | Build per-process named pipe path: `{NamedpDir}/{NAMEDP_PREFIX}{pid}_{time}` |
+| **`GetSocketMessage()`** | **1396** | `select()`-based multiplexed message receive on `NamedPipeSocket` |
+| **`GetInterProcMesg()`** | **1516** | Decode inter-process message: `FILE_MESG` reads from file, `DATA_MESG` reads from buffer |
+| **`SetInterProcMesg()`** | **1622** | Encode inter-process message: `FILE_MESG` writes data to temp file, `DATA_MESG` copies inline |
 
-#### Key workflows (with citations)
+### 3.3 SharedMemory.cpp -- Shared Memory Table Engine
 
-- **Child bootstrap (“son process”):** the canonical flow is `OpenSemaphore()` → `OpenFirstExtent()` → `GetCurrNamedPipe()` → `ListenSocketNamed()` → `AddCurrProc()` (`source_code/GenLib/Memory.c:L566-L605`).
-- **Privilege drop:** after parameters are loaded, the process attempts `setuid(atoi(MacUid))` (`source_code/GenLib/Memory.c:L591-L595`).
-- **Parent broadcast to children:** `BroadcastSonProcs()` connects to each `proc_data.named_pipe` from shared memory and sends a message using `WriteSocket()` (`source_code/GenLib/Memory.c:L775-L804`), with a 1-second alarm timeout around connect (`source_code/GenLib/Memory.c:L773-L786`).
+| Function | Line | Purpose |
+|---|---:|---|
+| **`InitFirstExtent()`** | **288** | Allocate and init first shm extent (Father only). Uses `shmget`/`shmat`. |
+| `AddNextExtent()` | 518 | Allocate additional shm extent and chain it (static, Father only) |
+| `KillAllExtents()` | 711 | Detach and `IPC_RMID` all extents (Father only, shutdown) |
+| **`OpenFirstExtent()`** | **869** | Attach to existing first shm extent (child processes) |
+| `AttachAllExtents()` | 999 | Attach all newly-allocated extents not yet attached locally (static) |
+| `DetachAllExtents()` | 1122 | Detach all attached extents |
+| `AttachShMem()` | 1238 | Low-level `shmat()` wrapper (static) |
+| **`CreateTable()`** | **1291** | Create a new named table in shm (Father only) |
+| **`OpenTable()`** | **1501** | Open existing table for access (extern "C") |
+| `CloseTable()` | 1642 | Close table connection |
+| **`AddItem()`** | **1700** | Add a row to a table (allocates from extent or reuses free rows) |
+| `DeleteItem()` | 1938 | Delete a row from a table (moves to free chain) |
+| `DeleteTable()` | 2160 | Delete all rows from a table (bulk move to free chain) |
+| `ListTables()` | 2293 | Debug: print all table names and row counts |
+| `ParmComp()` | 2329 | Row comparator for `PARM_TABLE` (by `par_key`) |
+| `ProcComp()` | 2359 | Row comparator for `PROC_TABLE` (by `pid`) |
+| `UpdtComp()` | 2387 | Row comparator for `UPDT_TABLE` (by `table_name`) |
+| **`ActItems()`** | **2417** | Iterate table rows, calling an operation function per row |
+| `SetRecordSize()` | 2511 | Resize table record size (inflates by 2.5x) |
+| `RewindTable()` | 2609 | Reset table cursor to first row |
+| `GetItem()` | 2668 | Operation: copy current row data to caller's buffer |
+| `SeqFindItem()` | 2724 | Operation: sequential key-range search |
+| `SetItem()` | 2774 | Operation: overwrite current row data from caller's buffer |
+| `GetProc()` | 2829 | Operation: find `PROC_DATA` row by pid |
+| `get_sys_status()` | 2887 | Read system status from `STAT_TABLE` |
+| **`AddCurrProc()`** | **2921** | Register current process in `PROC_TABLE` |
+| `UpdateTimeStat()` | 3030 | Update time-based statistics (pharmacy or doctor) |
+| `IncrementCounters()` | 3080 | Operation: increment pharmacy statistics counters |
+| `IncrementDoctorCounters()` | 3356 | Operation: increment doctor statistics counters |
+| `RescaleTimeStat()` | 3630 | Rescale time statistics (zero stale entries) |
+| `RescaleCounters()` | 3663 | Operation: rescale pharmacy statistics |
+| `RescaleDoctorCounters()` | 3785 | Operation: rescale doctor statistics |
+| `GetMessageIndex()` | 3896 | Map message number to array index |
+| `IncrementRevision()` | 3931 | Operation: increment `STAT_DATA.param_rev` |
+| `UpdateShmParams()` | 3969 | Reload parameters from shm if revision changed |
+| `GetFreeSqlServer()` | 4024 | Find and lock an idle SQL server process |
+| `LockSqlServer()` | 4065 | Operation: atomically lock a free `SQLPROC_TYPE` entry |
+| `SetFreeSqlServer()` | 4096 | Release a locked SQL server process |
+| `ReleaseSqlServer()` | 4123 | Operation: clear `busy_flg` for a process by pid |
+| `ShmGetParamsByName()` | 4153 | Load/reload parameters from `PARM_TABLE` into a `ParamTab` descriptor array |
+| `GetPrescriptionId()` | 4266 | Atomically read and increment prescription ID from shm |
+| `GetMessageRecId()` | 4310 | Atomically read and increment message rec_id from shm |
+| `DiprComp()` | 4354 | Row comparator for `DIPR_TABLE` (by pid, then status) |
+| `GetSonsCount()` | 4397 | Read `sons_count` from `STAT_TABLE` |
+| `AddToSonsCount()` | 4439 | Atomically add to `sons_count` in `STAT_TABLE` |
+| `GetTabNumByName()` | 4495 | Look up table number in `TableTab[]` by name |
+| `UpdateLastAccessTime()` | 4525 | Update current process's last-access timestamp in `PROC_TABLE` |
+| `UpdateLastAccessTimeInternal()` | 4552 | Operation: set `l_year..l_sec` fields for matching pid |
+| `UpdateTable()` | 4612 | Operation: update `UPDT_DATA` row by table name match |
+| `GetTable()` | 4664 | Operation: get `UPDT_DATA` row by table name match |
+| `set_sys_status()` | 4716 | Set system/subsystem status in `STAT_TABLE` |
 
-#### Security / robustness notes (code-level)
+### 3.4 Semaphores.c -- System V Semaphore Operations
 
-- **Shell execution:** `GetSystemLoad()` and `run_cmd()` execute shell commands via `popen()` (`source_code/GenLib/Memory.c:L1271-L1273`, `source_code/GenLib/Memory.c:L1336-L1343`). If command strings become attacker-controlled, this is command-injection risk.
-- **In-place argv tokenization:** `Run_server()` calls `strtok()` directly on `proc_data->proc_name` (`source_code/GenLib/Memory.c:L1050-L1053`), mutating the stored string (this can surprise callers if the structure is reused).
+| Function | Line | Purpose |
+|---|---:|---|
+| **`CreateSemaphore()`** | **109** | Create semaphore (Father only). BSD: `semget()` + `semctl(SETVAL, 1)` |
+| `DeleteSemaphore()` | 181 | Delete semaphore. BSD: `semctl(IPC_RMID)` |
+| **`OpenSemaphore()`** | **275** | Open existing semaphore (child processes). BSD: `semget(IPC_CREAT)` |
+| `CloseSemaphore()` | 404 | Close semaphore (mark as unused locally) |
+| **`WaitForResource()`** | **487** | Acquire semaphore (lock). BSD: `semop(W={0,-1,SEM_UNDO})`. Supports re-entrant ("pushable") locking via `sem_busy_flg` counter. |
+| **`ReleaseResource()`** | **625** | Release semaphore (unlock). BSD: `semop(P={0,+1,SEM_UNDO})`. Decrements `sem_busy_flg`; only does actual semop when count reaches 0. |
+
+### 3.5 GeneralError.c -- Error Handling and Logging
+
+| Function | Line | Purpose |
+|---|---:|---|
+| **`GerrLogExit()`** | **92** | Log error message to log file, then `exit(status)` |
+| **`GerrLogReturn()`** | **165** | Log error message to log file, then return (with 250ms delay to prevent doom loops) |
+| **`GerrLogMini()`** | **248** | Log minimal-format message (one-liner) to log file |
+| `GerrLogAddBlankLines()` | 288 | Write N blank lines to log file |
+| `GerrLogFnameMini()` | 314 | Log minimal-format message to a specified file |
+| `GerrLogFnameClear()` | 355 | Clear (truncate) a specified log file |
+| `GerrLogToFileName()` | 382 | Log full-format error to a specified file (with 250ms delay) |
+| `GmsgLogExit()` | 445 | Log titled message to log file, then `exit(status)` |
+| `GmsgLogReturn()` | 521 | Log titled message to log file, then return |
+| `open_log_file()` | 594 | Open `{LogDir}/{LogFile}` for append; falls back to `stderr` |
+| `close_log_file()` | 670 | Flush and close log file (skips close if `stderr`) |
+| `open_other_file()` | 695 | Open `{LogDir}/{fname}` with specified mode; creates directory if needed |
+| `create_log_directory()` | 746 | Create directory path for log file via `mkdir -m777 -p` |
+
+### 3.6 GxxPersonality.c
+
+| Function | Line | Purpose |
+|---|---:|---|
+| `Prn()` | 12 | Debug print helper: formats and prints with pid/ppid prefix |
+
+The `__gxx_personality_v0()` stub is `#if 0`'d out -- it was apparently needed at some point for C++ exception handling but is now disabled. (`GxxPersonality.c:L5-L10`)
 
 ---
 
-### `SharedMemory.cpp` (4774 lines) — shared-memory table engine + runtime state tables
+## 4. InitSonProcess() Step-by-Step Sequence
 
-**Purpose:** Shared memory “extent” allocator + table engine, plus shared tables for processes, params, statistics, and status (`source_code/GenLib/SharedMemory.cpp:L12-L16`).
+According to code at `Memory.c:L552-L612`, `InitSonProcess()` performs the following steps in order:
 
-**Primary dependencies:**
-- `Global.h` + `CCGlobal.h` (`source_code/GenLib/SharedMemory.cpp:L36-L42`)
-- `MsgHndlr.h` (included even under `NON_SQL`) (`source_code/GenLib/SharedMemory.cpp:L46-L50`)
+```
+InitSonProcess (proc_pathname, proc_type, retrys, eicon_port, system)
+```
 
-#### Core data model (extents + table connections)
+| Step | Code | Line | Description |
+|---|---|---:|---|
+| 1 | `ABORT_ON_ERR(InitEnv(GerrId))` | 560 | Allocate environment name/value hash buffers |
+| 2 | `ABORT_ON_ERR(HashEnv(GerrId))` | 563 | Read all `EnvTabPar` environment variables and cache them |
+| 3 | `RETURN_ON_ERR(OpenSemaphore())` | 566 | Open the system semaphore created by FatherProcess |
+| 4 | `RETURN_ON_ERR(OpenFirstExtent())` | 569 | Attach to the first shared memory extent |
+| 5 | `GetCurrProgName(proc_pathname, CurrProgName)` | 572 | Extract program filename from path |
+| 6 | `RETURN_ON_ERR(ShmGetParamsByName(SonProcParams, PAR_LOAD))` | 575 | Load runtime parameters from shared memory `PARM_TABLE` |
+| 7 | `plock(PROCLOCK)` or `mlockall(MCL_CURRENT)` | 578-589 | Optionally lock pages in primary memory (if `LockPagesMode == 1`) |
+| 8 | `setuid(atoi(MacUid))` | 592 | Drop to unprivileged user ID |
+| 9 | `GetCurrNamedPipe(CurrNamedPipe)` | 598 | Build per-process socket path: `{NamedpDir}/{NAMEDP_PREFIX}{pid}_{time}` |
+| 10 | `RETURN_ON_ERR(ListenSocketNamed(CurrNamedPipe))` | 601 | Create and listen on AF_UNIX socket at that path |
+| 11 | `RETURN_ON_ERR(AddCurrProc(retrys, proc_type, eicon_port, system))` | 604 | Register process in shared memory `PROC_TABLE` |
+| 12 | `RETURN_ON_ERR(AddToSonsCount(1))` | 608 | Increment `sons_count` in `STAT_TABLE` |
+| 13 | `return (MAC_OK)` | 611 | Return success |
 
-- **Master header:** `master_shm_header` points to `MASTER_SHM_HEADER` at the start of the first shared-memory segment (`source_code/GenLib/SharedMemory.cpp:L60-L60`, `source_code/GenLib/SharedMemory.cpp:L403-L423`).
-- **Extents chain:** `ExtentChain[]` stores `{shm_id,start_addr}` for each attached extent (`source_code/GenLib/SharedMemory.cpp:L62-L71`).
-- **Fixed key + mode:** first extent uses `ShmKey1 = 0x000abcde` (`source_code/GenLib/SharedMemory.cpp:L79-L82`) and `ShmMode = 0777` (`source_code/GenLib/SharedMemory.cpp:L75-L77`).
-- **Table connections:** `ConnTab[CONN_MAX=150]` is a per-process connection table with `busy_flg`, `table_header`, `curr_row` etc (`source_code/GenLib/SharedMemory.cpp:L88-L95`).
+### Calling Components
 
-#### Function inventory (all functions in file)
+According to code across the repository, `InitSonProcess()` is called by:
 
-| Function | File:Line | Summary |
-|----------|-----------|---------|
-| `InitFirstExtent` | `source_code/GenLib/SharedMemory.cpp:L288-L508` | Father-only init: remove old shm (if exists), create new first segment, initialize master + first extent, init `ConnTab` (`source_code/GenLib/SharedMemory.cpp:L321-L368`, `source_code/GenLib/SharedMemory.cpp:L403-L507`). |
-| `AddNextExtent` (static) | `source_code/GenLib/SharedMemory.cpp:L518-L701` | Allocate next extent via `IPC_PRIVATE`, link it from previous extent header, extend `ExtentChain` (`source_code/GenLib/SharedMemory.cpp:L562-L693`). |
-| `KillAllExtents` | `source_code/GenLib/SharedMemory.cpp:L711-L860` | Detach + `IPC_RMID` all extents (Father-only shutdown) (`source_code/GenLib/SharedMemory.cpp:L760-L815`). |
-| `OpenFirstExtent` | `source_code/GenLib/SharedMemory.cpp:L869-L990` | Attach to first extent using fixed key, init `ConnTab` + `ExtentChain` for current process (`source_code/GenLib/SharedMemory.cpp:L898-L939`, `source_code/GenLib/SharedMemory.cpp:L944-L989`). |
-| `AttachAllExtents` (static) | `source_code/GenLib/SharedMemory.cpp:L999-L1113` | If new extents exist (extent_count increased), attach them using the `next_extent_id` links (`source_code/GenLib/SharedMemory.cpp:L1053-L1106`). |
-| `DetachAllExtents` | `source_code/GenLib/SharedMemory.cpp:L1122-L1229` | Detach all currently attached extents, reset globals, error on detach failures (`source_code/GenLib/SharedMemory.cpp:L1162-L1221`). |
-| `AttachShMem` (static) | `source_code/GenLib/SharedMemory.cpp:L1238-L1281` | Wrapper for `shmat(shm_id)` with error logging (`source_code/GenLib/SharedMemory.cpp:L1255-L1273`). |
-| `CreateTable` | `source_code/GenLib/SharedMemory.cpp:L1291-L1491` | Father-only: allocate `TABLE_HEADER` for a named table (from `TableTab[]` schema), link into master list, then `OpenTable()` (`source_code/GenLib/SharedMemory.cpp:L1325-L1338`, `source_code/GenLib/SharedMemory.cpp:L1384-L1490`). |
-| `OpenTable` | `source_code/GenLib/SharedMemory.cpp:L1501-L1633` | Child: find table header by name, allocate a `ConnTab` slot, set `curr_row=first_row` (`source_code/GenLib/SharedMemory.cpp:L1555-L1586`, `source_code/GenLib/SharedMemory.cpp:L1592-L1632`). |
-| `CloseTable` | `source_code/GenLib/SharedMemory.cpp:L1642-L1690` | Release a connection slot in `ConnTab` (`source_code/GenLib/SharedMemory.cpp:L1671-L1689`). |
-| `AddItem` | `source_code/GenLib/SharedMemory.cpp:L1700-L1928` | Insert new row: allocate from free list or free extent; append to row chain; copy payload into row_data (`source_code/GenLib/SharedMemory.cpp:L1762-L1776`, `source_code/GenLib/SharedMemory.cpp:L1914-L1921`). |
-| `DeleteItem` | `source_code/GenLib/SharedMemory.cpp:L1938-L2150` | Find row by comparator (`row_comp`) then move it to free list; update counts (`source_code/GenLib/SharedMemory.cpp:L1996-L2031`, `source_code/GenLib/SharedMemory.cpp:L2096-L2141`). |
-| `DeleteTable` | `source_code/GenLib/SharedMemory.cpp:L2160-L2284` | Truncate table: move all rows to free chain, reset row list, adjust counts (`source_code/GenLib/SharedMemory.cpp:L2212-L2276`). |
-| `ListTables` | `source_code/GenLib/SharedMemory.cpp:L2293-L2320` | Debug print table names and record/free counts. |
-| `ParmComp` | `source_code/GenLib/SharedMemory.cpp:L2329-L2350` | Comparator for `PARM_DATA` by `par_key`. |
-| `ProcComp` | `source_code/GenLib/SharedMemory.cpp:L2359-L2378` | Comparator for `PROC_DATA` by `pid`. |
-| `UpdtComp` | `source_code/GenLib/SharedMemory.cpp:L2387-L2408` | Comparator for `UPDT_DATA` by `table_name`. |
-| `ActItems` | `source_code/GenLib/SharedMemory.cpp:L2417-L2502` | Iterate rows calling callback; callback returns `OPER_FORWARD/STOP/BACKWARD` (`source_code/GenLib/SharedMemory.cpp:L2464-L2493`). |
-| `SetRecordSize` | `source_code/GenLib/SharedMemory.cpp:L2511-L2600` | Adjust table record size (inflates to `ceil(data_size*2.5)` or truncates) (`source_code/GenLib/SharedMemory.cpp:L2562-L2586`). |
-| `RewindTable` | `source_code/GenLib/SharedMemory.cpp:L2609-L2658` | Set `curr_row = first_row`. |
-| `GetItem` | `source_code/GenLib/SharedMemory.cpp:L2668-L2712` | Copy current row’s data into caller buffer, then `OPER_STOP`. |
-| `SeqFindItem` | `source_code/GenLib/SharedMemory.cpp:L2724-L2764` | NIU sequential range search using `memcmp` on key bounds (`source_code/GenLib/SharedMemory.cpp:L2752-L2761`). |
-| `SetItem` | `source_code/GenLib/SharedMemory.cpp:L2774-L2818` | Copy caller buffer into current row’s data, then `OPER_STOP`. |
-| `GetProc` | `source_code/GenLib/SharedMemory.cpp:L2829-L2878` | Find process row by `pid` while iterating; copies row into provided `PROC_DATA`. |
-| `get_sys_status` | `source_code/GenLib/SharedMemory.cpp:L2887-L2912` | Read single `STAT_DATA` record from `STAT_TABLE` (`source_code/GenLib/SharedMemory.cpp:L2898-L2911`). |
-| `AddCurrProc` | `source_code/GenLib/SharedMemory.cpp:L2921-L3022` | Append current process record into `PROC_TABLE` (sets pid/ppid/time, named_pipe, log_file, system/subsystem) (`source_code/GenLib/SharedMemory.cpp:L2959-L3012`). |
-| `UpdateTimeStat` | `source_code/GenLib/SharedMemory.cpp:L3030-L3071` | Update `TSTT_TABLE`/`DSTT_TABLE` counters using `IncrementCounters`/`IncrementDoctorCounters` callbacks (`source_code/GenLib/SharedMemory.cpp:L3054-L3066`). |
-| `IncrementCounters` | `source_code/GenLib/SharedMemory.cpp:L3080-L3347` | Per-message rolling window counts + timing stats update (pharmacy). |
-| `IncrementDoctorCounters` | `source_code/GenLib/SharedMemory.cpp:L3356-L3621` | Per-message rolling window counts + timing stats update (doctor). |
-| `RescaleTimeStat` | `source_code/GenLib/SharedMemory.cpp:L3630-L3654` | Rescale statistics by “clearing” stale buckets. |
-| `RescaleCounters` | `source_code/GenLib/SharedMemory.cpp:L3663-L3776` | Rescale pharmacy stats buckets. |
-| `RescaleDoctorCounters` | `source_code/GenLib/SharedMemory.cpp:L3785-L3888` | Rescale doctor stats buckets. |
-| `GetMessageIndex` | `source_code/GenLib/SharedMemory.cpp:L3896-L3922` | Map message number to stats index via `PharmMessages`/`DoctorMessages` arrays (`source_code/GenLib/SharedMemory.cpp:L3903-L3921`). |
-| `IncrementRevision` | `source_code/GenLib/SharedMemory.cpp:L3931-L3960` | Increment `STAT_DATA.param_rev` (`source_code/GenLib/SharedMemory.cpp:L3946-L3959`). |
-| `UpdateShmParams` | `source_code/GenLib/SharedMemory.cpp:L3969-L4014` | Periodic parameter reload gate using `STAT_TABLE.param_rev` vs local `ParametersRevision` (`source_code/GenLib/SharedMemory.cpp:L3997-L4013`). |
-| `GetFreeSqlServer` | `source_code/GenLib/SharedMemory.cpp:L4024-L4056` | Find and lock an available SqlServer process via `LockSqlServer` callback (`source_code/GenLib/SharedMemory.cpp:L4038-L4052`). |
-| `LockSqlServer` | `source_code/GenLib/SharedMemory.cpp:L4065-L4087` | In `PROC_TABLE`, choose matching `proc_type` with `busy_flg==MAC_FALS`, then set busy flag (`source_code/GenLib/SharedMemory.cpp:L4076-L4086`). |
-| `SetFreeSqlServer` | `source_code/GenLib/SharedMemory.cpp:L4096-L4114` | Free a previously locked SqlServer pid via `ReleaseSqlServer`. |
-| `ReleaseSqlServer` | `source_code/GenLib/SharedMemory.cpp:L4123-L4143` | Clear `busy_flg` for matching pid. |
-| `ShmGetParamsByName` | `source_code/GenLib/SharedMemory.cpp:L4153-L4255` | Load params from `PARM_TABLE` by names `CurrProgName.<param>` and `ALL.<param>`, supports reload gating; warns on missing params (`source_code/GenLib/SharedMemory.cpp:L4171-L4251`). |
-| `GetPrescriptionId` | `source_code/GenLib/SharedMemory.cpp:L4266-L4299` | Read & increment prescription id from a dedicated row (`source_code/GenLib/SharedMemory.cpp:L4292-L4298`). |
-| `GetMessageRecId` | `source_code/GenLib/SharedMemory.cpp:L4310-L4343` | Read & increment message record id from a dedicated row (`source_code/GenLib/SharedMemory.cpp:L4336-L4341`). |
-| `DiprComp` | `source_code/GenLib/SharedMemory.cpp:L4354-L4386` | Comparator for “died processes” by `{pid,status}` (`source_code/GenLib/SharedMemory.cpp:L4373-L4385`). |
-| `GetSonsCount` | `source_code/GenLib/SharedMemory.cpp:L4397-L4430` | Read `STAT_DATA.sons_count` from `STAT_TABLE` (`source_code/GenLib/SharedMemory.cpp:L4414-L4428`). |
-| `AddToSonsCount` | `source_code/GenLib/SharedMemory.cpp:L4439-L4486` | Increment `STAT_DATA.sons_count` with shm lock (`WaitForResource`) (`source_code/GenLib/SharedMemory.cpp:L4449-L4477`). |
-| `GetTabNumByName` | `source_code/GenLib/SharedMemory.cpp:L4495-L4514` | Find table schema index in `TableTab[]` by name (`source_code/GenLib/SharedMemory.cpp:L4501-L4513`). |
-| `UpdateLastAccessTime` | `source_code/GenLib/SharedMemory.cpp:L4525-L4543` | Update current process record’s last-access timestamp (`source_code/GenLib/SharedMemory.cpp:L4531-L4541`). |
-| `UpdateLastAccessTimeInternal` | `source_code/GenLib/SharedMemory.cpp:L4552-L4603` | Callback that matches current `pid` and writes `l_*` fields from `localtime()` (`source_code/GenLib/SharedMemory.cpp:L4580-L4599`). |
-| `UpdateTable` | `source_code/GenLib/SharedMemory.cpp:L4612-L4655` | Update `UPDT_DATA` record by table name (date/time). |
-| `GetTable` | `source_code/GenLib/SharedMemory.cpp:L4664-L4707` | Get `UPDT_DATA` record by table name (date/time). |
-| `set_sys_status` | `source_code/GenLib/SharedMemory.cpp:L4716-L4774` | Update `STAT_DATA.status` and subsystem statuses under shm lock (`source_code/GenLib/SharedMemory.cpp:L4731-L4774`). |
+| Component | Call Site | Arguments |
+|---|---|---|
+| SqlServer | `SqlServer.c:L211` | `SQLPROC_TYPE`, `PHARM_SYS` |
+| As400UnixServer | `As400UnixServer.c:L194` | `AS400TOUNIX_TYPE`, `PHARM_SYS` |
+| As400UnixClient | `As400UnixClient.c:L174` | `UNIXTOAS400_TYPE`, `PHARM_SYS` |
+| As400UnixDocServer | `As400UnixDocServer.c:L88` | `DOCAS400TOUNIX_TYPE`, `DOCTOR_SYS` |
+| As400UnixDoc2Server | `As400UnixDoc2Server.c:L101-L107` | `DOC2AS400TOUNIX_TYPE`, `DOCTOR_SYS` |
+| PharmTcpServer | `PharmTcpServer.cpp:L124-L128` | `PHARM_TCP_SERVER_TYPE`, variable `SubSystem` |
+| PharmWebServer | `PharmWebServer.cpp:L123-L128` | `WEBSERVERPROC_TYPE`, variable `SubSystem` |
 
-#### Key behaviors (with citations)
+**Note**: FatherProcess does NOT call `InitSonProcess()`; it performs its own initialization sequence (create semaphore, init first extent, create tables) and then calls `AddCurrProc()` directly at `FatherProcess.c:L351`.
 
-- **Global shm lock**: many operations take the semaphore lock via `WaitForResource()` and release via `ReleaseResource()` (e.g., `InitFirstExtent` (`source_code/GenLib/SharedMemory.cpp:L312-L313`, `source_code/GenLib/SharedMemory.cpp:L506-L507`) and `AddItem` (`source_code/GenLib/SharedMemory.cpp:L1738-L1741`, `source_code/GenLib/SharedMemory.cpp:L1926-L1927`)).
-- **Extent strategy**: first extent uses fixed key; later extents use `IPC_PRIVATE` and are linked via `next_extent_id` (`source_code/GenLib/SharedMemory.cpp:L321-L357`, `source_code/GenLib/SharedMemory.cpp:L562-L666`).
-- **Table schema is external**: table definitions come from `TableTab[]` (`source_code/GenLib/SharedMemory.cpp:L96-L97`), and `CreateTable()` resolves `table_no` via `GetTabNumByName()` (`source_code/GenLib/SharedMemory.cpp:L1325-L1334`).
+---
 
-#### Security / robustness notes (code-level)
+## 5. IPC Socket API Documentation
 
-- **Permissions**: `ShmMode = 0777` makes segments broadly accessible (`source_code/GenLib/SharedMemory.cpp:L75-L77`). Combined with IPC keys, this is sensitive in multi-tenant environments.
+### 5.1 Architecture
 
+The IPC system uses **Unix-domain stream sockets** (`AF_UNIX`, `SOCK_STREAM`) for inter-process communication. Each process creates a named socket file at a unique path. The system also supports TCP/IP sockets (`AF_INET`) for external clients.
 
+### 5.2 Named Socket Path Generation
+
+According to code at `Sockets.c:L1376-L1387`:
+```c
+sprintf(buffer, "%s/%s%d_%ld", NamedpDir, NAMEDP_PREFIX, getpid(), (long)time(NULL));
+```
+Where `NAMEDP_PREFIX` is defined in `Global.h:L151-L152` and `NamedpDir` is an environment variable.
+
+### 5.3 Message Framing Protocol
+
+All socket messages use a `MESSAGE_HEADER` struct (defined in `Global.h`) containing ASCII-formatted `messageType` and `messageLen` fields. According to code at `Sockets.c:L1196-L1239`:
+- `get_header_details()` reads the fixed-size header, then `atoi()` parses type and length
+- `set_header_details()` formats type and length with `sprintf()` and writes the header
+
+### 5.4 Private MESG_HEADER struct
+
+In addition to `MESSAGE_HEADER` (the socket framing header), there is a private `MESG_HEADER` struct defined at `Sockets.c:L38-L43` used by the inter-process message system:
+```c
+typedef struct { int length; char mesg_type; } MESG_HEADER;
+```
+This header prefixes the payload in `GetInterProcMesg()`/`SetInterProcMesg()`.
+
+### 5.5 Key Functions
+
+**`ListenSocketNamed(socket_name)`** (`Sockets.c:L89-L207`):
+1. `socket(AF_UNIX, SOCK_STREAM, 0)` -- create socket
+2. `bind()` to `socket_name` path
+3. `listen(socket_num, SOMAXCONN)`
+4. Stores socket in global `NamedPipeSocket`
+5. Returns socket number
+
+**`GetSocketMessage(micro_sec, buffer, max_len, size, close_flg)`** (`Sockets.c:L1396-L1510`):
+1. `select()` on `NamedPipeSocket` with configurable timeout
+2. On connection: `AcceptConnection()`, then `ReadSocket()` to get framed message
+3. If `close_flg == LEAVE_OPEN_SOCK`, returns the accepted socket; otherwise closes it
+
+**`GetInterProcMesg(in_buf, length, out_buf)`** (`Sockets.c:L1516-L1615`):
+- Parses `MESG_HEADER` (length + mesg_type) from `in_buf`
+- `FILE_MESG` (file-based): opens file named in payload, reads content
+- `DATA_MESG` (inline): copies data directly from buffer
+
+**`SetInterProcMesg(in_buf, length, mesg_type, out_buf, out_len)`** (`Sockets.c:L1622-L1756`):
+- `FILE_MESG`: writes data to a temp file in `NamedpDir` (named with pid + timestamp), puts filename in output buffer
+- `DATA_MESG`: copies data inline into output buffer
+
+### 5.6 Select-Based I/O
+
+Both `read_socket_data()` and `write_socket_data()` use `select()` for timeout-controlled I/O:
+- Read timeout: `ReadTimeout` global variable (`Sockets.c:L974`)
+- Write timeout: `WriteTimeout` global variable (`Sockets.c:L1102`)
+- A comment at `Sockets.c:L1438-L1440` notes that `poll()` is preferred over `select()` but migration is not urgent.
+
+---
+
+## 6. Shared Memory Management Documentation
+
+### 6.1 Architecture
+
+The shared memory subsystem implements a **multi-extent, table-based in-memory database**:
+
+- **Extents**: System V shared memory segments (`shmget`/`shmat`), chained via `EXTENT_HEADER` linked list
+- **Tables**: Named collections of doubly-linked-list rows within extents
+- **Rows**: Each row has a `TABLE_ROW` header (prev/next pointers, data pointer) plus variable-length data
+- **Free list**: Deleted rows are moved to a per-table free chain for reuse
+- **Connection table**: `ConnTab[CONN_MAX=150]` tracks open table connections per process (`SharedMemory.cpp:L88-L94`)
+
+### 6.2 Key Data Structures (from `Global.h`)
+
+According to `Global.h:L720-L795`:
+- `MASTER_SHM_HEADER`: top-level structure at start of first extent (extent_count, first/last table, first/free extent pointers)
+- `EXTENT_HEADER`: per-extent metadata (free_space, extent_size, free_addr_off, next/back extent pointers, next_extent_id for shm attachment)
+- `TABLE_HEADER`: per-table metadata (TABLE_DATA schema, record_count, free_count, first/last row, first/last free, next/back table)
+- `TABLE_ROW`: per-row wrapper (next/back row pointers, row_data extent pointer)
+- `TABLE`: connection handle (conn_id, busy_flg, table_header pointer, curr_row cursor)
+- `EXTENT_PTR`: {ext_no, offset} pair used as shared-memory-safe pointers
+
+### 6.3 Extent Pointer Resolution
+
+According to code at `SharedMemory.cpp:L134-L142`, the `GET_ABS_ADDR(extent_ptr)` macro resolves an `EXTENT_PTR` to an absolute address:
+```c
+ExtentChain[extent_ptr.ext_no].start_addr + extent_ptr.offset
+```
+A null extent pointer is represented by `ext_no == -1` (`SharedMemory.cpp:L121`).
+
+### 6.4 Father Process Initialization
+
+**`InitFirstExtent(shm_size)`** (`SharedMemory.cpp:L288-L508`):
+1. Acquires semaphore (`WaitForResource`)
+2. Checks for and removes any pre-existing shm segment with key `ShmKey1 = 0x000abcde` (`SharedMemory.cpp:L80-L81`)
+3. `shmget(ShmKey1, shm_size, 0777 | IPC_CREAT)` to create new segment
+4. `shmat()` to attach
+5. Initializes `MASTER_SHM_HEADER` at start of segment
+6. Initializes `EXTENT_HEADER` with free space = `shm_size - sizeof(EXTENT_HEADER) - sizeof(MASTER_SHM_HEADER)`
+7. Allocates local `ExtentChain` array (40 slots initially)
+8. Initializes `ConnTab[150]` connection table
+9. Releases semaphore
+
+### 6.5 Child Process Attachment
+
+**`OpenFirstExtent()`** (`SharedMemory.cpp:L869-L990`):
+1. Acquires semaphore
+2. `shmget(ShmKey1, 0, 0)` to get existing shm id
+3. `shmat()` to attach
+4. Initializes local `ExtentChain` and `ConnTab`
+5. Releases semaphore
+
+### 6.6 Table Operations
+
+**`CreateTable(table_name, tablep)`** (`SharedMemory.cpp:L1291-L1491`):
+- Looks up table schema in `TableTab[]` by name
+- Checks for duplicate table names
+- Allocates `TABLE_HEADER` in a free extent
+- Links into master table chain (doubly-linked list)
+- Calls `OpenTable()` to return a connection handle
+
+**`AddItem(tablep, row_data)`** (`SharedMemory.cpp:L1700-L1928`):
+- Either reuses a row from the free chain, or allocates new space from extent
+- Record size is word-aligned (`sizeof(int)` boundary, `SharedMemory.cpp:L1770-L1776`)
+- Appends to end of row chain
+- Copies user data via `memcpy`
+
+**`ActItems(tablep, rewind_flg, func, args)`** (`SharedMemory.cpp:L2417-L2502`):
+- Core iteration engine: walks row chain calling `func(tablep, args)`
+- Operation return codes: `OPER_FORWARD` (next row), `OPER_STOP` (break), `OPER_BACKWARD` (prev row)
+- Returns `NO_MORE_ROWS` when chain exhausted
+
+### 6.7 Concurrency Model
+
+All shared memory operations acquire the semaphore via `WaitForResource()` at entry and release via `ReleaseResource()` at exit (using the `RETURN(a)` macro defined at `SharedMemory.cpp:L104` that calls `ReleaseResource()` before returning). The semaphore supports re-entrant acquisition via `sem_busy_flg` counter (`Semaphores.c:L508-L513`, `Semaphores.c:L640-L650`).
+
+---
+
+## 7. Semaphore Operations Documentation
+
+### 7.1 Configuration
+
+The semaphore facility is compile-time selected. According to `Semaphores.c:L48`:
+```c
+#define SEMAPHORES BSD_SEM
+```
+The active implementation uses **System V (BSD-style) semaphores**. Three implementations are present in the source (XENIX, POSIX, BSD) but only BSD is active.
+
+### 7.2 Key and Identity
+
+- Semaphore key: `SemKey1 = 0x000abcde` (`Semaphores.c:L92`)
+- Semaphore name (for path construction): `"mac_sem1"` (`Semaphores.c:L63`)
+- Path used in `sprintf`: `{NamedpDir}/mac_sem1` (`Semaphores.c:L116`)
+
+### 7.3 Semaphore Operations (BSD_SEM path)
+
+| Operation struct | Value | Meaning |
+|---|---|---|
+| `W` | `{0, -1, SEM_UNDO}` | Wait (decrement/acquire) |
+| `P` | `{0, +1, SEM_UNDO}` | Post (increment/release) |
+| `WNB` | `{0, -1, SEM_UNDO\|IPC_NOWAIT}` | Non-blocking wait |
+| `PNB` | `{0, +1, SEM_UNDO\|IPC_NOWAIT}` | Non-blocking post |
+
+Defined at `Semaphores.c:L86-L90`.
+
+`SEM_UNDO` ensures automatic release if a process crashes, which is critical for system stability.
+
+### 7.4 Re-Entrant (Pushable) Locking
+
+According to code at `Semaphores.c:L508-L513`:
+```c
+if( sem_busy_flg )
+{
+    sem_busy_flg++;
+    return( MAC_OK );
+}
+```
+If the semaphore is already held by the current process, `WaitForResource()` simply increments a counter instead of making a blocking `semop()` call. `ReleaseResource()` decrements the counter and only performs the actual `semop()` when the counter reaches zero (`Semaphores.c:L640-L650`). This prevents deadlocks when GenLib functions call other GenLib functions that also need the semaphore.
+
+### 7.5 What the Semaphore Protects
+
+The single system semaphore protects **all shared memory access**. Every function in `SharedMemory.cpp` that reads or modifies shared memory calls `WaitForResource()` before accessing and `ReleaseResource()` afterward. This includes:
+- Table creation, opening, closing
+- Row add, delete, iterate
+- Status reads/writes
+- Parameter revision checks
+- Process registration
+- Statistics updates
+
+---
+
+## 8. Error Handling Documentation
+
+### 8.1 Logging Destinations
+
+According to `GeneralError.c:L594-L661`:
+- Primary: `{LogDir}/{LogFile}` -- per-process log file, opened for append
+- Fallback: `stderr` (if `LogDir` or `LogFile` are empty)
+- Alternate files: `{LogDir}/{FileName}` via `open_other_file()`
+
+### 8.2 Log Message Formats
+
+**Standard format** (`ErrorFmt`, `GeneralError.c:L48-L54`):
+```
+MESSAGE:
+   PID {pid}    User: {user}    Working dir: {cwd}
+   From {source} Line {line} at {timestamp}
+   Message: {message}
+---------------------------------------------------------------
+```
+
+**Titled format** (`TitleFmt`, `GeneralError.c:L55-L66`):
+```
+*******************<<< START OF MESSAGE >>>********************
+        TITLE : {title}
+        ...
+********************<<< END OF MESSAGE >>>*********************
+```
+
+**Mini format** (`GerrLogMini`, `GeneralError.c:L271`):
+```
+{message} - {month day} {db_timestamp}
+```
+
+### 8.3 Severity Levels (Implicit)
+
+The system does not use explicit severity constants. Instead, severity is encoded in the function choice:
+
+| Function | Behavior | Implicit Severity |
+|---|---|---|
+| `GerrLogExit()` | Log + `exit(status)` | Fatal |
+| `GmsgLogExit()` | Log (titled) + `exit(status)` | Fatal |
+| `GerrLogReturn()` | Log + 250ms sleep + return | Error |
+| `GerrLogToFileName()` | Log to file + 250ms sleep + return | Error |
+| `GmsgLogReturn()` | Log (titled) + return | Error |
+| `GerrLogMini()` | Log (one-liner) + return | Info/Warning |
+| `GerrLogFnameMini()` | Log to file (one-liner) + return | Info/Warning |
+
+### 8.4 Doom-Loop Protection
+
+According to code at `GeneralError.c:L226-L233`, `GerrLogReturn()` includes a 250ms `usleep()` delay before returning. This prevents rapid-fire error logging from filling the disk. The same protection is applied in `GerrLogToFileName()` at `GeneralError.c:L429-L430`.
+
+### 8.5 Error Macro System
+
+Error macros are defined in `Global.h` (based on the `GerrId` macro pattern). Key patterns observed across the codebase:
+- `GerrId` expands to `GerrSource, __LINE__` providing automatic file:line
+- `GerrStr` expands to `errno, strerror(errno)` for system error formatting
+- `RETURN_ON_ERR(expr)` evaluates `expr` and returns if error
+- `ABORT_ON_ERR(expr)` evaluates `expr` and aborts process if error
+- `CONT_ON_ERR(expr)` evaluates `expr` and continues loop on error
+- `ERR_STATE(state)` tests whether a state value represents an error
+
+---
+
+## 9. Build System Documentation
+
+### 9.1 Makefile Analysis
+
+According to `Makefile:L1-L55`:
+
+**Target**: `libgenlib.a` (static archive library)
+
+**Source files**:
+```
+GeneralError.c  Memory.c  Semaphores.c  Sockets.c  SharedMemory.cpp  GxxPersonality.c
+```
+
+**Build process**:
+1. Each `.c`/`.cpp` file is compiled to `.o` with `$(CC) $(COMP_OPTS)`
+2. All `.o` files are archived into `libgenlib.a` via `$(AR) r`
+
+**External includes**: The Makefile references `../Util/Defines.mak` (`Makefile:L4`) and `../Util/Rules.mak` (`Makefile:L27`) for compiler flags and rules, but these files are not present in the repository. [NEEDS_VERIFICATION: actual `COMP_OPTS` and `CC` values]
+
+**Clean target**: `rm $(TARGET) $(OBJS)` (`Makefile:L52-L53`)
+
+---
+
+## 10. Cross-References to Consuming Components
+
+### 10.1 Complete Bootstrap Sequence
+
+Based on analysis of FatherProcess (`FatherProcess.c`) and GenLib code:
+
+1. **FatherProcess** starts, installs SIGTERM handler (`FatherProcess.c:L239-L253`)
+2. Connects to database via `SQLMD_connect()` (`FatherProcess.c:L259-L271`)
+3. Builds named pipe path, calls `ListenSocketNamed()` (`FatherProcess.c:L299-L301`)
+4. Calls `CreateSemaphore()` (`FatherProcess.c:L303-L305`)
+5. Calls `InitFirstExtent(SharedSize)` (`FatherProcess.c:L306-L308`)
+6. Iterates `TableTab[]` calling `CreateTable()` for each (`FatherProcess.c:L309-L334`)
+7. Calls `AddCurrProc(0, FATHERPROC_TYPE, 0, PHARM_SYS | DOCTOR_SYS)` (`FatherProcess.c:L350-L351`)
+8. Spawns child processes via `Run_server()` (`Memory.c:L1023-L1252`)
+
+Each child process then:
+1. Calls `InitSonProcess()` (see Section 4 above)
+2. Enters its main processing loop
+
+### 10.2 GenLib Functions Called by Components
+
+| GenLib Function | Called By |
+|---|---|
+| `InitSonProcess()` | SqlServer, As400UnixServer, As400UnixClient, As400UnixDocServer, As400UnixDoc2Server, PharmTcpServer, PharmWebServer |
+| `CreateSemaphore()` | FatherProcess |
+| `InitFirstExtent()` | FatherProcess |
+| `CreateTable()` | FatherProcess |
+| `OpenTable()` / `CloseTable()` | All processes (via `ActItems` pattern) |
+| `ListenSocketNamed()` | All processes (via `InitSonProcess` or directly by FatherProcess) |
+| `ConnectSocketNamed()` | FatherProcess (in `BroadcastSonProcs`), and inter-process communication |
+| `GetSocketMessage()` | All server processes in their main loops |
+| `WriteSocket()` / `ReadSocket()` | All processes performing IPC |
+| `GetFreeSqlServer()` / `SetFreeSqlServer()` | Processes that delegate SQL work (e.g., As400UnixServer) |
+| `Run_server()` | FatherProcess (to spawn child processes) |
+| `AddCurrProc()` | FatherProcess (directly), all children (via `InitSonProcess`) |
+| `AddToSonsCount()` | FatherProcess (decrement on child death at `FatherProcess.c:L787`), all children (increment via `InitSonProcess`) |
+| `BroadcastSonProcs()` | FatherProcess (for shutdown/restart messages) |
+| `ExitSonProcess()` | All child processes on shutdown |
+| `GerrLogMini()` / `GerrLogReturn()` | All processes for logging |
+| `OpenTable(DIPR_TABLE/PROC_TABLE)` | PharmTcpServer (`PharmTcpServer.cpp:L137-L142`), PharmWebServer (`PharmWebServer.cpp:L438-L442`) |
+| `WinHebToDosHeb()` / `EncodeHebrew()` | Processes handling Hebrew text in transactions |
+| `UpdateTimeStat()` | SqlServer and similar processes after processing messages |
+| `UpdateShmParams()` | All child processes (periodic parameter refresh) |
+| `UpdateLastAccessTime()` | All child processes (heartbeat) |
+| `ToGoDown()` | All child processes (shutdown check) |
+
+---
+
+## 11. Security Notes
+
+The following locations contain security-sensitive values. **Values are intentionally not reproduced here.**
+
+| Location | Description |
+|---|---|
+| `SharedMemory.cpp:L80-L81` | Hard-coded shared memory key `ShmKey1` |
+| `Semaphores.c:L92` | Hard-coded semaphore key `SemKey1` (same value as `ShmKey1`) |
+| `Semaphores.c:L59`, `SharedMemory.cpp:L76-L77` | File mode `0777` for semaphore and shared memory |
+| `Memory.c:L592-L595` | `setuid()` call using `MacUid` from environment |
+| `TikrotRPC.h:L69-L72` | Hard-coded RPC credentials (in header, not GenLib, but referenced by GenLib callers) |
+| `global_1.h:L5-L7` | Hard-coded connect-password macros |
+
+**Notable**: Both the shared memory key and semaphore key appear to use the same value `0x000abcde`. The file permissions `0777` allow any user on the system to access the semaphore and shared memory. [NEEDS_VERIFICATION: whether this is intentional for the deployment environment or a security concern]
+
+---
+
+## 12. Verification Backlog
+
+Items that could not be fully verified from the available source code:
+
+| ID | Item | Notes |
+|---|---|---|
+| VB-01 | `Defines.mak` and `Rules.mak` contents | Referenced by `Makefile:L4,L27` but not present in repository. Needed to verify exact compiler flags. |
+| VB-02 | `DelCurrProc` function | No `DelCurrProc` function exists anywhere in the codebase. Process unregistration from `PROC_TABLE` appears to be handled by FatherProcess via `DeleteItem()` when a child dies, but this path was not fully traced. |
+| VB-03 | `EnvTabPar` definition | Referenced at `Memory.c:L462` -- this appears to be a global array of `EnvTab` structs defined elsewhere (likely in `Global.h` or a component's source). Exact contents determine which environment variables are required. |
+| VB-04 | `SonProcParams` definition | Referenced at `Memory.c:L575` and `SharedMemory.cpp:L4007`. This is a `ParamTab` array defining which shared-memory parameters each process needs. Appears to be defined per-component. |
+| VB-05 | `MESSAGE_HEADER` struct layout | The socket framing header is referenced but its exact field sizes (which determine the wire protocol) are defined in `Global.h`. The `messageType` and `messageLen` fields are ASCII strings parsed with `atoi()`. |
+| VB-06 | Complete list of `PcMessages[]` | Used in `BroadcastSonProcs()` at `Memory.c:L797-L798`. This message array determines what shutdown/control messages can be broadcast. |
+| VB-07 | Shared memory key collision risk | Both `ShmKey1` and `SemKey1` use `0x000abcde`. If another application on the same host uses this key, there could be conflicts. |
+| VB-08 | `FILE_MESG` temp file cleanup | `SetInterProcMesg()` creates temp files in `NamedpDir` (`Sockets.c:L1650-L1670`) but no cleanup mechanism was observed in GenLib. [NEEDS_VERIFICATION: whether temp files are cleaned up by the receiving process or an external mechanism] |
+| VB-09 | `SharedSize` global variable | Referenced in `GET_FREE_EXTENT` macro (`SharedMemory.cpp:L214`) and `InitFirstExtent()`. Its value is passed from FatherProcess but the actual size value is determined by environment/parameters. |
+| VB-10 | Thread safety | The library uses process-level semaphores for shared memory protection, but all static variables (`ConnTab`, `ExtentChain`, `sem_busy_flg`, etc.) are not thread-safe. The system appears to be purely multi-process, not multi-threaded. |
+
+---
+
+## Appendix: File Cross-Reference Summary
+
+```
+Memory.c
+  Calls into: Semaphores.c (OpenSemaphore)
+              SharedMemory.cpp (OpenFirstExtent, ShmGetParamsByName, AddCurrProc, AddToSonsCount)
+              Sockets.c (GetCurrNamedPipe, ListenSocketNamed, ConnectSocketNamed, WriteSocket, CloseSocket, DisposeSockets)
+              GeneralError.c (GerrLogExit, GerrLogReturn, GerrLogMini)
+
+Sockets.c
+  Calls into: GeneralError.c (GerrLogReturn, GerrLogMini)
+  Uses globals: NamedPipeSocket, CurrNamedPipe, NamedpDir, ReadTimeout, WriteTimeout
+
+SharedMemory.cpp
+  Calls into: Semaphores.c (WaitForResource, ReleaseResource)
+              Memory.c (MemAllocReturn, MemReallocReturn)
+              GeneralError.c (GerrLogReturn, GerrLogMini)
+  Uses globals: master_shm_header, ExtentChain, ConnTab, TableTab[] (extern from GenSql)
+
+Semaphores.c
+  Calls into: GeneralError.c (GerrLogReturn)
+  Uses globals: sem_num, sem_busy_flg, SemKey1, NamedpDir
+
+GeneralError.c
+  Calls into: (standalone -- no GenLib dependencies)
+  Uses globals: LogDir, LogFile, buf
+
+GxxPersonality.c
+  Calls into: (standalone -- debug helper only)
+```
